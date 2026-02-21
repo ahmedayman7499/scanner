@@ -244,6 +244,33 @@
       }
       .badge{border:1px solid #ddd;background:#fff}
     }
+    /* ===== PDF MODE (for js download) ===== */
+body.pdf-mode{
+  background:#fff !important;
+  color:#000 !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+
+body.pdf-mode .no-print{ display:none !important; }
+body.pdf-mode .print-header{ display:block !important; margin:0 0 8px 0; }
+body.pdf-mode .print-summary{ display:grid !important; }
+body.pdf-mode .tableWrap{ border:0 !important; overflow:visible !important; background:#fff !important; }
+body.pdf-mode table{ width:100% !important; min-width:auto !important; }
+body.pdf-mode thead th{
+  position:static !important;
+  background:#f4f4f4 !important;
+  border:1px solid #ddd !important;
+}
+body.pdf-mode tbody td{ border:1px solid #ddd !important; }
+body.pdf-mode .badge{ border:1px solid #ddd !important; background:#fff !important; }
+
+/* يمنع تقطيع صف بين صفحتين */
+body.pdf-mode tr{ break-inside: avoid; page-break-inside: avoid; }
+
+/* اخفاء عمود checkbox تماما في الـ PDF */
+body.pdf-mode th.no-print,
+body.pdf-mode td.no-print{ display:none !important; }
   </style>
 </head>
 
@@ -766,46 +793,53 @@ function updateToggleBtn(){
   btn.textContent = allSelected ? "إلغاء الكل" : "تحديد الكل";
 }
   async function downloadSelectedPDF(){
-
-  if(selected.size === 0){
-    alert("مفيش طلبات محددة");
+  const ids = Array.from(selected);
+  if(ids.length === 0){
+    toast("اختار أوردرات الأول ✅");
     return;
   }
 
-  // خزن البيانات الأصلية
-  const originalRows = [...rows];
+  // جهّز بيانات الطباعة
+  const prevRows = rows.slice();
+  const filtered = rows.filter(r => ids.includes(String(r.orderId)));
 
-  // فلترة على المحدد فقط
-  rows = rows.filter(r => selected.has(String(r.orderId)));
+  // لو عايز PDF بالترتيب اللي متحدد (اختياري)
+  // filtered.sort((a,b)=> ids.indexOf(String(a.orderId)) - ids.indexOf(String(b.orderId)));
+
+  rows = filtered;
+  selected = new Set(ids);
 
   updatePrintSummary();
   render();
 
-  // اخفاء checkbox و no-print مؤقتاً
-  const hidden = [];
-  document.querySelectorAll(".no-print").forEach(el=>{
-    hidden.push([el, el.style.display]);
-    el.style.display = "none";
-  });
+  // فعل وضع PDF
+  document.body.classList.add("pdf-mode");
 
-  const element = document.querySelector(".card:last-of-type");
+  // عنصر المحتوى اللي هيتحول PDF (الـ card اللي فيه الهيدر + الجدول)
+  const card = document.querySelector(".card:not(.no-print)"); 
+  // لو اتغير ترتيب الكروت عندك: خليها ID ثابت أفضل (هقولك تحت)
 
   const opt = {
-    margin: 5,
-    filename: "delivery_selected.pdf",
-    image: { type: 'jpeg', quality: 1 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    margin:       8, // mm تقريبا (html2pdf بيحسبها بوحدات مختلفة بس ده عملي)
+    filename:     `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:        { type: "jpeg", quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" }
   };
 
-  await html2pdf().set(opt).from(element).save();
-
-  // رجّع العناصر
-  hidden.forEach(([el,prev])=> el.style.display = prev);
-
-  // رجّع كل البيانات
-  rows = originalRows;
-  render();
+  try{
+    await html2pdf().set(opt).from(card).save();
+    toast("✅ تم تحميل PDF للمحدد");
+  }catch(e){
+    console.error(e);
+    toast("❌ حصل خطأ في تحميل الـ PDF");
+  }finally{
+    // رجّع الوضع الطبيعي
+    document.body.classList.remove("pdf-mode");
+    rows = prevRows;
+    // خلي selected زي ما هو
+    render();
+  }
 }
 /** ================== Boot ================== **/
 loadMine();
