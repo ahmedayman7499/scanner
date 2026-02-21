@@ -244,7 +244,7 @@
       }
       .badge{border:1px solid #ddd;background:#fff}
     }
-    /* ===== PDF MODE (for js download) ===== */
+   /* ===== PDF MODE (fix dark overlay) ===== */
 body.pdf-mode{
   background:#fff !important;
   color:#000 !important;
@@ -252,23 +252,54 @@ body.pdf-mode{
   margin:0 !important;
 }
 
+/* اقفل أي طبقات/جريدينتس/شفافيات */
+body.pdf-mode *{
+  box-shadow:none !important;
+  text-shadow:none !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+}
+
+/* خلي الكروت والخلفيات بيضا */
+body.pdf-mode .wrap{ max-width:none !important; }
+body.pdf-mode .card{
+  background:#fff !important;
+  border:0 !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+
+/* الهيدر والملخص يطلعوا */
 body.pdf-mode .no-print{ display:none !important; }
-body.pdf-mode .print-header{ display:block !important; margin:0 0 8px 0; }
-body.pdf-mode .print-summary{ display:grid !important; }
+body.pdf-mode .print-header{ display:block !important; margin:0 0 8px 0; background:#fff !important; }
+body.pdf-mode .print-summary{ display:grid !important; background:#fff !important; }
+
+/* الجدول */
 body.pdf-mode .tableWrap{ border:0 !important; overflow:visible !important; background:#fff !important; }
-body.pdf-mode table{ width:100% !important; min-width:auto !important; }
+body.pdf-mode table{ width:100% !important; min-width:auto !important; background:#fff !important; }
+
+body.pdf-mode thead, 
+body.pdf-mode tbody, 
+body.pdf-mode tr, 
+body.pdf-mode th, 
+body.pdf-mode td{
+  background:#fff !important;
+}
+
 body.pdf-mode thead th{
   position:static !important;
   background:#f4f4f4 !important;
   border:1px solid #ddd !important;
 }
+
 body.pdf-mode tbody td{ border:1px solid #ddd !important; }
 body.pdf-mode .badge{ border:1px solid #ddd !important; background:#fff !important; }
 
-/* يمنع تقطيع صف بين صفحتين */
+/* يمنع تقطيع صف */
 body.pdf-mode tr{ break-inside: avoid; page-break-inside: avoid; }
 
-/* اخفاء عمود checkbox تماما في الـ PDF */
+/* اخفاء عمود checkbox */
 body.pdf-mode th.no-print,
 body.pdf-mode td.no-print{ display:none !important; }
   </style>
@@ -355,7 +386,7 @@ body.pdf-mode td.no-print{ display:none !important; }
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="printArea">
     <div class="print-header">
       <div class="print-title">ورقة تسليم للمندوب - white-clothes</div>
       <div id="printDate"></div>
@@ -799,45 +830,59 @@ function updateToggleBtn(){
     return;
   }
 
-  // جهّز بيانات الطباعة
+  if(typeof html2pdf === "undefined"){
+    toast("مكتبة PDF مش متحملة (html2pdf) ❌");
+    return;
+  }
+
+  const printEl = document.getElementById("printArea");
+  if(!printEl){
+    toast("مش لاقي منطقة الطباعة #printArea ❌");
+    return;
+  }
+
+  // خزّن الوضع الحالي
   const prevRows = rows.slice();
+  const prevSelected = new Set(Array.from(selected));
+
+  // فلترة المحدد فقط
   const filtered = rows.filter(r => ids.includes(String(r.orderId)));
-
-  // لو عايز PDF بالترتيب اللي متحدد (اختياري)
-  // filtered.sort((a,b)=> ids.indexOf(String(a.orderId)) - ids.indexOf(String(b.orderId)));
-
   rows = filtered;
   selected = new Set(ids);
 
   updatePrintSummary();
   render();
 
-  // فعل وضع PDF
+  // PDF mode
   document.body.classList.add("pdf-mode");
 
-  // عنصر المحتوى اللي هيتحول PDF (الـ card اللي فيه الهيدر + الجدول)
-  const card = document.querySelector(".card:not(.no-print)"); 
-  // لو اتغير ترتيب الكروت عندك: خليها ID ثابت أفضل (هقولك تحت)
+  // استنى الـ DOM يثبت
+  await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r)));
 
   const opt = {
-    margin:       8, // mm تقريبا (html2pdf بيحسبها بوحدات مختلفة بس ده عملي)
-    filename:     `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
-    image:        { type: "jpeg", quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" }
+    margin: 8,
+    filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] } // يمنع تقطيع الصفوف قدر الإمكان
   };
 
   try{
-    await html2pdf().set(opt).from(card).save();
+    await html2pdf().set(opt).from(printEl).save();
     toast("✅ تم تحميل PDF للمحدد");
   }catch(e){
-    console.error(e);
-    toast("❌ حصل خطأ في تحميل الـ PDF");
+    console.error("PDF ERROR:", e);
+    toast("❌ خطأ في توليد الـ PDF (افتح Console)");
   }finally{
-    // رجّع الوضع الطبيعي
     document.body.classList.remove("pdf-mode");
     rows = prevRows;
-    // خلي selected زي ما هو
+    selected = prevSelected;
     render();
   }
 }
