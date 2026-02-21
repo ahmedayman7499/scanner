@@ -419,7 +419,12 @@ function beep(){
 
 /** ================== HTTP ================== **/
 async function api(action, params={}){
-  const qs = new URLSearchParams({ action, key: API_KEY, ...params }).toString();
+  const qs = new URLSearchParams({
+  action,
+  key: API_KEY,
+  _t: Date.now(), // منع الكاش
+  ...params
+}).toString();
   const url = WEB_APP_URL + "?" + qs;
 
   // fetch first
