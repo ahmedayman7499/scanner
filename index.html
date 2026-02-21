@@ -211,6 +211,9 @@
       z-index:9999;
       box-shadow: var(--shadow);
     }
+    #pdfSandbox table{ width:100% !important; min-width:0 !important; }
+#pdfSandbox .tableWrap{ overflow:visible !important; border:0 !important; background:#fff !important; }
+#pdfSandbox .no-print{ display:none !important; }
 
     /* PRINT */
     @page { size: A4 landscape; margin: 8mm; }
@@ -860,59 +863,85 @@ async function downloadSelectedPDF(){
   const prevSelected = new Set(selected);
 
   // فلترة المحدد فقط
-  const filtered = rows.filter(r => ids.includes(String(r.orderId)));
-  rows = filtered;
+  rows = rows.filter(r => ids.includes(String(r.orderId)));
   selected = new Set(ids);
 
   updatePrintSummary();
   render();
 
-  // فعل وضع PDF (ستايل الطباعة)
-  document.body.classList.add("pdf-mode");
-
+  // 1) هات منطقة الطباعة
   const area = document.getElementById("printArea");
   if(!area){
     toast("❌ printArea مش موجود");
-    document.body.classList.remove("pdf-mode");
     rows = prevRows; selected = prevSelected; render();
     return;
   }
 
-  // ✅ انتظر لحد ما الستايل يثبت + الجدول يعمل layout
-  await nextFrame();
-  await nextFrame();
-  await sleep(250); // جرب 250-500 لو لسه
+  // 2) اعمل Sandbox ثابت خارج الشاشة بمقاس A4 landscape (px)
+  // A4 landscape تقريباً @96dpi => 1123x794
+  const W = 1123, H = 794;
 
-  // اجبار reflow (بيساعد مع القص)
-  area.style.transform = "translateZ(0)";
-  area.offsetHeight; // force reflow
-  await nextFrame();
+  const sandbox = document.createElement("div");
+  sandbox.id = "pdfSandbox";
+  sandbox.style.cssText = `
+    position: fixed;
+    left: -20000px;
+    top: 0;
+    width: ${W}px;
+    min-height: ${H}px;
+    background: #fff;
+    color: #000;
+    direction: rtl;
+    padding: 8mm;
+    box-sizing: border-box;
+    overflow: visible;
+    font-size: 12px;
+  `;
 
+  // clone للـ printArea فقط
+  const clone = area.cloneNode(true);
+
+  // ✅ مهم: شيل أي overflow/min-width يسبب قص
+  clone.style.width = "100%";
+  clone.style.margin = "0";
+  clone.style.padding = "0";
+  clone.style.boxShadow = "none";
+  clone.style.border = "0";
+  clone.style.borderRadius = "0";
+  clone.style.background = "#fff";
+
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
+
+  // 3) استنى شوية عشان layout يثبت على الموبايل
+  await new Promise(r=>requestAnimationFrame(()=>r()));
+  await new Promise(r=>setTimeout(r, 400));
+
+  // 4) طلّع PDF من الـ sandbox الثابت
   const opt = {
     margin: 0,
     filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
       scale: 2,
-      useCORS: true,
       backgroundColor: "#ffffff",
       scrollX: 0,
       scrollY: 0,
-      // ✅ تثبيت مقاس الالتقاط (A4 Landscape @96dpi تقريبًا)
-
+      windowWidth: W,
+      windowHeight: H
     },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    pagebreak: { mode: ["css","legacy"] }
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
   };
 
   try{
-    await html2pdf().set(opt).from(area).save();
+    await html2pdf().set(opt).from(sandbox).save();
     toast("✅ تم تحميل PDF للمحدد");
   }catch(e){
     console.error(e);
     toast("❌ حصل خطأ في تحميل الـ PDF");
   }finally{
-    document.body.classList.remove("pdf-mode");
+    // رجّع كل حاجة
+    sandbox.remove();
     rows = prevRows;
     selected = prevSelected;
     render();
