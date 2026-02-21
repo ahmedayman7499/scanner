@@ -451,31 +451,28 @@ async function bulkUpdate(){
     if(!partialAmount) return alert("لازم تكتب المبلغ");
   }
 
-const res = await api("bulkUpdate", {
-  ids: ids.join(","),
-  status,
-  courier,
-  shipDate,
-  deliveryDate,
-  partialAmount
-});
+  const res = await api("bulkUpdate", {
+    ids: ids.join(","),
+    status,
+    courier,
+    shipDate,
+    deliveryDate,
+    partialAmount
+  });
 
-if(!res || !res.ok){
-  toast("❌ فشل تحديث الحالة: " + (res?.error || "Unknown"), "err");
-  return;
-}
+  if(!res || !res.ok){
+    toast("❌ فشل تحديث الحالة: " + (res?.error || "Unknown"), "err");
+    return;
+  }
 
-const updatedCount = res.updatedCount ?? ids.length;  // لو السيرفر مش بيرجعها هنفترض كلها
-toast(✅ تم تحديث الحالة (${updatedCount}) طلب, "ok");
+  const updatedCount = (res.updatedCount != null) ? res.updatedCount : ids.length;
+  toast(`✅ تم تحديث الحالة (${updatedCount}) طلب`, "ok");
 
-if(res.missing && res.missing.length){
-  toast("⚠️ طلبات مش موجودة: " + res.missing.join(","), "warn");
-}
+  if(res.missing && res.missing.length){
+    toast("⚠️ طلبات مش موجودة: " + res.missing.join(","), "warn");
+  }
 
-await refreshMine();
-
-function printA4(){
-  window.print();
+  await refreshMine();
 }
 
 /** ================== QR Scan ================== **/
