@@ -451,7 +451,7 @@ async function bulkUpdate(){
     if(!partialAmount) return alert("لازم تكتب المبلغ");
   }
 
-  const res = await api("bulkUpdate", {
+const res = await api("bulkUpdate", {
   ids: ids.join(","),
   status,
   courier,
@@ -466,28 +466,13 @@ if(!res || !res.ok){
 }
 
 const updatedCount = res.updatedCount ?? ids.length;  // لو السيرفر مش بيرجعها هنفترض كلها
-toast(`✅ تم تحديث الحالة (${updatedCount}) طلب`, "ok");
+toast(✅ تم تحديث الحالة (${updatedCount}) طلب, "ok");
 
 if(res.missing && res.missing.length){
   toast("⚠️ طلبات مش موجودة: " + res.missing.join(","), "warn");
 }
 
 await refreshMine();
-    ids: ids.join(","),
-    status,
-    courier,
-    shipDate,
-    deliveryDate,
-    partialAmount
-  });
-
-  if(!res.ok){ alert(res.error||"Error"); return; }
-  if(res.missing && res.missing.length){
-    alert("طلبات مش موجودة: " + res.missing.join(","));
-  }
-  toast("تم تحديث الحالة ✅", "ok");
-  await refreshMine();
-}
 
 function printA4(){
   window.print();
