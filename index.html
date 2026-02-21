@@ -585,6 +585,17 @@ function updatePrintSummary(){
   document.getElementById("pShipping").textContent = shippingSum;
 }
 
+function updatePrintSummary(){
+  const count = rows.length;
+  const subtotalSum = rows.reduce((a,r)=>a + Number(r.subtotal||0), 0);
+  const shippingSum = rows.reduce((a,r)=>a + Number(r.shipping||0), 0);
+
+  document.getElementById("printDate").textContent = "تاريخ الطباعة: " + new Date().toLocaleString("ar-EG");
+  document.getElementById("pCount").textContent = count;
+  document.getElementById("pSubtotal").textContent = subtotalSum;
+  document.getElementById("pShipping").textContent = shippingSum;
+}
+
 function printA4(){
   updatePrintSummary();
   window.print();
