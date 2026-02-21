@@ -28,13 +28,28 @@
     .warn{color:#ffd36a}
     .err{color:#ff7b7b}
 
-    @media print{
-      body{background:#fff; color:#000; margin:0}
-      .no-print{display:none}
-      .card{border:0; background:#fff}
-      th{background:#f2f2f2}
-    }
-    @page { size: A4; margin: 10mm; }
+@page { size: A4 landscape; margin: 8mm; }
+
+@media print{
+  body{background:#fff; color:#000; margin:0; font-size:12px}
+  .no-print{display:none !important}
+  .card{border:0; background:#fff; padding:0; margin:0}
+  table{width:100%; border-collapse:collapse}
+  th,td{border:1px solid #ddd; padding:6px 8px; text-align:right; vertical-align:top}
+  th{background:#f5f5f5; font-weight:700}
+  .print-header{display:block !important}
+  .print-summary{display:flex !important; gap:10px; margin:8px 0 12px 0}
+  .print-box{border:1px solid #ddd; border-radius:10px; padding:8px 10px; flex:1}
+  .print-title{font-size:16px; font-weight:800; margin-bottom:4px}
+  .muted{opacity:1}
+}
+
+    /* أعمدة تظهر في الطباعة فقط */
+.print-only { display:none; }
+@media print { .print-only { display:table-cell; } }
+    
+/* افتراضيًا مخفيين على الشاشة */
+.print-header, .print-summary { display:none; }
 
     /* QR frame */
     #qrWrap{display:none; margin-top:12px;}
@@ -166,17 +181,38 @@
 </div>
 
 <div class="card">
+  <div class="print-header">
+  <div class="print-title">ورقة تسليم - A4 (Landscape)</div>
+  <div class="muted" id="printDate"></div>
+</div>
+
+<div class="print-summary">
+  <div class="print-box">
+    <div><b>عدد الطلبات:</b> <span id="pCount">0</span></div>
+    <div><b>إجمالي التحصيل (بدون شحن):</b> <span id="pSubtotal">0</span></div>
+    <div><b>إجمالي الشحن:</b> <span id="pShipping">0</span></div>
+  </div>
+
+  <div class="print-box">
+    <div><b>ملاحظة:</b> البيانات مطبوعة من نظام المسح</div>
+    <div><b>المسؤول:</b> ____________</div>
+    <div><b>التوقيع:</b> ____________</div>
+  </div>
+</div>
   <table>
     <thead>
-      <tr>
-        <th>✅</th>
-        <th>Order ID</th>
-        <th>الاسم</th>
-        <th>موبايل / محافظة / عنوان (سطر واحد)</th>
-        <th>الإجمالي (بدون شحن)</th>
-        <th>الحالة</th>
-      </tr>
-    </thead>
+  <tr>
+    <th class="no-print">✅</th>
+    <th>Order ID</th>
+    <th>الاسم</th>
+    <th class="print-only">تاريخ الشحن</th>
+    <th class="print-only">إجمالي التحصيل (بدون شحن)</th>
+    <th>موبايل / محافظة / عنوان</th>
+    <th>الإجمالي (بدون شحن)</th>
+    <th class="print-only">الشحن</th>
+    <th>الحالة</th>
+  </tr>
+</thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
@@ -289,13 +325,16 @@ function render(){
     const checked = selected.has(r.orderId);
 
     tr.innerHTML = `
-      <td><input type="checkbox" ${checked?"checked":""} /></td>
-      <td><b>${esc(r.orderId)}</b></td>
-      <td>${esc(r.name||"")}</td>
-      <td>${esc((r.phone||"") + " / " + (r.city||"") + " / " + (r.address||""))}</td>
-      <td><b>${esc(String(r.subtotal||0))}</b></td>
-      <td>${esc(r.status||"")}</td>
-    `;
+  <td class="no-print"><input type="checkbox" ${checked?"checked":""} /></td>
+  <td><b>${esc(r.orderId)}</b></td>
+  <td>${esc(r.name||"")}</td>
+  <td class="print-only">${esc(r.shipDate || "")}</td>
+  <td class="print-only"><b>${esc(String(r.subtotal||0))}</b></td>
+  <td>${esc((r.phone||"") + " / " + (r.city||"") + " / " + (r.address||""))}</td>
+  <td><b>${esc(String(r.subtotal||0))}</b></td>
+  <td class="print-only">${esc(String(r.shipping||0))}</td>
+  <td>${esc(r.status||"")}</td>
+`;
 
     tr.querySelector("input").addEventListener("change",(e)=>{
       if (e.target.checked) selected.add(r.orderId);
@@ -527,6 +566,23 @@ loadMine();
 // الصفحة تفتح فاضية — لو عايز تظهر اللي كنت ماسحهم/مخزنهم من قبل، فعّل السطر ده:
 // refreshMine();
 render();
+
+function updatePrintSummary(){
+  const count = rows.length;
+  const subtotalSum = rows.reduce((a,r)=>a + Number(r.subtotal||0), 0);
+  const shippingSum = rows.reduce((a,r)=>a + Number(r.shipping||0), 0);
+
+  document.getElementById("printDate").textContent = "تاريخ الطباعة: " + new Date().toLocaleString("ar-EG");
+  document.getElementById("pCount").textContent = count;
+  document.getElementById("pSubtotal").textContent = subtotalSum;
+  document.getElementById("pShipping").textContent = shippingSum;
+}
+
+function printA4(){
+  updatePrintSummary();
+  window.print();
+}
+  
 </script>
 </body>
 </html>
