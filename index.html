@@ -274,6 +274,16 @@ body.pdf-mode table{
   width: 100% !important;
 }
 
+body.pdf-mode #printArea{
+  width: 297mm !important;
+  min-height: 210mm !important;
+}
+
+body.pdf-mode{
+  display:flex !important;
+  justify-content:center !important;
+}
+
 body.pdf-mode .tableWrap{
   overflow: visible !important;
   border:0 !important;
@@ -869,21 +879,19 @@ function updateToggleBtn(){
   const h = area.scrollHeight;
 
   const opt = {
-    margin: 0,
-    filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: w,
-      windowHeight: h,
-      scrollX: 0,
-      scrollY: 0
-    },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    pagebreak: { mode: ["css","legacy"] }
-  };
+  margin: 0,
+  filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
+  image: { type: "jpeg", quality: 0.98 },
+  html2canvas: {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    scrollX: 0,
+    scrollY: 0
+  },
+  jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+  pagebreak: { mode: ["css","legacy"] }
+};
 
   try{
     await html2pdf().set(opt).from(area).save();
