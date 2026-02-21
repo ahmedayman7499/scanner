@@ -418,24 +418,16 @@ function beep(){
 }
 
 /** ================== HTTP ================== **/
-async function api(action, params={}){
+async function api(action, params = {}) {
   const qs = new URLSearchParams({
-  action,
-  key: API_KEY,
-  _t: Date.now(), // منع الكاش
-  ...params
-}).toString();
-  const url = WEB_APP_URL + "?" + qs;
+    action,
+    key: API_KEY,
+    _t: Date.now(),
+    ...params
+  }).toString();
 
-  // fetch first
-  try{
-    const res = await fetch(url, { method: "GET", cache: "no-store" }); // 👈 مهم
-    const txt = await res.text();
-    return JSON.parse(txt);
-  }catch(err){
-    // fallback JSONP
-    return await jsonp(url);
-  }
+  const url = WEB_APP_URL + "?" + qs;
+  return await jsonp(url);
 }
 function jsonp(url){
   return new Promise((resolve,reject)=>{
