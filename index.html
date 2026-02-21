@@ -265,8 +265,25 @@ body.pdf-mode #printArea{
   background:#fff !important;
   padding:0 !important;
   margin:0 !important;
-  width: 297mm !important;   /* عرض A4 Landscape */
-  min-height: 210mm !important;
+  width: 100% !important;
+}
+
+/* امنع أي min-width يزوّد العرض ويقص */
+body.pdf-mode table{
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+body.pdf-mode .tableWrap{
+  overflow: visible !important;
+  border:0 !important;
+  background:#fff !important;
+}
+
+/* اعمل padding حقيقي زي الطباعة بدل ما يجي قص من الطرف */
+body.pdf-mode #printArea{
+  padding: 8mm !important;
+  box-sizing: border-box !important;
 }
 
 /* الهيدر والملخص يظهروا */
@@ -837,7 +854,6 @@ function updateToggleBtn(){
   updatePrintSummary();
   render();
 
-  // فعل وضع PDF (ستايل الطباعة)
   document.body.classList.add("pdf-mode");
 
   const area = document.getElementById("printArea");
@@ -848,22 +864,25 @@ function updateToggleBtn(){
     return;
   }
 
-  // مهم جدًا عشان مايحصلش قص/زوم
+  // خد المقاسات الحقيقية
+  const w = area.scrollWidth;
+  const h = area.scrollHeight;
+
   const opt = {
-    margin: [8,8,8,8], // mm
+    margin: 0,
     filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
-      width: 1122,   // عرض A4 Landscape بالبيكسل تقريبًا
-      windowWidth: 1122,
-       scrollX: 0,
-       scrollY: 0
-       },
+      windowWidth: w,
+      windowHeight: h,
+      scrollX: 0,
+      scrollY: 0
+    },
     jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    pagebreak: { mode: ["avoid-all","css","legacy"] } // 👈 يمنع تقطيع الصفوف قدر الإمكان
+    pagebreak: { mode: ["css","legacy"] }
   };
 
   try{
