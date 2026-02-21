@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scanner + A4 Delivery Sheet</title>
+
+  <!-- QR library (CDN) -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial; margin:16px; background:#0b1220; color:#e8eefc;}
+    .card{background:#111a2e; border:1px solid #223055; border-radius:14px; padding:14px; margin-bottom:12px;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    input,select,button{border-radius:12px; border:1px solid #2b3a67; background:#0e1730; color:#e8eefc; padding:10px 12px;}
+    button{cursor:pointer; border:0; background:#2563eb;}
+    button.secondary{background:#334155;}
+    button.danger{background:#b91c1c;}
+    .pill{display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2a4a; border:1px solid #2b3a67; font-size:12px;}
+    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:14px;}
+    th,td{border-bottom:1px solid #223055; padding:10px; text-align:right; vertical-align:top;}
+    th{background:#0e1730; position:sticky; top:0;}
+    .muted{opacity:.7}
+    .big{font-size:18px; font-weight:700}
+    .right{margin-inline-start:auto}
+    .no-print{display:block}
+    .ok{color:#7CFC98}
+    .warn{color:#ffd36a}
+    .err{color:#ff7b7b}
+
+    @media print{
+      body{background:#fff; color:#000; margin:0}
+      .no-print{display:none}
+      .card{border:0; background:#fff}
+      th{background:#f2f2f2}
+    }
+    @page { size: A4; margin: 10mm; }
+
+    /* QR frame */
+    #qrWrap{display:none; margin-top:12px;}
+    #qrBoxOuter{
+      position:relative;
+      width:100%;
+      max-width:520px;
+      border-radius:18px;
+      border:2px solid #223055;
+      overflow:hidden;
+      background:#0e1730;
+    }
+    #qr-reader{width:100%;}
+    /* overlay square frame in middle */
+    #qrOverlay{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #qrOverlay .frame{
+      width:260px;
+      height:260px;
+      border-radius:18px;
+      border:3px solid rgba(124,252,152,.95);
+      box-shadow: 0 0 0 9999px rgba(0,0,0,.35);
+      position:relative;
+    }
+    /* corner accents */
+    #qrOverlay .frame:before, #qrOverlay .frame:after{
+      content:"";
+      position:absolute;
+      inset:-8px;
+      border-radius:22px;
+      border:2px dashed rgba(255,211,106,.55);
+    }
+
+    /* small toast */
+    #toast{
+      position:fixed;
+      bottom:14px;
+      left:14px;
+      right:14px;
+      max-width:520px;
+      margin:auto;
+      background:#0e1730;
+      border:1px solid #223055;
+      border-radius:14px;
+      padding:10px 12px;
+      display:none;
+      z-index:9999;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card no-print">
+  <div class="row">
+    <div class="big">📄 ورقة تسليم A4</div>
+    <span class="pill" id="countPill">عدد المسجل: 0</span>
+    <span class="pill" id="sumPill">الإجمالي (بدون شحن): 0</span>
+    <span class="pill right" id="datePill"></span>
+  </div>
+  <div class="muted" style="margin-top:8px">
+    ✅ الصفحة بتفتح فاضية — هتظهر هنا <b>الأوردرات اللي بتعملها Scan/إضافة فقط</b>.
+  </div>
+</div>
+
+<div class="card no-print">
+  <div class="row">
+    <input id="orderIdInput" placeholder="ادخل Order ID يدويًا" />
+    <button onclick="addOne()">➕ إضافة</button>
+
+    <button class="secondary" onclick="startScan()">📷 تشغيل QR</button>
+    <button class="secondary" onclick="stopScan()">⏹ إيقاف</button>
+
+    <button class="secondary" onclick="refreshMine()">🔄 تحديث (أوردراتي فقط)</button>
+    <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
+
+    <button onclick="printA4()">🖨️ طباعة A4</button>
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <select id="statusSelect">
+      <option value="">اختر الحالة للتغيير بالجملة…</option>
+      <option>تحت الطباعة</option>
+      <option>تم الطباعة</option>
+      <option>تم الشحن</option>
+      <option>تم التسليم</option>
+      <option>مرتجع</option>
+      <option>مرتجع جزئي</option>
+      <option>الغاء</option>
+    </select>
+
+    <button class="danger" onclick="bulkUpdate()">✏️ تحديث الكل</button>
+
+    <span class="muted">* عند (تم الشحن) هيطلب مندوب + تاريخ شحن، وعند (مرتجع جزئي) هيطلب مبلغ.</span>
+  </div>
+
+  <div id="qrWrap">
+    <div class="muted" style="margin-bottom:8px">
+      📌 حط الـ QR جوّه المربع الأخضر. أول ما يلقط: <b class="ok">يرن فورًا</b> + يضيف الأوردر تحت.
+    </div>
+
+    <div id="qrBoxOuter">
+      <div id="qr-reader"></div>
+      <div id="qrOverlay"><div class="frame"></div></div>
+    </div>
+
+    <div class="muted" style="margin-top:8px">
+      لو الكاميرا مش بتفتح: جرّب https بدل http، واسمح للمتصفح بالكاميرا.
+    </div>
+  </div>
+</div>
+
+<div class="card no-print">
+  <div class="big">✍️ إدخال يدوي (لو مفيش فواتير)</div>
+  <div class="row" style="margin-top:10px;">
+    <input id="m_id" placeholder="Order ID" />
+    <input id="m_name" placeholder="الاسم" />
+    <input id="m_phone" placeholder="الموبايل" />
+    <input id="m_city" placeholder="المحافظة" />
+    <input id="m_addr" placeholder="العنوان" style="min-width:280px; flex:1;" />
+    <input id="m_sub" placeholder="الإجمالي بدون شحن" />
+    <button onclick="manualAdd()">💾 حفظ</button>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>✅</th>
+        <th>Order ID</th>
+        <th>الاسم</th>
+        <th>موبايل / محافظة / عنوان (سطر واحد)</th>
+        <th>الإجمالي (بدون شحن)</th>
+        <th>الحالة</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/** ================== CONFIG ================== **/
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwZ68iM4-HzCpfX3tRrVWzzZQIONDuDO2VKXyKxhRY/exec";
+const API_KEY = "123";
+
+/** ================== STATE ================== **/
+let rows = [];
+let selected = new Set();
+let mineIds = new Set();     // IDs scanned/added in this session (persisted)
+let qr = null;
+let lastScan = { id:"", t:0 };
+
+document.getElementById("datePill").textContent = new Date().toLocaleString("ar-EG");
+
+/** ================== Persistence ================== **/
+const LS_KEY = "scanner_mine_ids_v1";
+function loadMine(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+    mineIds = new Set(arr.map(x => String(x)));
+  }catch(e){
+    mineIds = new Set();
+  }
+}
+function saveMine(){
+  localStorage.setItem(LS_KEY, JSON.stringify(Array.from(mineIds)));
+}
+
+/** ================== Toast ================== **/
+let toastTimer=null;
+function toast(msg, cls=""){
+  const el = document.getElementById("toast");
+  el.className = cls;
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.style.display="none", 2200);
+}
+
+/** ================== BEEP (instant) ================== **/
+let audioCtx = null;
+function beep(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "sine";
+    o.frequency.value = 880; // high pitch
+    g.gain.value = 0.07;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    setTimeout(()=>{ o.stop(); }, 120);
+  }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([60]); }catch(e){}
+}
+
+/** ================== HTTP (GET JSON with fallback JSONP) ================== **/
+async function api(action, params={}){
+  const qs = new URLSearchParams({ action, key: API_KEY, ...params }).toString();
+  const url = WEB_APP_URL + "?" + qs;
+
+  // 1) try fetch (if CORS allows)
+  try{
+    const res = await fetch(url, { method:"GET" });
+    const txt = await res.text();
+    // sometimes Apps Script returns HTML on error
+    const data = JSON.parse(txt);
+    return data;
+  }catch(err){
+    // 2) fallback JSONP (requires server to support callback; if not, you will see JSONP failed)
+    return await jsonp(url);
+  }
+}
+
+function jsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb = "cb_" + Math.random().toString(36).slice(2);
+    window[cb] = (data)=>{ cleanup(); resolve(data); };
+    function cleanup(){
+      try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+      script.remove();
+    }
+    const script = document.createElement("script");
+    // callback param for JSONP (if server supports it)
+    script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+    script.onerror = ()=>{ cleanup(); reject(new Error("JSONP failed")); };
+    document.body.appendChild(script);
+  });
+}
+
+/** ================== UI ================== **/
+function render(){
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  let sum = 0;
+  rows.forEach(r => sum += Number(r.subtotal||0));
+
+  document.getElementById("countPill").textContent = "عدد المسجل: " + rows.length;
+  document.getElementById("sumPill").textContent = "الإجمالي (بدون شحن): " + sum;
+
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    const checked = selected.has(r.orderId);
+
+    tr.innerHTML = `
+      <td><input type="checkbox" ${checked?"checked":""} /></td>
+      <td><b>${esc(r.orderId)}</b></td>
+      <td>${esc(r.name||"")}</td>
+      <td>${esc((r.phone||"") + " / " + (r.city||"") + " / " + (r.address||""))}</td>
+      <td><b>${esc(String(r.subtotal||0))}</b></td>
+      <td>${esc(r.status||"")}</td>
+    `;
+
+    tr.querySelector("input").addEventListener("change",(e)=>{
+      if (e.target.checked) selected.add(r.orderId);
+      else selected.delete(r.orderId);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/** ================== Core: only show MY scanned IDs ================== **/
+async function refreshMine(){
+  if (mineIds.size === 0){
+    rows = [];
+    selected = new Set();
+    render();
+    toast("لا يوجد أوردرات عندك لسه — ابدأ Scan/إضافة.", "warn");
+    return;
+  }
+
+  const res = await api("scanList");
+  if(!res.ok){ toast(res.error || "Error", "err"); return; }
+
+  const all = res.rows || [];
+  const mine = all.filter(r => mineIds.has(String(r.orderId)));
+
+  // order by most recent scanned (based on mineIds order in LS)
+  const mineOrder = Array.from(mineIds);
+  mine.sort((a,b)=> mineOrder.indexOf(String(b.orderId)) - mineOrder.indexOf(String(a.orderId)));
+
+  rows = mine;
+  selected = new Set(rows.map(r=>r.orderId)); // default select all shown
+  render();
+}
+
+/** ================== Add one (manual Order ID) ================== **/
+async function addOne(){
+  const id = document.getElementById("orderIdInput").value.trim();
+  if(!id) return;
+
+  // add to mine immediately (so it never loads all)
+  mineIds.add(String(id));
+  saveMine();
+
+  // quick feedback instantly
+  beep();
+  toast("تم التقاط/إضافة: " + id, "ok");
+
+  const res = await api("scanAdd", { orderId:id });
+  if(!res.ok){
+    toast(res.error || "فشل إضافة الأوردر", "err");
+    return;
+  }
+
+  document.getElementById("orderIdInput").value="";
+  await refreshMine(); // will show only mine
+}
+
+/** ================== Manual minimal add (local only) ================== **/
+async function manualAdd(){
+  const d = {
+    orderId: document.getElementById("m_id").value.trim(),
+    name: document.getElementById("m_name").value.trim(),
+    phone: document.getElementById("m_phone").value.trim(),
+    city: document.getElementById("m_city").value.trim(),
+    address: document.getElementById("m_addr").value.trim(),
+    subtotal: document.getElementById("m_sub").value.trim(),
+  };
+  if(!d.orderId) return alert("اكتب Order ID");
+
+  mineIds.add(String(d.orderId));
+  saveMine();
+
+  // If you have manualAdd action on server, keep it; otherwise comment this block.
+  try{
+    const res = await api("manualAdd", d);
+    if(!res.ok){ alert(res.error||"Error"); return; }
+  }catch(e){
+    // ignore if server doesn't support manualAdd
+  }
+
+  ["m_id","m_name","m_phone","m_city","m_addr","m_sub"].forEach(id=>document.getElementById(id).value="");
+  beep();
+  toast("تم حفظ الأوردر يدويًا: " + d.orderId, "ok");
+  await refreshMine();
+}
+
+/** ================== Bulk Update (uses selected in UI) ================== **/
+async function bulkUpdate(){
+  const status = document.getElementById("statusSelect").value.trim();
+  if(!status) return alert("اختار الحالة");
+
+  const ids = Array.from(selected);
+  if(ids.length===0) return alert("مفيش طلبات محددة");
+
+  let courier="", shipDate="", deliveryDate="", partialAmount="";
+
+  if(status === "تم الشحن"){
+    courier = prompt("اسم المندوب؟", "") || "";
+    shipDate = prompt("تاريخ الشحن (YYYY-MM-DD)؟", new Date().toISOString().slice(0,10)) || "";
+    if(!courier) return alert("لازم اسم المندوب");
+  }
+
+  if(status === "تم التسليم"){
+    deliveryDate = prompt("تاريخ التسليم (YYYY-MM-DD)؟", new Date().toISOString().slice(0,10)) || "";
+  }
+
+  if(status === "مرتجع جزئي"){
+    partialAmount = prompt("مبلغ اللي العميل دفعه (مرتجع جزئي)؟", "") || "";
+    if(!partialAmount) return alert("لازم تكتب المبلغ");
+  }
+
+  const res = await api("bulkUpdate", {
+    ids: ids.join(","),
+    status,
+    courier,
+    shipDate,
+    deliveryDate,
+    partialAmount
+  });
+
+  if(!res.ok){ alert(res.error||"Error"); return; }
+  if(res.missing && res.missing.length){
+    alert("طلبات مش موجودة: " + res.missing.join(","));
+  }
+  toast("تم تحديث الحالة ✅", "ok");
+  await refreshMine();
+}
+
+function printA4(){
+  window.print();
+}
+
+/** ================== QR Scan ================== **/
+async function startScan(){
+  document.getElementById("qrWrap").style.display = "block";
+
+  if(!qr){
+    qr = new Html5Qrcode("qr-reader");
+  }
+// ✅ Force permission prompt early
+  await navigator.mediaDevices.getUserMedia({ video: true });
+  
+  const config = {
+    fps: 15,
+    qrbox: { width: 260, height: 260 }, // match overlay square
+    aspectRatio: 1.0,
+    disableFlip: false
+  };
+
+  // pick camera
+  let camId = null;
+  try{
+    const cams = await Html5Qrcode.getCameras();
+    if(cams && cams.length){
+      // prefer back camera by label
+      const back = cams.find(c => /back|rear|environment/i.test(c.label));
+      camId = (back || cams[0]).id;
+    }
+  }catch(e){}
+
+  try{
+    await qr.start(
+      camId || { facingMode: "environment" },
+      config,
+      onQrSuccess,
+      ()=>{} // ignore scan errors spam
+    );
+    toast("الكاميرا شغالة ✅", "ok");
+  }catch(e){
+    const msg = (e && (e.name || e.message || e)) + "";
+toast("فشل تشغيل الكاميرا: " + msg, "err");
+
+if (msg.includes("NotAllowedError")) {
+  alert("الكاميرا مرفوضة من المتصفح.\nافتح القفل جنب العنوان → Site settings → Camera: Allow ثم Reload.");
+}
+if (msg.includes("NotFoundError")) {
+  alert("مفيش كاميرا متشافة. جرّب توصيل كاميرا/تعريفها.");
+}
+if (msg.includes("NotReadableError")) {
+  alert("الكاميرا مشغولة في برنامج تاني (Zoom/Teams…). اقفلهم وجرب.");
+}
+  }
+}
+
+async function stopScan(){
+  document.getElementById("qrWrap").style.display = "none";
+  if(qr){
+    try{ await qr.stop(); }catch(e){}
+  }
+  toast("تم إيقاف الـ QR", "warn");
+}
+
+async function onQrSuccess(decodedText){
+  const now = Date.now();
+  const id = String(decodedText || "").trim();
+
+  // extract ID if QR contains extra text
+  const clean = id.match(/\d+/) ? (id.match(/\d+/)[0]) : id;
+  if(!clean) return;
+
+  // anti-duplicate rapid fire (2 seconds)
+  if (lastScan.id === clean && (now - lastScan.t) < 2000) return;
+  lastScan = { id: clean, t: now };
+
+  // instant feedback BEFORE any network
+  beep();
+  toast("تم التقاط QR: " + clean, "ok");
+
+  // add to mine
+  mineIds.add(String(clean));
+  saveMine();
+
+  // call server to mark Selected
+  const res = await api("scanAdd", { orderId: clean });
+  if(!res.ok){
+    toast("فشل إضافة الأوردر: " + (res.error||"Error"), "err");
+    return;
+  }
+
+  // show it immediately (only mine)
+  await refreshMine();
+}
+
+/** ================== Mine management ================== **/
+function clearMine(){
+  if(!confirm("هتمسح أوردراتك من الصفحة (مش من الشيت). متأكد؟")) return;
+  mineIds = new Set();
+  saveMine();
+  rows = [];
+  selected = new Set();
+  render();
+  toast("تم مسح أوردراتك من الصفحة.", "warn");
+}
+
+/** ================== Boot ================== **/
+loadMine();
+// الصفحة تفتح فاضية — لو عايز تظهر اللي كنت ماسحهم/مخزنهم من قبل، فعّل السطر ده:
+// refreshMine();
+render();
+</script>
+</body>
+</html>
