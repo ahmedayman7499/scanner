@@ -6,7 +6,7 @@
   <title>Scanner + A4 Delivery Sheet</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root{
       --bg:#0b1220;
@@ -36,6 +36,20 @@
       padding:14px;
     }
 
+    tbody tr{
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@media print{
+  tr, td, th { 
+    page-break-inside: avoid !important; 
+  }
+  tbody tr { 
+    break-inside: avoid !important; 
+  }
+}
+    
     .wrap{max-width:1100px;margin:0 auto}
     .topbar{
       position:sticky; top:10px; z-index:30;
@@ -264,7 +278,8 @@
 
       <div class="row">
         <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
-        <button onclick="printA4()">🖨️ طباعة A4</button>
+        <button onclick="printA4()">🖨️ طباعة</button>
+        <button class="secondary" onclick="downloadSelectedPDF()">⬇️ تحميل PDF المحدد</button>
       </div>
     </div>
 
@@ -749,6 +764,48 @@ function updateToggleBtn(){
   const allSelected = allIds.length && allIds.every(id => selected.has(id));
 
   btn.textContent = allSelected ? "إلغاء الكل" : "تحديد الكل";
+}
+  async function downloadSelectedPDF(){
+
+  if(selected.size === 0){
+    alert("مفيش طلبات محددة");
+    return;
+  }
+
+  // خزن البيانات الأصلية
+  const originalRows = [...rows];
+
+  // فلترة على المحدد فقط
+  rows = rows.filter(r => selected.has(String(r.orderId)));
+
+  updatePrintSummary();
+  render();
+
+  // اخفاء checkbox و no-print مؤقتاً
+  const hidden = [];
+  document.querySelectorAll(".no-print").forEach(el=>{
+    hidden.push([el, el.style.display]);
+    el.style.display = "none";
+  });
+
+  const element = document.querySelector(".card:last-of-type");
+
+  const opt = {
+    margin: 5,
+    filename: "delivery_selected.pdf",
+    image: { type: 'jpeg', quality: 1 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+
+  await html2pdf().set(opt).from(element).save();
+
+  // رجّع العناصر
+  hidden.forEach(([el,prev])=> el.style.display = prev);
+
+  // رجّع كل البيانات
+  rows = originalRows;
+  render();
 }
 /** ================== Boot ================== **/
 loadMine();
