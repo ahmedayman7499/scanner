@@ -862,14 +862,12 @@ async function downloadSelectedPDF(){
   const prevRows = rows.slice();
   const prevSelected = new Set(selected);
 
-  // فلترة المحدد فقط
   rows = rows.filter(r => ids.includes(String(r.orderId)));
   selected = new Set(ids);
 
   updatePrintSummary();
   render();
 
-  // 1) هات منطقة الطباعة
   const area = document.getElementById("printArea");
   if(!area){
     toast("❌ printArea مش موجود");
@@ -877,15 +875,13 @@ async function downloadSelectedPDF(){
     return;
   }
 
-  // 2) اعمل Sandbox ثابت خارج الشاشة بمقاس A4 landscape (px)
-  // A4 landscape تقريباً @96dpi => 1123x794
   const W = 1123, H = 794;
 
   const sandbox = document.createElement("div");
   sandbox.id = "pdfSandbox";
   sandbox.style.cssText = `
     position: fixed;
-    left: -20000px;
+    left: 0;
     top: 0;
     width: ${W}px;
     min-height: ${H}px;
@@ -896,12 +892,13 @@ async function downloadSelectedPDF(){
     box-sizing: border-box;
     overflow: visible;
     font-size: 12px;
+
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
   `;
 
-  // clone للـ printArea فقط
   const clone = area.cloneNode(true);
-
-  // ✅ مهم: شيل أي overflow/min-width يسبب قص
   clone.style.width = "100%";
   clone.style.margin = "0";
   clone.style.padding = "0";
@@ -913,11 +910,9 @@ async function downloadSelectedPDF(){
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
 
-  // 3) استنى شوية عشان layout يثبت على الموبايل
-  await new Promise(r=>requestAnimationFrame(()=>r()));
+  await new Promise(r=>requestAnimationFrame(r));
   await new Promise(r=>setTimeout(r, 400));
 
-  // 4) طلّع PDF من الـ sandbox الثابت
   const opt = {
     margin: 0,
     filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
@@ -934,13 +929,12 @@ async function downloadSelectedPDF(){
   };
 
   try{
-    await html2pdf().set(opt).from(sandbox).save();
+    await html2pdf().set(opt).from(clone).save();
     toast("✅ تم تحميل PDF للمحدد");
   }catch(e){
     console.error(e);
     toast("❌ حصل خطأ في تحميل الـ PDF");
   }finally{
-    // رجّع كل حاجة
     sandbox.remove();
     rows = prevRows;
     selected = prevSelected;
