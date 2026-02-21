@@ -340,7 +340,11 @@
       <table>
         <thead>
           <tr>
-            <th class="no-print">✅</th>
+            <th class="no-print">
+            <button type="button" class="ghost" id="toggleAllBtn" onclick="toggleAll()">
+               تحديد الكل
+            </button>
+            </th>
             <th class="nowrap">Order ID</th>
             <th>الاسم</th>
             <th>الهاتف / محافظة / عنوان</th>
@@ -457,6 +461,7 @@ function statusBadge(status){
 
 /** ================== Render ================== **/
 function render(){
+  updateToggleBtn();
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
@@ -725,6 +730,31 @@ function clearMine(){
   document.getElementById("orderIdInput").addEventListener("keydown", (e)=>{
   if(e.key === "Enter") addOne();
 });
+  function toggleAll(){
+  const allIds = rows.map(r => String(r.orderId));
+  const allSelected = allIds.every(id => selected.has(id));
+
+  if(allSelected){
+    // لو كله متحدد → شيلهم
+    selected.clear();
+  }else{
+    // لو مش كله متحدد → حددهم كلهم
+    allIds.forEach(id => selected.add(id));
+  }
+
+  updateToggleBtn();
+  render();
+}
+
+function updateToggleBtn(){
+  const btn = document.getElementById("toggleAllBtn");
+  if(!btn) return;
+
+  const allIds = rows.map(r => String(r.orderId));
+  const allSelected = allIds.length && allIds.every(id => selected.has(id));
+
+  btn.textContent = allSelected ? "إلغاء الكل" : "تحديد الكل";
+}
 /** ================== Boot ================== **/
 loadMine();
 render();
