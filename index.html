@@ -429,7 +429,7 @@ async function api(action, params={}){
 
   // fetch first
   try{
-    const res = await fetch(url, { method:"GET" });
+    const res = await fetch(url, { method: "GET", cache: "no-store" }); // 👈 مهم
     const txt = await res.text();
     return JSON.parse(txt);
   }catch(err){
