@@ -6,6 +6,7 @@
   <title>Scanner + A4 Delivery Sheet</title>
 
   <!-- QR library (CDN) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -440,9 +441,7 @@ async function startScan(){
   if(!qr){
     qr = new Html5Qrcode("qr-reader");
   }
-// ✅ Force permission prompt early
-  await navigator.mediaDevices.getUserMedia({ video: true });
-  
+
   const config = {
     fps: 15,
     qrbox: { width: 260, height: 260 }, // match overlay square
@@ -470,18 +469,7 @@ async function startScan(){
     );
     toast("الكاميرا شغالة ✅", "ok");
   }catch(e){
-    const msg = (e && (e.name || e.message || e)) + "";
-toast("فشل تشغيل الكاميرا: " + msg, "err");
-
-if (msg.includes("NotAllowedError")) {
-  alert("الكاميرا مرفوضة من المتصفح.\nافتح القفل جنب العنوان → Site settings → Camera: Allow ثم Reload.");
-}
-if (msg.includes("NotFoundError")) {
-  alert("مفيش كاميرا متشافة. جرّب توصيل كاميرا/تعريفها.");
-}
-if (msg.includes("NotReadableError")) {
-  alert("الكاميرا مشغولة في برنامج تاني (Zoom/Teams…). اقفلهم وجرب.");
-}
+    toast("فشل تشغيل الكاميرا: " + e, "err");
   }
 }
 
