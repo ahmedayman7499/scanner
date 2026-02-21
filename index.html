@@ -280,7 +280,7 @@ body.pdf-mode #printArea{
 }
 
 body.pdf-mode{
-  display:flex !important;
+  
   justify-content:center !important;
 }
 
@@ -899,8 +899,7 @@ async function downloadSelectedPDF(){
       scrollX: 0,
       scrollY: 0,
       // ✅ تثبيت مقاس الالتقاط (A4 Landscape @96dpi تقريبًا)
-      windowWidth: 1123,
-      windowHeight: 794
+
     },
     jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
     pagebreak: { mode: ["css","legacy"] }
