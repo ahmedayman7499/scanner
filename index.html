@@ -252,6 +252,13 @@ body.pdf-mode{
   margin:0 !important;
 }
 
+    body.pdf-mode #printArea{
+  width:100% !important;
+}
+    body.pdf-mode .print-header{
+  text-align:right !important;
+}
+
 /* اقفل أي طبقات/جريدينتس/شفافيات */
 body.pdf-mode *{
   box-shadow:none !important;
@@ -273,7 +280,13 @@ body.pdf-mode .card{
 /* الهيدر والملخص يطلعوا */
 body.pdf-mode .no-print{ display:none !important; }
 body.pdf-mode .print-header{ display:block !important; margin:0 0 8px 0; background:#fff !important; }
-body.pdf-mode .print-summary{ display:grid !important; background:#fff !important; }
+body.pdf-mode .print-summary{
+  display:grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap:8px !important;
+  margin:8px 0 12px 0 !important;
+  background:#fff !important;
+}
 
 /* الجدول */
 body.pdf-mode .tableWrap{ border:0 !important; overflow:visible !important; background:#fff !important; }
