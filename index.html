@@ -722,6 +722,9 @@ function clearMine(){
   toast("تم مسح أوردراتك من الصفحة");
 }
 
+  document.getElementById("orderIdInput").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") addOne();
+});
 /** ================== Boot ================== **/
 loadMine();
 render();
