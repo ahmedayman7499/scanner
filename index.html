@@ -205,7 +205,7 @@
     <th class="no-print">✅</th>
     <th>Order ID</th>
     <th>الاسم</th>
-  
+    <!-- <th class="print-only">تاريخ الشحن</th> -->
     <th class="print-only">إجمالي التحصيل (بدون شحن)</th>
     <th>موبايل / محافظة / عنوان</th>
     <th>الإجمالي (بدون شحن)</th>
@@ -329,7 +329,7 @@ function render(){
   <td><b>${esc(r.orderId)}</b></td>
   <td>${esc(r.name||"")}</td>
   <td class="print-only">${esc(r.shipDate || "")}</td>
-  <td class="print-only"><b>${esc(String(r.subtotal||0))}</b></td>
+  // <td class="print-only">${esc(r.shipDate || "")}</td>
   <td>
   ${esc(r.phone || "")}
   ${r.altPhone ? " - " + esc(r.altPhone) : ""}
