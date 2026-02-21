@@ -2,219 +2,358 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Scanner + A4 Delivery Sheet</title>
 
-  <!-- QR library (CDN) -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body{font-family:system-ui,Segoe UI,Arial; margin:16px; background:#0b1220; color:#e8eefc;}
-    .card{background:#111a2e; border:1px solid #223055; border-radius:14px; padding:14px; margin-bottom:12px;}
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-    input,select,button{border-radius:12px; border:1px solid #2b3a67; background:#0e1730; color:#e8eefc; padding:10px 12px;}
-    button{cursor:pointer; border:0; background:#2563eb;}
-    button.secondary{background:#334155;}
-    button.danger{background:#b91c1c;}
-    .pill{display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2a4a; border:1px solid #2b3a67; font-size:12px;}
-    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:14px;}
-    th,td{border-bottom:1px solid #223055; padding:10px; text-align:right; vertical-align:top;}
-    th{background:#0e1730; position:sticky; top:0;}
-    .muted{opacity:.7}
-    .big{font-size:18px; font-weight:700}
+    :root{
+      --bg:#0b1220;
+      --card:#0f1a31;
+      --card2:#0c152b;
+      --text:#e8eefc;
+      --muted:rgba(232,238,252,.72);
+      --line:rgba(255,255,255,.10);
+      --line2:rgba(255,255,255,.14);
+      --blue:#3b82f6;
+      --blue2:#2563eb;
+      --red:#ef4444;
+      --amber:#f59e0b;
+      --green:#22c55e;
+      --radius:16px;
+      --shadow: 0 10px 35px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Arial;
+      background: radial-gradient(1200px 700px at 15% 0%, #12214a 0%, transparent 60%),
+                  radial-gradient(900px 600px at 95% 15%, #0f2b3f 0%, transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      padding:14px;
+    }
+
+    .wrap{max-width:1100px;margin:0 auto}
+    .topbar{
+      position:sticky; top:10px; z-index:30;
+      backdrop-filter: blur(10px);
+      background: rgba(15,26,49,.72);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:12px 12px;
+    }
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .right{margin-inline-start:auto}
+    .title{font-weight:900;font-size:18px;letter-spacing:.2px}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(12,21,43,.65);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .muted{color:var(--muted)}
+
+    .card{
+      margin-top:12px;
+      background: linear-gradient(180deg, rgba(15,26,49,.92), rgba(12,21,43,.92));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:12px;
+    }
+
+    input,select,button{
+      border-radius: 14px;
+      border:1px solid var(--line2);
+      background: rgba(12,21,43,.78);
+      color: var(--text);
+      padding: 11px 12px;
+      outline:none;
+      transition:.15s ease;
+      min-height: 44px;
+    }
+    input::placeholder{color:rgba(232,238,252,.45)}
+    input:focus,select:focus{border-color:rgba(59,130,246,.7); box-shadow:0 0 0 4px rgba(59,130,246,.18)}
+
+    button{
+      cursor:pointer;
+      border:0;
+      background: linear-gradient(180deg,var(--blue),var(--blue2));
+      font-weight:800;
+    }
+    button:active{transform: translateY(1px)}
+    button.secondary{background: rgba(148,163,184,.14); border:1px solid var(--line2); font-weight:800}
+    button.danger{background: linear-gradient(180deg,#ff5a5a,var(--red))}
+    button.ghost{background:transparent;border:1px solid var(--line2)}
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 860px){
+      .grid{grid-template-columns:1fr}
+      .topbar{top:8px}
+    }
+
+    /* Table */
+    .tableWrap{
+      width:100%;
+      overflow:auto;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(10,18,34,.35);
+    }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width: 980px; /* عشان الموبايل يسكرول أفقي بدل ما يكسر */
+    }
+    thead th{
+      position:sticky; top:0;
+      background: rgba(10,18,34,.90);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
+      padding:10px;
+      text-align:right;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    tbody td{
+      border-bottom:1px solid rgba(255,255,255,.06);
+      padding:10px;
+      vertical-align:top;
+      font-size:13px;
+    }
+    tbody tr:hover td{background: rgba(59,130,246,.06)}
+    .mono{font-variant-numeric: tabular-nums}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      white-space:nowrap;
+      background: rgba(255,255,255,.05);
+    }
+    .b-ok{border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12)}
+    .b-warn{border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.10)}
+    .b-err{border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10)}
+
+    .addr{line-height:1.5}
+    .small{font-size:12px;color:var(--muted)}
+    .nowrap{white-space:nowrap}
     .no-print{display:block}
-    .ok{color:#7CFC98}
-    .warn{color:#ffd36a}
-    .err{color:#ff7b7b}
 
-@page { size: A4 landscape; margin: 8mm; }
-
-@media print{
-  body{background:#fff; color:#000; margin:0; font-size:12px}
-  .no-print{display:none !important}
-  .card{border:0; background:#fff; padding:0; margin:0}
-  table{width:100%; border-collapse:collapse}
-  th,td{border:1px solid #ddd; padding:6px 8px; text-align:right; vertical-align:top}
-  th{background:#f5f5f5; font-weight:700}
-  .print-header{display:block !important}
-  .print-summary{display:flex !important; gap:10px; margin:8px 0 12px 0}
-  .print-box{border:1px solid #ddd; border-radius:10px; padding:8px 10px; flex:1}
-  .print-title{font-size:16px; font-weight:800; margin-bottom:4px}
-  .muted{opacity:1}
-}
-
-    /* أعمدة تظهر في الطباعة فقط */
-.print-only { display:none; }
-@media print { .print-only { display:table-cell; } }
-    
-/* افتراضيًا مخفيين على الشاشة */
-.print-header, .print-summary { display:none; }
-
-    /* QR frame */
-    #qrWrap{display:none; margin-top:12px;}
+    /* QR */
+    #qrWrap{display:none; margin-top:10px;}
     #qrBoxOuter{
       position:relative;
       width:100%;
-      max-width:520px;
+      max-width:560px;
       border-radius:18px;
-      border:2px solid #223055;
+      border:1px solid var(--line);
       overflow:hidden;
-      background:#0e1730;
+      background: rgba(12,21,43,.75);
     }
     #qr-reader{width:100%;}
-    /* overlay square frame in middle */
     #qrOverlay{
-      position:absolute;
-      inset:0;
+      position:absolute; inset:0;
       pointer-events:none;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:flex; align-items:center; justify-content:center;
     }
     #qrOverlay .frame{
-      width:260px;
-      height:260px;
+      width:260px; height:260px;
       border-radius:18px;
-      border:3px solid rgba(124,252,152,.95);
+      border:3px solid rgba(34,197,94,.92);
       box-shadow: 0 0 0 9999px rgba(0,0,0,.35);
       position:relative;
     }
-    /* corner accents */
-    #qrOverlay .frame:before, #qrOverlay .frame:after{
+    #qrOverlay .frame:after{
       content:"";
-      position:absolute;
-      inset:-8px;
+      position:absolute; inset:-10px;
       border-radius:22px;
-      border:2px dashed rgba(255,211,106,.55);
+      border:2px dashed rgba(245,158,11,.55);
     }
 
-    /* small toast */
+    /* Toast */
     #toast{
       position:fixed;
-      bottom:14px;
-      left:14px;
-      right:14px;
+      bottom:14px; left:14px; right:14px;
       max-width:520px;
       margin:auto;
-      background:#0e1730;
-      border:1px solid #223055;
+      background: rgba(10,18,34,.92);
+      border:1px solid var(--line);
       border-radius:14px;
       padding:10px 12px;
       display:none;
       z-index:9999;
+      box-shadow: var(--shadow);
+    }
+
+    /* PRINT */
+    @page { size: A4 landscape; margin: 8mm; }
+    .print-header,.print-summary{display:none}
+
+    @media print{
+      body{background:#fff;color:#000;margin:0;padding:0;font-size:12px}
+      .no-print{display:none !important}
+      .wrap{max-width:none}
+      .card{box-shadow:none;border:0;border-radius:0;background:#fff;padding:0;margin:0}
+      .tableWrap{border:0; overflow:visible}
+      table{min-width:auto; width:100%}
+      thead th{
+        position:static;
+        background:#f4f4f4;
+        border:1px solid #ddd;
+        font-size:11px;
+        padding:7px;
+      }
+      tbody td{border:1px solid #ddd;padding:7px;font-size:11px}
+      .print-header{display:block;margin-bottom:8px}
+      .print-title{font-size:16px;font-weight:900;margin-bottom:2px}
+      .print-summary{
+        display:grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap:8px;
+        margin:8px 0 12px 0;
+      }
+      .print-box{
+        border:1px solid #ddd;border-radius:10px;padding:8px 10px;
+      }
+      .badge{border:1px solid #ddd;background:#fff}
     }
   </style>
 </head>
+
 <body>
+<div class="wrap">
 
-<div class="card no-print">
-  <div class="row">
-    <div class="big">📄 ورقة تسليم A4</div>
-    <span class="pill" id="countPill">عدد المسجل: 0</span>
-    <span class="pill" id="sumPill">الإجمالي (بدون شحن): 0</span>
-    <span class="pill right" id="datePill"></span>
-  </div>
-  <div class="muted" style="margin-top:8px">
-    ✅ الصفحة بتفتح فاضية — هتظهر هنا <b>الأوردرات اللي بتعملها Scan/إضافة فقط</b>.
-  </div>
-</div>
-
-<div class="card no-print">
-  <div class="row">
-    <input id="orderIdInput" placeholder="ادخل Order ID يدويًا" />
-    <button onclick="addOne()">➕ إضافة</button>
-
-    <button class="secondary" onclick="startScan()">📷 تشغيل QR</button>
-    <button class="secondary" onclick="stopScan()">⏹ إيقاف</button>
-
-    <button class="secondary" onclick="refreshMine()">🔄 تحديث (أوردراتي فقط)</button>
-    <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
-
-    <button onclick="printA4()">🖨️ طباعة A4</button>
-  </div>
-
-  <div class="row" style="margin-top:10px;">
-    <select id="statusSelect">
-      <option value="">اختر الحالة للتغيير بالجملة…</option>
-      <option>تحت الطباعة</option>
-      <option>تم الطباعة</option>
-      <option>تم الشحن</option>
-      <option>تم التسليم</option>
-      <option>مرتجع</option>
-      <option>مرتجع جزئي</option>
-      <option>الغاء</option>
-    </select>
-
-    <button class="danger" onclick="bulkUpdate()">✏️ تحديث الكل</button>
-
-    <span class="muted">* عند (تم الشحن) هيطلب مندوب + تاريخ شحن، وعند (مرتجع جزئي) هيطلب مبلغ.</span>
-  </div>
-
-  <div id="qrWrap">
-    <div class="muted" style="margin-bottom:8px">
-      📌 حط الـ QR جوّه المربع الأخضر. أول ما يلقط: <b class="ok">يرن فورًا</b> + يضيف الأوردر تحت.
+  <div class="topbar no-print">
+    <div class="row">
+      <div class="title">📄 ورقة تسليم A4</div>
+      <span class="pill" id="countPill">عدد المسجل: 0</span>
+      <span class="pill" id="sumPill">التحصيل (بدون شحن): 0</span>
+      <span class="pill" id="shipSumPill">الشحن: 0</span>
+      <span class="pill right" id="datePill"></span>
     </div>
-
-    <div id="qrBoxOuter">
-      <div id="qr-reader"></div>
-      <div id="qrOverlay"><div class="frame"></div></div>
-    </div>
-
-    <div class="muted" style="margin-top:8px">
-      لو الكاميرا مش بتفتح: جرّب https بدل http، واسمح للمتصفح بالكاميرا.
+    <div class="muted" style="margin-top:6px">
+      ✅ الصفحة بتفتح فاضية — هتظهر هنا <b>الأوردرات اللي بتعملها Scan/إضافة فقط</b>.
     </div>
   </div>
-</div>
 
-<div class="card no-print">
-  <div class="big">✍️ إدخال يدوي (لو مفيش فواتير)</div>
-  <div class="row" style="margin-top:10px;">
-    <input id="m_id" placeholder="Order ID" />
-    <input id="m_name" placeholder="الاسم" />
-    <input id="m_phone" placeholder="الموبايل" />
-    <input id="m_city" placeholder="المحافظة" />
-    <input id="m_addr" placeholder="العنوان" style="min-width:280px; flex:1;" />
-    <input id="m_sub" placeholder="الإجمالي بدون شحن" />
-    <button onclick="manualAdd()">💾 حفظ</button>
+  <div class="card no-print">
+    <div class="grid">
+      <div class="row">
+        <input id="orderIdInput" placeholder="ادخل Order ID يدويًا" style="flex:1;min-width:220px" />
+        <button onclick="addOne()">➕ إضافة</button>
+      </div>
+
+      <div class="row">
+        <button class="secondary" onclick="startScan()">📷 تشغيل QR</button>
+        <button class="secondary" onclick="stopScan()">⏹ إيقاف</button>
+        <button class="secondary" onclick="refreshMine()">🔄 تحديث</button>
+      </div>
+
+      <div class="row">
+        <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
+        <button onclick="printA4()">🖨️ طباعة A4</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <select id="statusSelect" style="min-width:220px;flex:1">
+        <option value="">اختر الحالة للتغيير بالجملة…</option>
+        <option>تحت الطباعة</option>
+        <option>تم الطباعة</option>
+        <option>تم الشحن</option>
+        <option>تم التسليم</option>
+        <option>مرتجع</option>
+        <option>مرتجع جزئي</option>
+        <option>الغاء</option>
+      </select>
+
+      <button class="danger" onclick="bulkUpdate()">✏️ تحديث الحالة للمحدد</button>
+      <span class="small">* (تم الشحن) يطلب مندوب + تاريخ شحن — (مرتجع جزئي) يطلب مبلغ.</span>
+    </div>
+
+    <div id="qrWrap">
+      <div class="small" style="margin:8px 0">
+        📌 حط الـ QR جوّه المربع الأخضر. أول ما يلقط: <b style="color:var(--green)">يرن فورًا</b> + يضيف الأوردر.
+      </div>
+
+      <div id="qrBoxOuter">
+        <div id="qr-reader"></div>
+        <div id="qrOverlay"><div class="frame"></div></div>
+      </div>
+
+      <div class="small" style="margin-top:8px">
+        لو الكاميرا مش بتفتح: لازم https + اسمح للمتصفح بالكاميرا.
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="card">
-  <div class="print-header">
-  <div class="print-title">ورقة تسليم - A4 (Landscape)</div>
-  <div class="muted" id="printDate"></div>
-</div>
-
-<div class="print-summary">
-  <div class="print-box">
-    <div><b>عدد الطلبات:</b> <span id="pCount">0</span></div>
-    <div><b>إجمالي التحصيل (بدون شحن):</b> <span id="pSubtotal">0</span></div>
-    <div><b>إجمالي الشحن:</b> <span id="pShipping">0</span></div>
+  <div class="card no-print">
+    <div class="title" style="font-size:16px">✍️ إدخال يدوي (لو مفيش فواتير)</div>
+    <div class="row" style="margin-top:10px">
+      <input id="m_id" placeholder="Order ID" />
+      <input id="m_name" placeholder="الاسم" />
+      <input id="m_phone" placeholder="الموبايل" />
+      <input id="m_city" placeholder="المحافظة" />
+      <input id="m_addr" placeholder="العنوان" style="min-width:280px; flex:1" />
+      <input id="m_sub" placeholder="الإجمالي بدون شحن" />
+      <button onclick="manualAdd()">💾 حفظ</button>
+    </div>
   </div>
 
-  <div class="print-box">
-    <div><b>ملاحظة:</b> البيانات مطبوعة من نظام المسح</div>
-    <div><b>المسؤول:</b> ____________</div>
-    <div><b>التوقيع:</b> ____________</div>
+  <div class="card">
+    <div class="print-header">
+      <div class="print-title">ورقة تسليم - A4 (Landscape)</div>
+      <div id="printDate"></div>
+    </div>
+
+    <div class="print-summary">
+      <div class="print-box">
+        <div><b>عدد الطلبات:</b> <span id="pCount">0</span></div>
+        <div><b>إجمالي التحصيل (بدون شحن):</b> <span id="pSubtotal">0</span></div>
+        <div><b>إجمالي الشحن:</b> <span id="pShipping">0</span></div>
+      </div>
+      <div class="print-box">
+        <div><b>إجمالي التحصيل (بالشحن):</b> <span id="pTotalWithShip">0</span></div>
+        <div><b>المسؤول:</b> ____________</div>
+        <div><b>التوقيع:</b> ____________</div>
+      </div>
+      <div class="print-box">
+        <div><b>ملاحظة:</b> البيانات مطبوعة من نظام المسح</div>
+        <div><b>التاريخ:</b> <span id="pDate2"></span></div>
+      </div>
+    </div>
+
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="no-print">✅</th>
+            <th class="nowrap">Order ID</th>
+            <th>الاسم</th>
+            <th>الهاتف / محافظة / عنوان</th>
+            <th class="nowrap">التحصيل (بدون شحن)</th>
+            <th class="nowrap">الشحن</th>
+            <th class="nowrap">الحالة</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
-</div>
-  <table>
-    <thead>
-  <tr>
-    <th class="no-print">✅</th>
-    <th>Order ID</th>
-    <th>الاسم</th>
-    <!-- <th class="print-only">تاريخ الشحن</th> -->
-    <th class="print-only">إجمالي التحصيل (بدون شحن)</th>
-    <th>موبايل / محافظة / عنوان</th>
-    <th>الإجمالي (بدون شحن)</th>
-    <th class="print-only">الشحن</th>
-    <th>الحالة</th>
-  </tr>
-</thead>
-    <tbody id="tbody"></tbody>
-  </table>
+
 </div>
 
 <div id="toast"></div>
@@ -227,9 +366,11 @@ const API_KEY = "123";
 /** ================== STATE ================== **/
 let rows = [];
 let selected = new Set();
-let mineIds = new Set();     // IDs scanned/added in this session (persisted)
+let mineIds = new Set();
 let qr = null;
+
 let lastScan = { id:"", t:0 };
+let scanLockUntil = 0;
 
 document.getElementById("datePill").textContent = new Date().toLocaleString("ar-EG");
 
@@ -239,9 +380,7 @@ function loadMine(){
   try{
     const arr = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
     mineIds = new Set(arr.map(x => String(x)));
-  }catch(e){
-    mineIds = new Set();
-  }
+  }catch(e){ mineIds = new Set(); }
 }
 function saveMine(){
   localStorage.setItem(LS_KEY, JSON.stringify(Array.from(mineIds)));
@@ -249,16 +388,15 @@ function saveMine(){
 
 /** ================== Toast ================== **/
 let toastTimer=null;
-function toast(msg, cls=""){
+function toast(msg){
   const el = document.getElementById("toast");
-  el.className = cls;
   el.textContent = msg;
   el.style.display = "block";
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=> el.style.display="none", 2200);
 }
 
-/** ================== BEEP (instant) ================== **/
+/** ================== BEEP ================== **/
 let audioCtx = null;
 function beep(){
   try{
@@ -266,33 +404,30 @@ function beep(){
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     o.type = "sine";
-    o.frequency.value = 880; // high pitch
+    o.frequency.value = 880;
     g.gain.value = 0.07;
     o.connect(g); g.connect(audioCtx.destination);
     o.start();
     setTimeout(()=>{ o.stop(); }, 120);
   }catch(e){}
-  try{ if(navigator.vibrate) navigator.vibrate([60]); }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([50]); }catch(e){}
 }
 
-/** ================== HTTP (GET JSON with fallback JSONP) ================== **/
+/** ================== HTTP ================== **/
 async function api(action, params={}){
   const qs = new URLSearchParams({ action, key: API_KEY, ...params }).toString();
   const url = WEB_APP_URL + "?" + qs;
 
-  // 1) try fetch (if CORS allows)
+  // fetch first
   try{
     const res = await fetch(url, { method:"GET" });
     const txt = await res.text();
-    // sometimes Apps Script returns HTML on error
-    const data = JSON.parse(txt);
-    return data;
+    return JSON.parse(txt);
   }catch(err){
-    // 2) fallback JSONP (requires server to support callback; if not, you will see JSONP failed)
+    // fallback JSONP
     return await jsonp(url);
   }
 }
-
 function jsonp(url){
   return new Promise((resolve,reject)=>{
     const cb = "cb_" + Math.random().toString(36).slice(2);
@@ -302,107 +437,122 @@ function jsonp(url){
       script.remove();
     }
     const script = document.createElement("script");
-    // callback param for JSONP (if server supports it)
     script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
     script.onerror = ()=>{ cleanup(); reject(new Error("JSONP failed")); };
     document.body.appendChild(script);
   });
 }
 
-/** ================== UI ================== **/
+/** ================== Helpers ================== **/
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function n(v){ const x = Number(v); return isNaN(x)?0:x; }
+function statusBadge(status){
+  const s = (status||"").trim();
+  if (s === "تم الشحن" || s === "تم التسليم") return `<span class="badge b-ok">${esc(s||"-")}</span>`;
+  if (s === "مرتجع" || s === "مرتجع جزئي" || s === "الغاء") return `<span class="badge b-err">${esc(s||"-")}</span>`;
+  return `<span class="badge b-warn">${esc(s||"-")}</span>`;
+}
+
+/** ================== Render ================== **/
 function render(){
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
-  let sum = 0;
-  rows.forEach(r => sum += Number(r.subtotal||0));
+  const subtotalSum = rows.reduce((a,r)=> a + n(r.subtotal), 0);
+  const shippingSum = rows.reduce((a,r)=> a + n(r.shipping), 0);
 
   document.getElementById("countPill").textContent = "عدد المسجل: " + rows.length;
-  document.getElementById("sumPill").textContent = "الإجمالي (بدون شحن): " + sum;
+  document.getElementById("sumPill").textContent = "التحصيل (بدون شحن): " + subtotalSum;
+  document.getElementById("shipSumPill").textContent = "الشحن: " + shippingSum;
 
   rows.forEach(r=>{
     const tr = document.createElement("tr");
-    const checked = selected.has(r.orderId);
+    const checked = selected.has(String(r.orderId));
+
+    const phone1 = (r.phone || "").trim();
+    const phone2 = (r.altPhone || "").trim();
+    const phones = phone2 ? `${esc(phone1)} - ${esc(phone2)}` : `${esc(phone1)}`;
 
     tr.innerHTML = `
-  <td class="no-print"><input type="checkbox" ${checked?"checked":""} /></td>
-  <td><b>${esc(r.orderId)}</b></td>
-  <td>${esc(r.name||"")}</td>
-  <td class="print-only">${esc(r.shipDate || "")}</td>
-  // <td class="print-only">${esc(r.shipDate || "")}</td>
-  <td>
-  ${esc(r.phone || "")}
-  ${r.altPhone ? " - " + esc(r.altPhone) : ""}
-  / ${esc(r.city || "")}
-  / ${esc(r.address || "")}
-</td>
-  <td><b>${esc(String(r.subtotal||0))}</b></td>
-  <td class="print-only">${esc(String(r.shipping||0))}</td>
-  <td>${esc(r.status||"")}</td>
-`;
+      <td class="no-print"><input type="checkbox" ${checked?"checked":""} /></td>
+      <td class="mono"><b>${esc(r.orderId)}</b></td>
+      <td>${esc(r.name||"")}</td>
+      <td class="addr">
+        <div class="mono">${phones}</div>
+        <div class="small">${esc(r.city||"")}</div>
+        <div>${esc(r.address||"")}</div>
+      </td>
+      <td class="mono"><b>${esc(String(r.subtotal||0))}</b></td>
+      <td class="mono">${esc(String(r.shipping||0))}</td>
+      <td>${statusBadge(r.status)}</td>
+    `;
 
     tr.querySelector("input").addEventListener("change",(e)=>{
-      if (e.target.checked) selected.add(r.orderId);
-      else selected.delete(r.orderId);
+      const id = String(r.orderId);
+      if (e.target.checked) selected.add(id);
+      else selected.delete(id);
     });
 
     tbody.appendChild(tr);
   });
 }
 
-function esc(s){
-  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-/** ================== Core: only show MY scanned IDs ================== **/
+/** ================== Load only MY orders ================== **/
 async function refreshMine(){
   if (mineIds.size === 0){
     rows = [];
     selected = new Set();
     render();
-    toast("لا يوجد أوردرات عندك لسه — ابدأ Scan/إضافة.", "warn");
+    toast("لا يوجد أوردرات عندك لسه — ابدأ Scan/إضافة.");
     return;
   }
 
   const res = await api("scanList");
-  if(!res.ok){ toast(res.error || "Error", "err"); return; }
+  if(!res || !res.ok){
+    toast("خطأ في تحميل الأوردرات: " + (res?.error || "Unknown"));
+    return;
+  }
 
   const all = res.rows || [];
   const mine = all.filter(r => mineIds.has(String(r.orderId)));
 
-  // order by most recent scanned (based on mineIds order in LS)
   const mineOrder = Array.from(mineIds);
   mine.sort((a,b)=> mineOrder.indexOf(String(b.orderId)) - mineOrder.indexOf(String(a.orderId)));
 
   rows = mine;
-  selected = new Set(rows.map(r=>r.orderId)); // default select all shown
+  selected = new Set(rows.map(r=>String(r.orderId)));
   render();
 }
 
-/** ================== Add one (manual Order ID) ================== **/
+/** ================== Add one ================== **/
 async function addOne(){
   const id = document.getElementById("orderIdInput").value.trim();
   if(!id) return;
 
-  // add to mine immediately (so it never loads all)
+  if(mineIds.has(String(id))){
+    toast("الأوردر ده متسجل عندك بالفعل.");
+    return;
+  }
+
   mineIds.add(String(id));
   saveMine();
 
-  // quick feedback instantly
   beep();
-  toast("تم التقاط/إضافة: " + id, "ok");
+  toast("تم إضافة: " + id);
 
   const res = await api("scanAdd", { orderId:id });
-  if(!res.ok){
-    toast(res.error || "فشل إضافة الأوردر", "err");
+  if(!res || !res.ok){
+    toast("فشل إضافة الأوردر: " + (res?.error||"Unknown"));
     return;
   }
 
   document.getElementById("orderIdInput").value="";
-  await refreshMine(); // will show only mine
+  await refreshMine();
 }
 
-/** ================== Manual minimal add (local only) ================== **/
+/** ================== Manual add ================== **/
 async function manualAdd(){
   const d = {
     orderId: document.getElementById("m_id").value.trim(),
@@ -414,24 +564,26 @@ async function manualAdd(){
   };
   if(!d.orderId) return alert("اكتب Order ID");
 
+  if(mineIds.has(String(d.orderId))){
+    toast("الأوردر ده متسجل عندك بالفعل.");
+    return;
+  }
+
   mineIds.add(String(d.orderId));
   saveMine();
 
-  // If you have manualAdd action on server, keep it; otherwise comment this block.
   try{
     const res = await api("manualAdd", d);
-    if(!res.ok){ alert(res.error||"Error"); return; }
-  }catch(e){
-    // ignore if server doesn't support manualAdd
-  }
+    if(res && res.ok){}
+  }catch(e){}
 
   ["m_id","m_name","m_phone","m_city","m_addr","m_sub"].forEach(id=>document.getElementById(id).value="");
   beep();
-  toast("تم حفظ الأوردر يدويًا: " + d.orderId, "ok");
+  toast("تم حفظ الأوردر يدويًا: " + d.orderId);
   await refreshMine();
 }
 
-/** ================== Bulk Update (uses selected in UI) ================== **/
+/** ================== Bulk Update ================== **/
 async function bulkUpdate(){
   const status = document.getElementById("statusSelect").value.trim();
   if(!status) return alert("اختار الحالة");
@@ -446,119 +598,116 @@ async function bulkUpdate(){
     shipDate = prompt("تاريخ الشحن (YYYY-MM-DD)؟", new Date().toISOString().slice(0,10)) || "";
     if(!courier) return alert("لازم اسم المندوب");
   }
-
   if(status === "تم التسليم"){
     deliveryDate = prompt("تاريخ التسليم (YYYY-MM-DD)؟", new Date().toISOString().slice(0,10)) || "";
   }
-
   if(status === "مرتجع جزئي"){
-    partialAmount = prompt("مبلغ اللي العميل دفعه (مرتجع جزئي)؟", "") || "";
+    partialAmount = prompt("مبلغ اللي العميل دفعه؟", "") || "";
     if(!partialAmount) return alert("لازم تكتب المبلغ");
   }
 
   const res = await api("bulkUpdate", {
     ids: ids.join(","),
-    status,
-    courier,
-    shipDate,
-    deliveryDate,
-    partialAmount
+    status, courier, shipDate, deliveryDate, partialAmount
   });
 
   if(!res || !res.ok){
-    toast("❌ فشل تحديث الحالة: " + (res?.error || "Unknown"), "err");
+    toast("❌ فشل تحديث الحالة: " + (res?.error || "Unknown"));
     return;
   }
 
-  const updatedCount = (res.updatedCount != null) ? res.updatedCount : ids.length;
-  toast(`✅ تم تحديث الحالة (${updatedCount}) طلب`, "ok");
-
+  toast(`✅ تم تحديث الحالة (${res.updated ?? ids.length})`);
   if(res.missing && res.missing.length){
-    toast("⚠️ طلبات مش موجودة: " + res.missing.join(","), "warn");
+    toast("⚠️ طلبات مش موجودة: " + res.missing.join(","));
   }
-
   await refreshMine();
+}
+
+/** ================== Print ================== **/
+function updatePrintSummary(){
+  const count = rows.length;
+  const subtotalSum = rows.reduce((a,r)=>a + n(r.subtotal), 0);
+  const shippingSum = rows.reduce((a,r)=>a + n(r.shipping), 0);
+  const totalWithShip = subtotalSum + shippingSum;
+
+  const now = new Date().toLocaleString("ar-EG");
+  document.getElementById("printDate").textContent = "تاريخ الطباعة: " + now;
+  document.getElementById("pDate2").textContent = now;
+
+  document.getElementById("pCount").textContent = count;
+  document.getElementById("pSubtotal").textContent = subtotalSum;
+  document.getElementById("pShipping").textContent = shippingSum;
+  document.getElementById("pTotalWithShip").textContent = totalWithShip;
+}
+function printA4(){
+  updatePrintSummary();
+  window.print();
 }
 
 /** ================== QR Scan ================== **/
 async function startScan(){
   document.getElementById("qrWrap").style.display = "block";
 
-  if(!qr){
-    qr = new Html5Qrcode("qr-reader");
-  }
+  if(!qr) qr = new Html5Qrcode("qr-reader");
 
-  const config = {
-    fps: 15,
-    qrbox: { width: 260, height: 260 }, // match overlay square
-    aspectRatio: 1.0,
-    disableFlip: false
-  };
+  const config = { fps: 15, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0, disableFlip:false };
 
-  // pick camera
   let camId = null;
   try{
     const cams = await Html5Qrcode.getCameras();
     if(cams && cams.length){
-      // prefer back camera by label
       const back = cams.find(c => /back|rear|environment/i.test(c.label));
       camId = (back || cams[0]).id;
     }
   }catch(e){}
 
   try{
-    await qr.start(
-      camId || { facingMode: "environment" },
-      config,
-      onQrSuccess,
-      ()=>{} // ignore scan errors spam
-    );
-    toast("الكاميرا شغالة ✅", "ok");
+    await qr.start(camId || { facingMode:"environment" }, config, onQrSuccess, ()=>{});
+    toast("الكاميرا شغالة ✅");
   }catch(e){
-    toast("فشل تشغيل الكاميرا: " + e, "err");
+    toast("فشل تشغيل الكاميرا: " + e);
   }
 }
-
 async function stopScan(){
   document.getElementById("qrWrap").style.display = "none";
-  if(qr){
-    try{ await qr.stop(); }catch(e){}
-  }
-  toast("تم إيقاف الـ QR", "warn");
+  if(qr){ try{ await qr.stop(); }catch(e){} }
+  toast("تم إيقاف الـ QR");
 }
 
 async function onQrSuccess(decodedText){
   const now = Date.now();
-  const id = String(decodedText || "").trim();
+  if(now < scanLockUntil) return; // lock after success
 
-  // extract ID if QR contains extra text
-  const clean = id.match(/\d+/) ? (id.match(/\d+/)[0]) : id;
+  const raw = String(decodedText || "").trim();
+  const clean = raw.match(/\d+/) ? raw.match(/\d+/)[0] : raw;
   if(!clean) return;
 
-  // anti-duplicate rapid fire (2 seconds)
-  if (lastScan.id === clean && (now - lastScan.t) < 2000) return;
+  // منع تكرار سريع لنفس الكود
+  if (lastScan.id === clean && (now - lastScan.t) < 2500) return;
   lastScan = { id: clean, t: now };
+
+  // لو متسجل عندك بالفعل
   if(mineIds.has(String(clean))){
-  toast("⚠️ الأوردر ده متسجل عندك بالفعل", "warn");
-  return;
-}
-
-  // instant feedback BEFORE any network
-  beep();
-  toast("تم التقاط QR: " + clean, "ok");
-
-  // add to mine
-  mineIds.add(String(clean));
-  saveMine();
-
-  // call server to mark Selected
-  const res = await api("scanAdd", { orderId: clean });
-  if(!res.ok){
-    toast("فشل إضافة الأوردر: " + (res.error||"Error"), "err");
+    toast("⚠️ الأوردر ده متسجل عندك بالفعل");
+    scanLockUntil = now + 1200;
     return;
   }
 
-  // show it immediately (only mine)
+  // lock 1.5s عشان الكاميرا متقراهوش ورا بعض
+  scanLockUntil = now + 1500;
+
+  beep();
+  toast("تم التقاط QR: " + clean);
+
+  mineIds.add(String(clean));
+  saveMine();
+
+  const res = await api("scanAdd", { orderId: clean });
+  if(!res || !res.ok){
+    toast("فشل إضافة الأوردر: " + (res?.error || "Unknown"));
+    return;
+  }
+
   await refreshMine();
 }
 
@@ -570,42 +719,12 @@ function clearMine(){
   rows = [];
   selected = new Set();
   render();
-  toast("تم مسح أوردراتك من الصفحة.", "warn");
+  toast("تم مسح أوردراتك من الصفحة");
 }
 
 /** ================== Boot ================== **/
 loadMine();
-// الصفحة تفتح فاضية — لو عايز تظهر اللي كنت ماسحهم/مخزنهم من قبل، فعّل السطر ده:
-// refreshMine();
 render();
-
-function updatePrintSummary(){
-  const count = rows.length;
-  const subtotalSum = rows.reduce((a,r)=>a + Number(r.subtotal||0), 0);
-  const shippingSum = rows.reduce((a,r)=>a + Number(r.shipping||0), 0);
-
-  document.getElementById("printDate").textContent = "تاريخ الطباعة: " + new Date().toLocaleString("ar-EG");
-  document.getElementById("pCount").textContent = count;
-  document.getElementById("pSubtotal").textContent = subtotalSum;
-  document.getElementById("pShipping").textContent = shippingSum;
-}
-
-function updatePrintSummary(){
-  const count = rows.length;
-  const subtotalSum = rows.reduce((a,r)=>a + Number(r.subtotal||0), 0);
-  const shippingSum = rows.reduce((a,r)=>a + Number(r.shipping||0), 0);
-
-  document.getElementById("printDate").textContent = "تاريخ الطباعة: " + new Date().toLocaleString("ar-EG");
-  document.getElementById("pCount").textContent = count;
-  document.getElementById("pSubtotal").textContent = subtotalSum;
-  document.getElementById("pShipping").textContent = shippingSum;
-}
-
-function printA4(){
-  updatePrintSummary();
-  window.print();
-}
-  
 </script>
 </body>
 </html>
