@@ -481,11 +481,9 @@ function render(){
       <td class="no-print"><input type="checkbox" ${checked?"checked":""} /></td>
       <td class="mono"><b>${esc(r.orderId)}</b></td>
       <td>${esc(r.name||"")}</td>
-      <td class="addr">
-        <div class="mono">${phones}</div>
-        <div class="small">${esc(r.city||"")}</div>
-        <div>${esc(r.address||"")}</div>
-      </td>
+      <td class="addr mono">
+  ${phones} / ${esc(r.city||"")} / ${esc(r.address||"")}
+</td>
       <td class="mono"><b>${esc(String(r.subtotal||0))}</b></td>
       <td class="mono">${esc(String(r.shipping||0))}</td>
       <td>${statusBadge(r.status)}</td>
