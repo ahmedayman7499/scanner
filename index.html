@@ -265,6 +265,8 @@ body.pdf-mode #printArea{
   background:#fff !important;
   padding:0 !important;
   margin:0 !important;
+  width: 297mm !important;   /* عرض A4 Landscape */
+  min-height: 210mm !important;
 }
 
 /* الهيدر والملخص يظهروا */
@@ -855,10 +857,11 @@ function updateToggleBtn(){
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
-      windowWidth: area.scrollWidth,  // 👈 يمنع الضغط/القص
-      scrollX: 0,
-      scrollY: 0
-    },
+      width: 1122,   // عرض A4 Landscape بالبيكسل تقريبًا
+      windowWidth: 1122,
+       scrollX: 0,
+       scrollY: 0
+       },
     jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
     pagebreak: { mode: ["avoid-all","css","legacy"] } // 👈 يمنع تقطيع الصفوف قدر الإمكان
   };
