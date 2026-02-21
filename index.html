@@ -530,6 +530,10 @@ async function onQrSuccess(decodedText){
   // anti-duplicate rapid fire (2 seconds)
   if (lastScan.id === clean && (now - lastScan.t) < 2000) return;
   lastScan = { id: clean, t: now };
+  if(mineIds.has(String(clean))){
+  toast("⚠️ الأوردر ده متسجل عندك بالفعل", "warn");
+  return;
+}
 
   // instant feedback BEFORE any network
   beep();
