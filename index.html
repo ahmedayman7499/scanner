@@ -846,7 +846,10 @@ function updateToggleBtn(){
 
   btn.textContent = allSelected ? "إلغاء الكل" : "تحديد الكل";
 }
-  async function downloadSelectedPDF(){
+  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+function nextFrame(){ return new Promise(r=>requestAnimationFrame(()=>r())); }
+
+async function downloadSelectedPDF(){
   const ids = Array.from(selected);
   if(ids.length === 0){
     toast("اختار أوردرات الأول ✅");
@@ -864,6 +867,7 @@ function updateToggleBtn(){
   updatePrintSummary();
   render();
 
+  // فعل وضع PDF (ستايل الطباعة)
   document.body.classList.add("pdf-mode");
 
   const area = document.getElementById("printArea");
@@ -874,24 +878,33 @@ function updateToggleBtn(){
     return;
   }
 
-  // خد المقاسات الحقيقية
-  const w = area.scrollWidth;
-  const h = area.scrollHeight;
+  // ✅ انتظر لحد ما الستايل يثبت + الجدول يعمل layout
+  await nextFrame();
+  await nextFrame();
+  await sleep(250); // جرب 250-500 لو لسه
+
+  // اجبار reflow (بيساعد مع القص)
+  area.style.transform = "translateZ(0)";
+  area.offsetHeight; // force reflow
+  await nextFrame();
 
   const opt = {
-  margin: 0,
-  filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
-  image: { type: "jpeg", quality: 0.98 },
-  html2canvas: {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    scrollX: 0,
-    scrollY: 0
-  },
-  jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-  pagebreak: { mode: ["css","legacy"] }
-};
+    margin: 0,
+    filename: `delivery_selected_${new Date().toISOString().slice(0,10)}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0,
+      // ✅ تثبيت مقاس الالتقاط (A4 Landscape @96dpi تقريبًا)
+      windowWidth: 1123,
+      windowHeight: 794
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+    pagebreak: { mode: ["css","legacy"] }
+  };
 
   try{
     await html2pdf().set(opt).from(area).save();
