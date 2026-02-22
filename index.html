@@ -363,7 +363,7 @@ body.pdf-mode tbody tr{
         <button onclick="printA4()">🖨️ طباعة</button>
         <button class="secondary" onclick="downloadSelectedPDF()">⬇️ تحميل PDF المحدد</button>
         <button class="secondary" onclick="downloadSelectedCSV() "style="display:none;" >⬇️ Excel المحدد</button>
-        <button class="secondary" onclick="downloadAllXLSX()">⬇️ Excel (كل الأوردرات)</button>
+        <button class="secondary" onclick="downloadAllXLSX()">⬇️ Excel (المحدد)</button>
       </div>
     </div>
 
@@ -986,19 +986,24 @@ function downloadSelectedCSV(){
 }
 
 function downloadAllXLSX(){
-  if(!rows || rows.length === 0){
-    toast("مفيش بيانات للتصدير");
-    return;
-  }
+  const ids = Array.from(selected);
 
-  const count = rows.length;
-  const subtotalSum = rows.reduce((a,r)=>a + (Number(r.subtotal)||0), 0);
+if(ids.length === 0){
+  toast("اختار أوردرات الأول ✅");
+  return;
+}
+
+// 👇 بدل rows استخدم المحدد بس
+const exportRows = rows.filter(r => ids.includes(String(r.orderId)));
+
+  const count = exportRows.length;
+  const subtotalSum = exportRows.reduce((a,r)=>a + (Number(r.subtotal)||0), 0);
   const shippingSum  = rows.reduce((a,r)=>a + (Number(r.shipping)||0), 0);
   const totalWithShip = subtotalSum + shippingSum;
   const now = new Date().toLocaleString("ar-EG");
 
   const tableHeader = ["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل بدون شحن","الشحن","الحالة"];
-  const tableRows = rows.map(r => ([
+  const tableRows = exportRows.map(r => ([
     String(r.orderId ?? ""),
     String(r.name ?? ""),
     String(r.phone ?? ""),
