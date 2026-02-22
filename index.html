@@ -1527,6 +1527,25 @@ function srAddSelectedToMine(){
   closeSearchResults();
   refreshMine();
 }
+const qEl = document.getElementById("idx_q");
+const statsEl = document.getElementById("indexStats");
+
+qEl.addEventListener("input", () => {
+  const q = qEl.value.trim().toLowerCase();
+
+  if (!q) {
+    statsEl.textContent = `✅ جاهز للبحث (${allRowsCache.length})`;
+    return;
+  }
+
+  const filtered = allRowsCache.filter(row => {
+    return Object.values(row).some(val =>
+      String(val).toLowerCase().includes(q)
+    );
+  });
+
+  statsEl.textContent = `🔎 نتائج متوقعة: ${filtered.length}`;
+});
 /** ================== Boot ================== **/
 loadMine();
 render();
