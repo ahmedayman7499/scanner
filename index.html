@@ -362,7 +362,7 @@ body.pdf-mode tbody tr{
         <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
         <button onclick="printA4()">🖨️ طباعة</button>
         <button class="secondary" onclick="downloadSelectedPDF()">⬇️ تحميل PDF المحدد</button>
-        <button class="secondary" onclick="downloadSelectedCSV()">⬇️ Excel المحدد</button>
+        <button class="secondary" onclick="downloadSelectedCSV() "style="display:none;" >⬇️ Excel المحدد</button>
         <button class="secondary" onclick="downloadAllXLSX()">⬇️ Excel (كل الأوردرات)</button>
       </div>
     </div>
@@ -399,7 +399,7 @@ body.pdf-mode tbody tr{
     </div>
   </div>
 
-  <div class="card no-print">
+  <div class="card no-print" style="display:none;">
     <div class="title" style="font-size:16px">✍️ إدخال يدوي (لو مفيش فواتير)</div>
     <div class="row" style="margin-top:10px">
       <input id="m_id" placeholder="Order ID" />
