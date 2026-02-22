@@ -1148,7 +1148,7 @@ ws["!rows"][1] = { hpt: 28 }; // صف التاريخ
   }
 
   XLSX.utils.book_append_sheet(wb, ws, "Delivery Sheet");
-  XLSX.writeFile(wb, `delivery_all_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `white-clothes-${new Date().toISOString().slice(0,10)}.xlsx`);
   toast("✅ تم تحميل Excel (كل الأوردرات) بالهيدر + بوردر + RTL");
 }
 /** ================== Boot ================== **/
