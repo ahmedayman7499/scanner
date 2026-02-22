@@ -7,6 +7,7 @@
 
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     :root{
       --bg:#0b1220;
@@ -361,6 +362,8 @@ body.pdf-mode tbody tr{
         <button class="danger" onclick="clearMine()">🧹 مسح أوردراتي</button>
         <button onclick="printA4()">🖨️ طباعة</button>
         <button class="secondary" onclick="downloadSelectedPDF()">⬇️ تحميل PDF المحدد</button>
+        <button class="secondary" onclick="downloadSelectedCSV()">⬇️ Excel المحدد</button>
+        <button class="secondary" onclick="downloadAllXLSX()">⬇️ Excel (كل الأوردرات)</button>
       </div>
     </div>
 
@@ -917,6 +920,231 @@ async function downloadSelectedPDF(){
     selected = prevSelected;
     render();
   }
+}
+
+function csvEscape(v){
+  const s = String(v ?? "");
+  // لو فيه فاصلة/سطر جديد/علامة اقتباس
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
+  return s;
+}
+
+function downloadSelectedCSV(){
+  const ids = Array.from(selected);
+  if(ids.length === 0){
+    toast("اختار أوردرات الأول ✅");
+    return;
+  }
+
+  // صفوف المحدد فقط
+  const filtered = rows.filter(r => ids.includes(String(r.orderId)));
+
+  // هيدر الأعمدة (إكسل)
+  const header = [
+    "Order ID",
+    "الاسم",
+    "الهاتف",
+    "هاتف إضافي",
+    "المحافظة",
+    "العنوان",
+    "التحصيل بدون شحن",
+    "الشحن",
+    "الحالة"
+  ];
+
+  const lines = [header.map(csvEscape).join(",")];
+
+  filtered.forEach(r=>{
+    const line = [
+      r.orderId,
+      r.name,
+      r.phone,
+      r.altPhone,
+      r.city,
+      r.address,
+      r.subtotal,
+      r.shipping,
+      r.status
+    ].map(csvEscape).join(",");
+    lines.push(line);
+  });
+
+  // UTF-8 BOM عشان العربي يطلع صح في Excel
+  const csv = "\uFEFF" + lines.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = `orders_selected_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  toast("✅ تم تحميل Excel (CSV) للمحدد");
+}
+
+function downloadAllXLSX(){
+  if(!rows || rows.length === 0){
+    toast("مفيش بيانات للتصدير");
+    return;
+  }
+
+  const count = rows.length;
+  const subtotalSum = rows.reduce((a,r)=>a + (Number(r.subtotal)||0), 0);
+  const shippingSum  = rows.reduce((a,r)=>a + (Number(r.shipping)||0), 0);
+  const totalWithShip = subtotalSum + shippingSum;
+  const now = new Date().toLocaleString("ar-EG");
+
+  const tableHeader = ["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل بدون شحن","الشحن","الحالة"];
+  const tableRows = rows.map(r => ([
+    String(r.orderId ?? ""),
+    String(r.name ?? ""),
+    String(r.phone ?? ""),
+    String(r.altPhone ?? ""),
+    String(r.city ?? ""),
+    String(r.address ?? ""),
+    Number(r.subtotal || 0),
+    Number(r.shipping || 0),
+    String(r.status ?? "")
+  ]));
+
+  const aoa = [];
+  aoa.push(["ورقة تسليم للمندوب - white-clothes"]);
+  aoa.push([`تاريخ تسليم الشحنة: ${now}`]);
+  aoa.push([""]);
+
+  // الملخص (3 بلوكات شكلهم قريب من الطباعة)
+  aoa.push(["عدد الطلبات:", count, "", "إجمالي التحصيل (بالشحن):", totalWithShip, "", "ملاحظة:", "البيانات مطبوعة من نظام المسح", ""]);
+  aoa.push(["إجمالي التحصيل (بدون شحن):", subtotalSum, "", "المسؤول:", "__________", "", "التاريخ:", now, ""]);
+  aoa.push(["إجمالي الشحن:", shippingSum, "", "التوقيع:", "__________", "", "", "", ""]);
+  aoa.push([""]);
+
+  const tableHeadRow = aoa.length;   // index قبل ما نضيف الهيدر
+  aoa.push(tableHeader);
+  tableRows.forEach(r => aoa.push(r));
+
+  const wb = XLSX.utils.book_new();
+
+  // ✅ RTL صح (مش ws['!rtl'])
+  wb.Workbook = wb.Workbook || {};
+  wb.Workbook.Views = [{ RTL: true }];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+// تكبير ارتفاع أول صفين
+ws["!rows"] = ws["!rows"] || [];
+ws["!rows"][0] = { hpt: 40 }; // صف العنوان
+ws["!rows"][1] = { hpt: 28 }; // صف التاريخ
+  // دمج العنوان + سطر التاريخ
+  ws["!merges"] = ws["!merges"] || [];
+  ws["!merges"].push({ s:{r:0,c:0}, e:{r:0,c:8} });
+  ws["!merges"].push({ s:{r:1,c:0}, e:{r:1,c:8} });
+
+  // عرض أعمدة
+  ws["!cols"] = [
+    {wch:10},
+    {wch:18},
+    {wch:14},
+    {wch:14},
+    {wch:12},
+    {wch:55},
+    {wch:18},
+    {wch:10},
+    {wch:14},
+  ];
+
+  // Freeze عند هيدر الجدول
+  ws["!freeze"] = { xSplit: 0, ySplit: tableHeadRow + 1 };
+
+  // إعدادات طباعة (لو حد طبع من Excel)
+  ws["!pageSetup"] = {
+    orientation: "landscape",
+    fitToWidth: 1,
+    fitToHeight: 0
+  };
+
+  // ===== Helpers للستايل =====
+  function border(style="thin"){
+    return {
+      top:    { style, color:{rgb:"000000"} },
+      bottom: { style, color:{rgb:"000000"} },
+      left:   { style, color:{rgb:"000000"} },
+      right:  { style, color:{rgb:"000000"} },
+    };
+  }
+
+  const ref = ws["!ref"];
+  const range = XLSX.utils.decode_range(ref);
+
+  const titleRow = 0;
+  const dateRow  = 1;
+  const summaryStart = 3;
+  const summaryEnd = 5; // 3 صفوف ملخص
+  const tableStart = tableHeadRow;   // هيدر الجدول
+  const tableEnd = range.e.r;
+
+  for(let R=range.s.r; R<=range.e.r; R++){
+    for(let C=range.s.c; C<=range.e.c; C++){
+      const addr = XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[addr]) continue;
+
+      ws[addr].s = ws[addr].s || {};
+      ws[addr].s.alignment = {
+        wrapText: true,
+        vertical: "top",
+        horizontal: "right"
+      };
+
+      // عنوان + تاريخ
+      if(R === titleRow){
+  ws[addr].s.font = { bold:true, sz:22 };
+  ws[addr].s.alignment = {
+    horizontal: "center",
+    vertical: "center",
+    wrapText: true
+  };
+}
+      if(R === dateRow){
+        ws[addr].s.font = { bold:true };
+      }
+
+      // ملخص: بوردر + تظبيط
+      if(R >= summaryStart && R <= summaryEnd){
+        ws[addr].s.border = border("thin");
+        // بوردر خارجي أقوى حوالين بلوك الملخص
+        if(R === summaryStart) ws[addr].s.border.top = { style:"medium", color:{rgb:"000000"} };
+        if(R === summaryEnd)   ws[addr].s.border.bottom = { style:"medium", color:{rgb:"000000"} };
+        if(C === 0)           ws[addr].s.border.right = { style:"medium", color:{rgb:"000000"} }; // RTL: اليمين أهم
+        if(C === 8)           ws[addr].s.border.left  = { style:"medium", color:{rgb:"000000"} };
+      }
+
+      // هيدر الجدول
+      if(R === tableStart){
+        ws[addr].s.font = { bold:true };
+        ws[addr].s.fill = { patternType:"solid", fgColor:{rgb:"EDEDED"} };
+        ws[addr].s.border = border("medium");
+      }
+
+      // جسم الجدول
+      if(R > tableStart){
+        ws[addr].s.border = border("thin");
+      }
+
+      // إطار خارجي للجدول كله (أوضح)
+      if(R >= tableStart && R <= tableEnd){
+        if(R === tableStart) ws[addr].s.border.top = { style:"medium", color:{rgb:"000000"} };
+        if(R === tableEnd)   ws[addr].s.border.bottom = { style:"medium", color:{rgb:"000000"} };
+        if(C === 0)          ws[addr].s.border.right = { style:"medium", color:{rgb:"000000"} }; // RTL
+        if(C === 8)          ws[addr].s.border.left  = { style:"medium", color:{rgb:"000000"} };
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, "Delivery Sheet");
+  XLSX.writeFile(wb, `delivery_all_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast("✅ تم تحميل Excel (كل الأوردرات) بالهيدر + بوردر + RTL");
 }
 /** ================== Boot ================== **/
 loadMine();
