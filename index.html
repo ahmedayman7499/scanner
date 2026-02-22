@@ -998,7 +998,7 @@ const exportRows = rows.filter(r => ids.includes(String(r.orderId)));
 
   const count = exportRows.length;
   const subtotalSum = exportRows.reduce((a,r)=>a + (Number(r.subtotal)||0), 0);
-  const shippingSum  = rows.reduce((a,r)=>a + (Number(r.shipping)||0), 0);
+  const shippingSum  = exportRows.reduce((a,r)=>a + (Number(r.shipping)||0), 0);
   const totalWithShip = subtotalSum + shippingSum;
   const now = new Date().toLocaleString("ar-EG");
 
