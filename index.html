@@ -85,13 +85,7 @@ tbody tr{break-inside: avoid; page-break-inside: avoid;}
   tr, td, th { page-break-inside: avoid !important; }
   tbody tr { break-inside: avoid !important; }
 }
-@media print{
-  .print-header, .print-summary{ display:block !important; }
-}
-body.pdf-mode .print-header,
-body.pdf-mode .print-summary{
-  display:block !important;
-}
+
 
 .wrap{max-width:1100px;margin:0 auto}
 
@@ -392,7 +386,7 @@ body.search-open .topbar{
 /* =========================
    PRINT (KEEP YOUR ORIGINAL)
    ========================= */
-@page { size: A4 landscape; margin: 8mm; }
+@page { margin: 8mm; }
 .print-header,.print-summary{display:none}
 
 @media print{
