@@ -1710,6 +1710,10 @@ function updatePrintSummary(){
 }
 function printA4(){
   updatePrintSummary();
+
+  // امنع تأثيرات UI اللي بتبوظ print في الموبايل
+  document.body.classList.remove("search-open");
+
   window.print();
 }
 
