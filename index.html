@@ -486,6 +486,119 @@ body.pdf-mode tbody tr{
   break-inside: avoid !important;
   page-break-inside: avoid !important;
 }
+/* ====== SHIP MONITOR V1 ====== */
+.pillBtn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--line2);
+  background: rgba(12,21,43,.55);
+  color: var(--text);
+  font-weight:900;
+}
+.pillBtn b{ font-variant-numeric: tabular-nums; }
+
+.pillBtn.warn{
+  border-color: rgba(245,158,11,.35);
+  background: rgba(245,158,11,.10);
+}
+
+#shipMonitorCard{
+  border: 1px solid rgba(59,130,246,.25);
+  box-shadow: 0 14px 60px rgba(0,0,0,.35);
+}
+
+.shipCourier{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.shipRowOverdue td{
+  background: rgba(245,158,11,.06);
+}
+.shipDaysBadge{
+  display:inline-flex;
+  padding:3px 10px;
+  border-radius:999px;
+  border:1px solid rgba(245,158,11,.28);
+  background: rgba(245,158,11,.10);
+  font-weight:900;
+  white-space:nowrap;
+}
+.shipDaysBadge.danger{
+  border-color: rgba(239,68,68,.30);
+  background: rgba(239,68,68,.10);
+}
+
+/* ===== Ship Main Button States (V1) ===== */
+#shipBtn{
+  position: relative;
+  overflow: visible;
+  transition: .2s ease;
+}
+
+/* badge صغيرة فوق الزرار */
+#shipBtn .shipDot{
+  position:absolute;
+  top:-6px;
+  inset-inline-start:-6px; /* RTL: ناحية اليسار */
+  min-width:18px;
+  height:18px;
+  padding:0 6px;
+  border-radius:999px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  font-weight:950;
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow: 0 10px 20px rgba(0,0,0,.35);
+}
+
+/* نقطه حمراء “متأخر” */
+#shipBtn.state-overdue .shipDot{
+  display:inline-flex;
+  background: rgba(239,68,68,.95);
+  color:#fff;
+}
+
+/* زرار طبيعي */
+#shipBtn.state-normal{
+  background: rgba(148,163,184,.12) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+}
+
+/* زرار متابعة (أصفر) */
+#shipBtn.state-follow{
+  border-color: rgba(245,158,11,.40) !important;
+  background: rgba(245,158,11,.12) !important;
+  box-shadow: 0 0 28px rgba(245,158,11,.10), var(--shadow2) !important;
+}
+
+/* زرار متأخر (أحمر) */
+#shipBtn.state-overdue{
+  border-color: rgba(239,68,68,.45) !important;
+  background: rgba(239,68,68,.14) !important;
+  box-shadow: 0 0 32px rgba(239,68,68,.12), var(--shadow2) !important;
+}
+
+/* Pulse خفيف كل شوية */
+@keyframes softPulse {
+  0%   { transform: translateZ(0) scale(1);   box-shadow: 0 0 0 rgba(239,68,68,0.0); }
+  50%  { transform: translateZ(0) scale(1.02);box-shadow: 0 0 26px rgba(239,68,68,.14); }
+  100% { transform: translateZ(0) scale(1);   box-shadow: 0 0 0 rgba(239,68,68,0.0); }
+}
+#shipBtn.pulse{
+  animation: softPulse 1.2s ease-in-out;
+}
 </style>
 </head>
 
@@ -498,6 +611,11 @@ body.pdf-mode tbody tr{
       <span class="pill" id="countPill">عدد المسجل: 0</span>
       <span class="pill" id="sumPill">التحصيل (بدون شحن): 0</span>
       <span class="pill" id="shipSumPill">الشحن: 0</span>
+      <button class="secondary pillBtn state-normal" id="shipBtn" type="button" onclick="openShipMonitor()">
+      <span class="shipDot" id="shipDot">0</span>
+      🚚 تم الشحن (<b id="shipCountPill">0</b>)
+      </button>
+      
       <span class="pill right" id="datePill"></span>
     </div>
     <div class="muted" style="margin-top:6px">
@@ -620,7 +738,46 @@ body.pdf-mode tbody tr{
     </table>
   </div>
 </div>
+<div class="card no-print" id="shipMonitorCard" style="display:none;">
+  <div class="row">
+    <div class="title" style="font-size:16px">🚚 مراقبة “تم الشحن”</div>
+    <span class="pill right" id="shipStats">—</span>
+  </div>
 
+  <div class="row" style="margin-top:10px">
+  <button class="secondary" id="tabNormal"  onclick="setShipTab('normal')">🟢 طبيعي – <b id="bNormal">0</b></button>
+  <button class="secondary" id="tabFollow"  onclick="setShipTab('follow')">🟡 متابعة – <b id="bFollow">0</b></button>
+  <button class="secondary" id="tabOverdue" onclick="setShipTab('overdue')">🔴 متأخر – <b id="bOverdue">0</b></button>
+
+  <select id="shipCourierFilter" style="min-width:220px;flex:1" onchange="renderShipTable()">
+    <option value="">كل المندوبين</option>
+  </select>
+
+  <button class="danger" onclick="openShipMonitor()">✖️ إغلاق</button>
+</div>
+
+  <div class="small" style="margin-top:8px">
+    • المتأخر = تم الشحن وعدّى عليه أكثر من <b id="overdueDaysLabel">7</b> أيام بدون “تم التسليم”.  
+    • الأولوية: المتأخر فوق + الأقدم أولًا.
+  </div>
+
+  <div class="tableWrap" style="margin-top:10px">
+    <table>
+      <thead>
+        <tr>
+          <th class="nowrap">Order ID</th>
+          <th>الاسم</th>
+          <th>الهاتف / محافظة / عنوان</th>
+          <th class="nowrap">المندوب</th>
+          <th class="nowrap">تاريخ الشحن</th>
+          <th class="nowrap">أيام</th>
+          <th class="nowrap">الحالة</th>
+        </tr>
+      </thead>
+      <tbody id="shipTbody"></tbody>
+    </table>
+  </div>
+</div>
   <div class="card" id="printArea">
     <div class="print-header">
       <div class="print-title">ورقة تسليم للمندوب - white-clothes</div>
@@ -766,6 +923,291 @@ function statusBadge(status){
   return `<span class="badge b-warn">${esc(s||"-")}</span>`;
 }
 
+
+/** ================== SHIP MONITOR ================== **/
+const FOLLOW_MIN = 6;   // 6-9 متابعة
+const FOLLOW_MAX = 9;
+const OVERDUE_MIN = 10; // 10+ متأخر
+
+let shipAll = [];
+let shipTab = "overdue"; // "overdue" | "normal" | "follow"
+
+const COURIER_LS = "scanner_courier_colors_v1";
+function loadCourierColors(){
+  try{ return JSON.parse(localStorage.getItem(COURIER_LS) || "{}"); }
+  catch(e){ return {}; }
+}
+function saveCourierColors(map){
+  localStorage.setItem(COURIER_LS, JSON.stringify(map || {}));
+}
+function colorFromString(str){
+  let h = 0;
+  for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue} 75% 55%)`;
+}
+function getCourierChip(name){
+  const n = String(name || "غير محدد").trim() || "غير محدد";
+  const map = loadCourierColors();
+  if(!map[n]){
+    map[n] = colorFromString(n);
+    saveCourierColors(map);
+  }
+  const c = map[n];
+  return `<span class="shipCourier" style="border-color:${c}55;background:${c}18;color:var(--text)">
+    <span style="width:8px;height:8px;border-radius:999px;background:${c};display:inline-block"></span>
+    ${esc(n)}
+  </span>`;
+}
+
+function parseShipDate(r){
+  const raw =
+    r.shipDate ?? r.ship_date ?? r.shippedDate ?? r.shipped_date ??
+    r.shipDateText ?? r.ship_date_text ?? "";
+  const s = String(raw || "").trim();
+  if(!s) return null;
+
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    const dt = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+function daysSince(dt){
+  if(!dt) return null;
+  const ms = Date.now() - dt.getTime();
+  return Math.floor(ms / (1000*60*60*24));
+}
+function isDeliveredStatus(status){
+  return String(status||"").trim() === "تم التسليم";
+}
+
+// زرار الشحن: state + dot + pulse
+let lastPulseAt = 0;
+function setShipBtnState({ total=0, follow=0, overdue=0 }){
+  const btn = document.getElementById("shipBtn");
+  const dot = document.getElementById("shipDot");
+  const totalEl = document.getElementById("shipCountPill");
+  
+  let pulseTimer = null;
+
+function startPulseLoop(){
+  if(pulseTimer) return;
+  pulseTimer = setInterval(() => {
+    const btn = document.getElementById("shipBtn");
+    if(!btn) return;
+
+    // لو الزرار في حالة متأخر بس
+    if(btn.classList.contains("state-overdue")){
+      btn.classList.remove("pulse");
+      void btn.offsetWidth; // force reflow عشان الأنيميشن يعيد
+      btn.classList.add("pulse");
+      setTimeout(()=>btn.classList.remove("pulse"), 1400);
+    }
+  }, 9000);
+}
+startPulseLoop();
+
+  if(totalEl) totalEl.textContent = total;
+
+  btn.classList.remove("state-normal","state-follow","state-overdue","pulse");
+
+  if(overdue > 0){
+    btn.classList.add("state-overdue");
+    if(dot){
+      dot.textContent = overdue;
+      dot.style.display = "inline-flex";
+    }
+    const now = Date.now();
+    if(now - lastPulseAt > 9000){
+      lastPulseAt = now;
+      btn.classList.add("pulse");
+      setTimeout(()=>btn.classList.remove("pulse"), 1400);
+    }
+  } else if(follow > 0){
+    btn.classList.add("state-follow");
+    if(dot) dot.style.display = "none";
+  } else {
+    btn.classList.add("state-normal");
+    if(dot) dot.style.display = "none";
+  }
+}
+
+const OVERDUE_LS_KEY = "scanner_last_overdue_count";
+
+function getLastOverdue(){
+  return Number(localStorage.getItem(OVERDUE_LS_KEY) || 0);
+}
+
+function setLastOverdue(n){
+  localStorage.setItem(OVERDUE_LS_KEY, String(n));
+}
+
+async function refreshShipMonitor(){
+  try{
+    const res = await api("scanList");
+    if(!res || !res.ok) return;
+
+    const all = res.rows || [];
+
+    shipAll = all.filter(r =>
+      String(r.status||"").trim() === "تم الشحن" && !isDeliveredStatus(r.status)
+    );
+
+    let overdue = 0, follow = 0, normal = 0;
+
+    shipAll.forEach(r=>{
+      const d = daysSince(parseShipDate(r));
+      if(d === null) { normal++; return; }
+      if(d >= OVERDUE_MIN) overdue++;
+      else if(d >= FOLLOW_MIN && d <= FOLLOW_MAX) follow++;
+      else normal++;
+    });
+// ===== Toast مرة واحدة عند ظهور متأخر جديد =====
+const last = getLastOverdue();
+
+if(overdue > last){
+  toast(`🚨 في ${overdue - last} أوردر متأخر جديد`);
+}
+
+// خزّن العدد الحالي
+setLastOverdue(overdue);
+    setShipBtnState({ total: shipAll.length, follow, overdue });
+
+    buildCourierFilter(shipAll);
+    document.getElementById("bNormal").textContent  = normal;
+document.getElementById("bFollow").textContent  = follow;
+document.getElementById("bOverdue").textContent = overdue;
+
+    const card = document.getElementById("shipMonitorCard");
+    if(card && card.style.display !== "none"){
+      renderShipTable();
+      const stats = document.getElementById("shipStats");
+      if(stats) stats.textContent = `آخر تحديث: ${new Date().toLocaleTimeString("ar-EG")}`;
+    }
+  }catch(e){}
+}
+
+function buildCourierFilter(list){
+  const sel = document.getElementById("shipCourierFilter");
+  if(!sel) return;
+
+  const current = sel.value;
+  const set = new Set(list.map(r => String(r.courier||"غير محدد").trim() || "غير محدد"));
+  const arr = Array.from(set).sort((a,b)=> a.localeCompare(b,'ar'));
+
+  sel.innerHTML = `<option value="">كل المندوبين</option>` + arr.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  if(arr.includes(current)) sel.value = current;
+}
+
+function setShipTab(tab){
+  shipTab = tab;
+  const b1 = document.getElementById("tabOverdue");
+  const b2 = document.getElementById("tabNormal");
+  if(b1 && b2){
+    b1.style.opacity = (tab==="overdue") ? "1" : ".65";
+    b2.style.opacity = (tab==="normal") ? "1" : ".65";
+  }
+  renderShipTable();
+}
+
+function renderShipTable(){
+  const tbody = document.getElementById("shipTbody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+
+  const courierFilter = (document.getElementById("shipCourierFilter")?.value || "").trim();
+
+  let list = shipAll.map(r=>{
+    const dt = parseShipDate(r);
+    const d = daysSince(dt);
+    return { r, dt, days: d };
+  });
+
+  if(courierFilter){
+    list = list.filter(x => (String(x.r.courier||"غير محدد").trim() || "غير محدد") === courierFilter);
+  }
+
+  let filtered = list.filter(x=>{
+    const d = x.days;
+    if(d === null) return shipTab === "normal";
+    if(shipTab === "overdue") return d >= OVERDUE_MIN;
+    if(shipTab === "follow")  return d >= FOLLOW_MIN && d <= FOLLOW_MAX;
+    return d < FOLLOW_MIN; // normal
+  });
+
+  filtered.sort((a,b)=>{
+    const da = (a.days ?? -1);
+    const db = (b.days ?? -1);
+    // المتأخر: الأكبر فوق / المتابعة: الأكبر فوق / الطبيعي: الأصغر فوق
+    if(shipTab === "normal") return da - db;
+    return db - da;
+  });
+
+  filtered.forEach(x=>{
+    const r = x.r;
+    const id = String(r.orderId ?? "");
+    const shipDt = x.dt ? formatYMDLocal(x.dt) : "-";
+    const daysTxt = (x.days === null) ? "-" : String(x.days);
+
+    const phone1 = (r.phone || "").trim();
+    const phone2 = (r.altPhone || "").trim();
+    const phones = phone2 ? `${esc(phone1)} - ${esc(phone2)}` : `${esc(phone1)}`;
+
+    const tr = document.createElement("tr");
+
+    const isOver = (x.days !== null) && (x.days >= OVERDUE_MIN);
+    if(isOver) tr.classList.add("shipRowOverdue");
+
+    const badgeClass = isOver ? "shipDaysBadge danger" : "shipDaysBadge";
+
+    tr.innerHTML = `
+      <td class="mono"><b>${esc(id)}</b></td>
+      <td>${esc(r.name||"")}</td>
+      <td class="addr mono">${phones} / ${esc(r.city||"")} / ${esc(r.address||"")}</td>
+      <td>${getCourierChip(r.courier)}</td>
+      <td class="mono">${esc(shipDt)}</td>
+      <td><span class="${badgeClass}">${esc(daysTxt)} يوم</span></td>
+      <td>${statusBadge(r.status)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openShipMonitor(forceTab){
+  const card = document.getElementById("shipMonitorCard");
+  if(!card) return;
+
+  const isOpen = card.style.display !== "none";
+  if(isOpen){
+    card.style.display = "none";
+    return;
+  }
+
+  card.style.display = "block";
+
+  if(forceTab){
+    shipTab = forceTab;
+  }else{
+    const hasOver = shipAll.some(r=>{
+      const d = daysSince(parseShipDate(r));
+      return d !== null && d >= OVERDUE_MIN;
+    });
+    const hasFollow = shipAll.some(r=>{
+      const d = daysSince(parseShipDate(r));
+      return d !== null && d >= FOLLOW_MIN && d <= FOLLOW_MAX;
+    });
+    shipTab = hasOver ? "overdue" : (hasFollow ? "follow" : "normal");
+  }
+
+  setShipTab(shipTab);
+
+  // نزول ناعم للكارد
+  card.scrollIntoView({ behavior:"smooth", block:"start" });
+}
 /** ================== Render ================== **/
 function render(){
   updateToggleBtn();
@@ -1501,8 +1943,9 @@ function closeSearchResults(){
   document.getElementById("srTbody").innerHTML = "";
   document.getElementById("idx_q").value = "";
   document.getElementById("indexStats").textContent = `✅ جاهز للبحث (${allRowsCache.length})`;
+  document.body.classList.remove("search-open");
 }
-document.body.classList.remove("search-open");
+
 
 function srAddSelectedToMine(){
   const ids = Array.from(srSelected);
@@ -1546,11 +1989,19 @@ qEl.addEventListener("input", () => {
 
   statsEl.textContent = `🔎 نتائج متوقعة: ${filtered.length}`;
 });
+function formatYMDLocal(dt){
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const d = String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
 /** ================== Boot ================== **/
 loadMine();
 render();
 refreshMine();       // يعرض أوردراتك المعتادة
 loadAllForIndex();   // يجهز الداتا للبحث تلقائي
+refreshShipMonitor();
+setInterval(refreshShipMonitor, 60000);
 </script>
 </body>
 </html>
