@@ -655,6 +655,38 @@ body.pdf-mode tbody tr{
   animation: courierPulse 1.2s ease-in-out infinite;
   border-color: rgba(239,68,68,.35);
 }
+/* ===== Force Print Mode (Android friendly) ===== */
+body.force-print .no-print{
+  display:none !important;
+}
+
+body.force-print .print-header,
+body.force-print .print-summary{
+  display:block !important;
+}
+
+/* اطبع printArea بس */
+body.force-print .wrap > :not(#printArea){
+  display:none !important;
+}
+
+body.force-print #printArea{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding:8mm !important;
+  background:#fff !important;
+  border:0 !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+}
+
+/* احتياط: اخفاء اول عمود حتى لو no-print فشل */
+body.force-print table thead th:first-child,
+body.force-print table tbody td:first-child{
+  display:none !important;
+}
 </style>
 </head>
 
@@ -1711,11 +1743,24 @@ function updatePrintSummary(){
 function printA4(){
   updatePrintSummary();
 
-  // امنع تأثيرات UI اللي بتبوظ print في الموبايل
-  document.body.classList.remove("search-open");
+  // فعّل وضع الطباعة الإجباري (بيشتغل حتى لو @media print فشل على الموبايل)
+  document.body.classList.add("force-print");
 
-  window.print();
+  // سيبها فريمين عشان الDOM يلحق يتحدث قبل الطباعة (مهم للموبايل)
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      window.print();
+
+      // Android ساعات ما بيشغلش afterprint.. فـ نشيلها بتايمر
+      setTimeout(()=>document.body.classList.remove("force-print"), 1500);
+    });
+  });
 }
+
+// لو المتصفح بيدعم afterprint
+window.addEventListener("afterprint", ()=>{
+  document.body.classList.remove("force-print");
+});
 
 /** ================== QR Scan ================== **/
 async function startScan(){
