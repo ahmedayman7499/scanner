@@ -85,6 +85,13 @@ tbody tr{break-inside: avoid; page-break-inside: avoid;}
   tr, td, th { page-break-inside: avoid !important; }
   tbody tr { break-inside: avoid !important; }
 }
+@media print{
+  .print-header, .print-summary{ display:block !important; }
+}
+body.pdf-mode .print-header,
+body.pdf-mode .print-summary{
+  display:block !important;
+}
 
 .wrap{max-width:1100px;margin:0 auto}
 
@@ -1708,222 +1715,10 @@ function updatePrintSummary(){
   document.getElementById("pTotalWithShip").textContent = totalWithShip;
 }
 function printA4(){
-
   updatePrintSummary();
-
-  const area = document.getElementById("printArea");
-  if(!area){
-    toast("خطأ في الطباعة");
-    return;
-  }
-
-  const now = new Date().toLocaleString("ar-EG");
-
-  const html = `
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ورقة تسليم</title>
-<style>
-  body{
-    font-family:system-ui,Segoe UI,Arial;
-    margin:0;
-    padding:10mm;
-    background:#fff;
-    color:#000;
-    font-size:12px;
-  }
-
-  h1{
-    font-size:16px;
-    margin:0 0 6px 0;
-  }
-
-  .print-summary{
-    display:grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap:8px;
-    margin:10px 0 12px 0;
-  }
-
-  .print-box{
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:8px 10px;
-  }
-
-  table{
-    width:100%;
-    border-collapse:collapse;
-  }
-
-  th,td{
-    border:1px solid #ddd;
-    padding:6px;
-    font-size:11px;
-    text-align:right;
-    vertical-align:top;
-  }
-
-  th{
-    background:#f4f4f4;
-  }
-
-  .mono{
-    font-variant-numeric:tabular-nums;
-  }
-
-  @page{
-    size:A4 landscape;
-    margin:8mm;
-  }
-
-</style>
-</head>
-<body onload="window.print()">
-
-  <h1>📄 ورقة تسليم للمندوب - white-clothes</h1>
-  <div style="font-size:12px;margin-bottom:8px;">
-    تاريخ الطباعة: ${now}
-  </div>
-
-  ${area.innerHTML}
-
-</body>
-</html>
-  `;
-
-  const w = window.open("", "_blank");
-  if(!w){
-    toast("المتصفح مانع نافذة الطباعة (Pop-up). فعّلها وجرب تاني.");
-    return;
-  }
-
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  window.print();
 }
-function nextFrame(){ return new Promise(r=>requestAnimationFrame(()=>r())); }
-function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
-async function downloadSelectedPDF(){
-  const ids = Array.from(selected);
-  if(ids.length === 0){
-    toast("اختار أوردرات الأول ✅");
-    return;
-  }
-
-  // حفظ الحالة الحالية
-  const prevRows = rows.slice();
-  const prevSelected = new Set(selected);
-
-  // فلترة المحدد فقط
-  const filtered = rows.filter(r => ids.includes(String(r.orderId)));
-  rows = filtered;
-  selected = new Set(ids);
-
-  // تحديث الملخص + إعادة رندر (عشان الملخص يبقى مطابق للمحدد)
-  updatePrintSummary();
-  render();
-
-  // جهّز Wrapper للطباعة (صفحة تانية) — عشان الهيدر يطلع في الموبايل
-  const wrapper = document.createElement("div");
-  wrapper.style.background = "#fff";
-  wrapper.style.color = "#000";
-  wrapper.style.padding = "8mm";
-  wrapper.style.width = "297mm";      // A4 landscape
-  wrapper.style.minHeight = "210mm";  // A4 landscape
-  wrapper.style.fontFamily = "system-ui,Segoe UI,Arial";
-
-  const header = document.createElement("div");
-  header.innerHTML = `
-    <div style="font-size:16px;font-weight:900;margin-bottom:6px">
-      📄 ورقة تسليم للمندوب - white-clothes
-    </div>
-    <div style="font-size:12px;margin-bottom:10px">
-      تاريخ الطباعة: ${new Date().toLocaleString("ar-EG")}
-    </div>
-  `;
-  wrapper.appendChild(header);
-
-  // انسخ الـ printArea (اللي فيه الملخص + الجدول)
-  const area = document.getElementById("printArea");
-  if(!area){
-    toast("❌ printArea مش موجود");
-    // رجّع الحالة
-    rows = prevRows; selected = prevSelected; render();
-    return;
-  }
-
-  const clone = area.cloneNode(true);
-
-  // شيل أي no-print
-  clone.querySelectorAll(".no-print").forEach(el=> el.remove());
-
-  // خلي الجدول من غير scroll
-  const tw = clone.querySelector(".tableWrap");
-  if(tw){
-    tw.style.overflow = "visible";
-    tw.style.border = "0";
-    tw.style.boxShadow = "none";
-    tw.style.background = "#fff";
-  }
-
-  // تأكد إن الجدول ياخد العرض
-  const table = clone.querySelector("table");
-  if(table){
-    table.style.width = "100%";
-    table.style.minWidth = "0";
-  }
-
-  wrapper.appendChild(clone);
-
-  // لازم نضيفه مؤقتًا للـ DOM عشان html2pdf يقيسه صح
-  wrapper.style.position = "fixed";
-  wrapper.style.left = "-99999px";
-  wrapper.style.top = "0";
-  document.body.appendChild(wrapper);
-
-  // استنى layout
-  await nextFrame();
-  await nextFrame();
-  await sleep(200);
-
-  const opt = {
-    margin: 0,
-    filename: `white-clothes_selected_${new Date().toISOString().slice(0,10)}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: wrapper.scrollWidth,
-      windowHeight: wrapper.scrollHeight
-    },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    pagebreak: { mode: ["css","legacy"] }
-  };
-
-  try{
-    await html2pdf().set(opt).from(wrapper).save();
-    toast("✅ تم تحميل PDF للمحدد (بالهيدر)");
-  }catch(e){
-    console.error(e);
-    toast("❌ حصل خطأ في تحميل الـ PDF");
-  }finally{
-    // شيل الـ wrapper
-    wrapper.remove();
-
-    // رجّع الحالة زي ما كانت
-    rows = prevRows;
-    selected = prevSelected;
-    render();
-  }
-}
 /** ================== QR Scan ================== **/
 async function startScan(){
   document.getElementById("qrWrap").style.display = "block";
