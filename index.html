@@ -10,13 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
-/* ══════════════════════════════════════════════
-   WHITE CLOTHES — LUXURY MONOCHROME SYSTEM
-   Aesthetic: Editorial luxury. Black ink on ivory.
-   Like a fashion house's internal ops system.
-   اللوجو أبيض على أسود — الواجهة عكسه تماماً
-══════════════════════════════════════════════ */
-
 :root {
   --ink:      #0a0a0a;
   --ink2:     #141414;
@@ -29,30 +22,24 @@
   --pearl:    #ccc;
   --ivory:    #e8e4dc;
   --white:    #f5f2ed;
-
   --gold:     #c9a84c;
   --gold2:    #b8941e;
   --gold-faint: rgba(201,168,76,.12);
   --gold-glow:  rgba(201,168,76,.25);
-
   --red:      #c0392b;
   --red-faint: rgba(192,57,43,.12);
   --green:    #27ae60;
   --green-faint: rgba(39,174,96,.10);
   --amber:    #d4961a;
   --amber-faint: rgba(212,150,26,.12);
-
-  --r1: 4px;
-  --r2: 8px;
-  --r3: 16px;
-  --r4: 999px;
-
+  --blue:     #3498db;
+  --blue-faint: rgba(52,152,219,.10);
+  --r1: 4px; --r2: 8px; --r3: 16px; --r4: 999px;
   --sh1: 0 2px 16px rgba(0,0,0,.40);
   --sh2: 0 8px 40px rgba(0,0,0,.55);
   --sh3: 0 20px 80px rgba(0,0,0,.70);
 }
 
-/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
 
@@ -63,22 +50,61 @@ body {
   min-height: 100vh;
   padding: 12px;
   overflow-x: hidden;
-  /* Subtle linen grain */
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
-/* ── Typography ── */
 .display { font-family: 'Cormorant Garamond', serif; letter-spacing: .5px; }
 .mono    { font-family: 'JetBrains Mono', monospace; }
 
-/* ══════════════════════════════════════════════
-   TOPBAR — thin editorial header
-══════════════════════════════════════════════ */
+/* ══ DASHBOARD ══ */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.dash-tile {
+  background: var(--ink2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r3);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: border-color .2s, transform .15s;
+}
+.dash-tile:hover { border-color: var(--rule2); transform: translateY(-1px); }
+.dash-tile::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 0 0 var(--r3) var(--r3);
+}
+.dt-gold::after  { background: linear-gradient(90deg, var(--gold2), var(--gold)); }
+.dt-green::after { background: linear-gradient(90deg, #1e8449, var(--green)); }
+.dt-red::after   { background: linear-gradient(90deg, #922b21, var(--red)); }
+.dt-amber::after { background: linear-gradient(90deg, #b7770d, var(--amber)); }
+.dt-blue::after  { background: linear-gradient(90deg, #1a5276, var(--blue)); }
+.dt-pearl::after { background: linear-gradient(90deg, #666, var(--pearl)); }
+
+.dt-icon { font-size: 20px; margin-bottom: 6px; }
+.dt-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 600; color: var(--white);
+  line-height: 1; margin-bottom: 4px;
+}
+.dt-val.dt-gold  { color: var(--gold); }
+.dt-val.dt-green { color: var(--green); }
+.dt-val.dt-red   { color: #e74c3c; }
+.dt-val.dt-amber { color: var(--amber); }
+.dt-val.dt-blue  { color: var(--blue); }
+.dt-lbl { font-size: 10px; color: var(--mist); text-transform: uppercase; letter-spacing: 1.5px; }
+.dt-sub { font-size: 10px; color: var(--mist); margin-top: 3px; }
+
+/* ══ TOPBAR ══ */
 .topbar {
-  position: sticky;
-  top: 8px;
-  z-index: 200;
+  position: sticky; top: 8px; z-index: 200;
   background: rgba(10,10,10,.92);
   backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid var(--rule2);
@@ -86,329 +112,138 @@ body {
   padding: 10px 16px;
   box-shadow: var(--sh2);
 }
-
-/* Gold hairline on top */
 .topbar::before {
   content: "";
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
+  position: absolute; top: 0; left: 20%; right: 20%;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
   opacity: .7;
 }
+.topbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-.topbar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Brand mark */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .brand-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid var(--rule2);
-  background: var(--ink2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--rule2); background: var(--ink2);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
 }
-
-.brand-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
+.brand-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .brand-logo-fallback {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ivory);
-  letter-spacing: -1px;
+  font-size: 16px; font-weight: 700; color: var(--ivory); letter-spacing: -1px;
 }
-
 .brand-text { line-height: 1.1; }
 .brand-name {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--white);
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  font-size: 16px; font-weight: 600; color: var(--white);
+  letter-spacing: 2px; text-transform: uppercase;
 }
-.brand-tagline {
-  font-size: 9px;
-  color: var(--mist);
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  margin-top: 1px;
-}
+.brand-tagline { font-size: 9px; color: var(--mist); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 1px; }
 
-/* Vertical divider */
-.vr {
-  width: 1px;
-  height: 28px;
-  background: var(--rule);
-  flex-shrink: 0;
-}
+.vr { width: 1px; height: 28px; background: var(--rule); flex-shrink: 0; }
 
-/* ── Metric chips ── */
 .metric {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 6px 12px;
-  border-radius: var(--r2);
-  border: 1px solid var(--rule);
-  background: rgba(255,255,255,.03);
-  cursor: default;
-  transition: border-color .2s;
-  white-space: nowrap;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 12px; border-radius: var(--r2);
+  border: 1px solid var(--rule); background: rgba(255,255,255,.03);
+  cursor: default; transition: border-color .2s; white-space: nowrap;
 }
 .metric:hover { border-color: var(--rule2); }
+.metric-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--white); line-height: 1; }
+.metric-lbl { font-size: 9px; color: var(--mist); text-transform: uppercase; letter-spacing: 1.5px; }
 
-.metric-val {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--white);
-  line-height: 1;
-}
-.metric-lbl {
-  font-size: 9px;
-  color: var(--mist);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-}
+.topbar-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* Right side */
-.topbar-actions {
-  margin-inline-start: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ── Topbar Buttons ── */
 .tb-btn {
-  font-family: 'Cairo', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--silver);
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--rule);
-  border-radius: var(--r2);
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: all .18s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  position: relative;
-  letter-spacing: .5px;
+  font-family: 'Cairo', sans-serif; font-size: 11px; font-weight: 700;
+  color: var(--silver); background: rgba(255,255,255,.05);
+  border: 1px solid var(--rule); border-radius: var(--r2);
+  padding: 8px 14px; cursor: pointer; transition: all .18s;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap; position: relative; letter-spacing: .5px;
 }
 .tb-btn:hover { background: rgba(255,255,255,.08); border-color: var(--rule2); color: var(--white); }
 .tb-btn:active { transform: scale(.97); }
 
-/* Print pending button */
-.tb-btn.pending-active {
-  color: var(--gold);
-  border-color: rgba(201,168,76,.35);
-  background: var(--gold-faint);
-}
-@keyframes goldPulse {
-  0%,100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
-  50%      { box-shadow: 0 0 20px var(--gold-glow); }
-}
+.tb-btn.pending-active { color: var(--gold); border-color: rgba(201,168,76,.35); background: var(--gold-faint); }
+@keyframes goldPulse { 0%,100% { box-shadow: 0 0 0 rgba(201,168,76,0); } 50% { box-shadow: 0 0 20px var(--gold-glow); } }
 .tb-btn.pending-active { animation: goldPulse 2.5s ease-in-out infinite; }
 
 .tb-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: var(--r4);
-  background: rgba(201,168,76,.2);
-  border: 1px solid rgba(201,168,76,.3);
-  color: var(--gold);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  padding: 1px 7px; border-radius: var(--r4);
+  background: rgba(201,168,76,.2); border: 1px solid rgba(201,168,76,.3); color: var(--gold);
 }
 
-/* Ship button states */
-.tb-btn.ship-normal { }
-.tb-btn.ship-follow {
-  color: var(--amber);
-  border-color: rgba(212,150,26,.35);
-  background: var(--amber-faint);
-}
-.tb-btn.ship-overdue {
-  color: #e74c3c;
-  border-color: rgba(192,57,43,.35);
-  background: var(--red-faint);
-}
-@keyframes redPulse {
-  0%,100% { box-shadow: 0 0 0 rgba(192,57,43,0); }
-  50%      { box-shadow: 0 0 22px rgba(192,57,43,.3); }
-}
+.tb-btn.ship-follow { color: var(--amber); border-color: rgba(212,150,26,.35); background: var(--amber-faint); }
+.tb-btn.ship-overdue { color: #e74c3c; border-color: rgba(192,57,43,.35); background: var(--red-faint); }
+@keyframes redPulse { 0%,100% { box-shadow: 0 0 0 rgba(192,57,43,0); } 50% { box-shadow: 0 0 22px rgba(192,57,43,.3); } }
 .tb-btn.ship-overdue { animation: redPulse 2.2s ease-in-out infinite; }
 
 .ship-dot {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 5px;
-  border-radius: var(--r4);
-  background: var(--red);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 800;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  font-family: 'JetBrains Mono', monospace;
+  position: absolute; top: -5px; left: -5px;
+  min-width: 17px; height: 17px; padding: 0 5px;
+  border-radius: var(--r4); background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 800; display: none;
+  align-items: center; justify-content: center;
+  border: 2px solid var(--ink); font-family: 'JetBrains Mono', monospace;
 }
 
-.clock {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--mist);
-  letter-spacing: 1px;
-}
+.clock { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--mist); letter-spacing: 1px; }
 
-/* ══════════════════════════════════════════════
-   CARDS
-══════════════════════════════════════════════ */
+/* ══ CARDS ══ */
 .wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
 .card {
-  background: var(--ink2);
-  border: 1px solid var(--rule);
-  border-radius: var(--r3);
-  padding: 16px;
-  box-shadow: var(--sh1);
+  background: var(--ink2); border: 1px solid var(--rule);
+  border-radius: var(--r3); padding: 16px; box-shadow: var(--sh1);
   animation: fadeUp .3s ease;
 }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.card-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--pearl);
-  letter-spacing: .5px;
-}
-
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.card-title { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 600; color: var(--pearl); letter-spacing: .5px; }
 .card-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: var(--r4);
-  border: 1px solid var(--rule);
-  color: var(--silver);
-  background: rgba(255,255,255,.04);
-  margin-inline-start: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 2px 8px; border-radius: var(--r4);
+  border: 1px solid var(--rule); color: var(--silver);
+  background: rgba(255,255,255,.04); margin-inline-start: auto;
 }
+.section-rule { height: 1px; background: var(--rule); margin: 12px 0; }
 
-.section-rule {
-  height: 1px;
-  background: var(--rule);
-  margin: 12px 0;
-}
-
-/* ══════════════════════════════════════════════
-   CONTROLS GRID
-══════════════════════════════════════════════ */
-.ctrl-grid {
-  display: grid;
-  grid-template-columns: 1.8fr 1fr 1fr;
-  gap: 16px;
-}
+/* ══ CONTROLS ══ */
+.ctrl-grid { display: grid; grid-template-columns: 1.8fr 1fr 1fr; gap: 16px; }
 @media (max-width: 820px) { .ctrl-grid { grid-template-columns: 1fr; } }
-
 .ctrl-group { display: flex; flex-direction: column; gap: 8px; }
-
 .ctrl-label {
-  font-size: 9px;
-  color: var(--mist);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 6px;
-  margin-bottom: 2px;
+  font-size: 9px; color: var(--mist); text-transform: uppercase;
+  letter-spacing: 2px; border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px; margin-bottom: 2px;
 }
 
-/* ── Inputs ── */
+/* ══ INPUTS ══ */
 input, select {
-  font-family: 'Cairo', sans-serif;
-  font-size: 13px;
-  color: var(--ivory);
-  background: var(--ink3);
-  border: 1px solid var(--rule);
-  border-radius: var(--r2);
-  padding: 9px 13px;
-  outline: none;
-  width: 100%;
-  min-height: 38px;
+  font-family: 'Cairo', sans-serif; font-size: 13px; color: var(--ivory);
+  background: var(--ink3); border: 1px solid var(--rule);
+  border-radius: var(--r2); padding: 9px 13px;
+  outline: none; width: 100%; min-height: 38px;
   transition: border-color .18s, box-shadow .18s;
 }
 input::placeholder { color: var(--mist); }
-input:focus, select:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-faint);
-}
+input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-faint); }
 select option { background: var(--ink2); }
-
 .input-row { display: flex; gap: 8px; align-items: center; }
 .flex1 { flex: 1; min-width: 0; }
 
-/* ── Buttons ── */
+/* ══ BUTTONS ══ */
 button {
-  font-family: 'Cairo', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ivory);
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--rule);
-  border-radius: var(--r2);
-  padding: 9px 16px;
-  cursor: pointer;
-  transition: all .18s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  min-height: 38px;
-  letter-spacing: .3px;
+  font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700;
+  color: var(--ivory); background: rgba(255,255,255,.06);
+  border: 1px solid var(--rule); border-radius: var(--r2);
+  padding: 9px 16px; cursor: pointer; transition: all .18s;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; white-space: nowrap; min-height: 38px; letter-spacing: .3px;
 }
 button:hover { background: rgba(255,255,255,.10); border-color: var(--rule2); }
 button:active { transform: scale(.97); }
@@ -416,655 +251,271 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none !important; 
 
 .btn-gold {
   background: linear-gradient(145deg, var(--gold), var(--gold2));
-  border-color: rgba(201,168,76,.4);
-  color: #0a0a0a;
-  font-weight: 900;
-  box-shadow: 0 4px 18px var(--gold-faint);
+  border-color: rgba(201,168,76,.4); color: #0a0a0a;
+  font-weight: 900; box-shadow: 0 4px 18px var(--gold-faint);
 }
 .btn-gold:hover { box-shadow: 0 6px 28px var(--gold-glow); transform: translateY(-1px); }
-
-.btn-danger {
-  background: rgba(192,57,43,.15);
-  border-color: rgba(192,57,43,.35);
-  color: #e74c3c;
-}
+.btn-danger { background: rgba(192,57,43,.15); border-color: rgba(192,57,43,.35); color: #e74c3c; }
 .btn-danger:hover { background: rgba(192,57,43,.22); }
-
-.btn-ghost {
-  background: transparent;
-  border-color: var(--rule);
-  font-size: 11px;
-  padding: 6px 12px;
-  min-height: 32px;
-}
-
+.btn-ghost { background: transparent; border-color: var(--rule); font-size: 11px; padding: 6px 12px; min-height: 32px; }
 .btn-w100 { width: 100%; }
 
-/* ══════════════════════════════════════════════
-   LOADING OVERLAY (global spinner)
-══════════════════════════════════════════════ */
+/* ══ LOADING OVERLAY ══ */
 #loadingOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10,10,10,.75);
-  backdrop-filter: blur(6px);
-  z-index: 9000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
+  position: fixed; inset: 0; background: rgba(10,10,10,.75);
+  backdrop-filter: blur(6px); z-index: 9000;
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
 }
 #loadingOverlay.active { display: flex; }
-
-.spinner {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid var(--rule2);
-  border-top-color: var(--gold);
-  animation: spin 0.8s linear infinite;
-}
+.spinner { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--rule2); border-top-color: var(--gold); animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.loading-txt { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--pearl); letter-spacing: 2px; }
 
-.loading-txt {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 16px;
-  color: var(--pearl);
-  letter-spacing: 2px;
-}
-
-/* ══════════════════════════════════════════════
-   STATUS CHANGE TOAST (inline, not bottom)
-   يظهر تحت الأوردرات مباشرة مع progress bar
-══════════════════════════════════════════════ */
+/* ══ TOAST ══ */
 #statusToast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
+  position: fixed; bottom: 20px; left: 50%;
   transform: translateX(-50%) translateY(20px);
-  opacity: 0;
-  transition: all .3s cubic-bezier(.34,1.56,.64,1);
-  z-index: 8000;
-  pointer-events: none;
-  min-width: 280px;
-  max-width: 90vw;
+  opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  z-index: 8000; pointer-events: none; min-width: 280px; max-width: 90vw;
 }
-#statusToast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
-
+#statusToast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 .toast-box {
-  background: var(--ink2);
-  border: 1px solid var(--rule2);
-  border-radius: var(--r3);
-  padding: 14px 18px;
-  box-shadow: var(--sh3);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
-  overflow: hidden;
+  background: var(--ink2); border: 1px solid var(--rule2);
+  border-radius: var(--r3); padding: 14px 18px; box-shadow: var(--sh3);
+  display: flex; align-items: center; gap: 12px;
+  position: relative; overflow: hidden;
 }
-
-.toast-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
+.toast-icon { font-size: 20px; flex-shrink: 0; }
 .toast-body { flex: 1; min-width: 0; }
 .toast-title { font-size: 13px; font-weight: 700; color: var(--white); }
 .toast-sub   { font-size: 11px; color: var(--silver); margin-top: 2px; }
-
 .toast-progress {
-  position: absolute;
-  bottom: 0; left: 0;
-  height: 2px;
-  border-radius: 0 0 var(--r3) var(--r3);
-  background: var(--gold);
-  width: 100%;
-  transform-origin: left;
+  position: absolute; bottom: 0; left: 0; height: 2px;
+  border-radius: 0 0 var(--r3) var(--r3); background: var(--gold);
+  width: 100%; transform-origin: left;
   animation: progressShrink 2.8s linear forwards;
 }
-@keyframes progressShrink {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
-}
+@keyframes progressShrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.toast-box.t-ok   .toast-progress { background: var(--green); }
+.toast-box.t-warn .toast-progress { background: var(--amber); }
+.toast-box.t-err  .toast-progress { background: var(--red); }
+.toast-box.t-ok   { border-color: rgba(39,174,96,.3); }
+.toast-box.t-warn { border-color: rgba(212,150,26,.3); }
+.toast-box.t-err  { border-color: rgba(192,57,43,.3); }
 
-.toast-box.t-ok    .toast-progress { background: var(--green); }
-.toast-box.t-warn  .toast-progress { background: var(--amber); }
-.toast-box.t-err   .toast-progress { background: var(--red); }
-.toast-box.t-ok    { border-color: rgba(39,174,96,.3); }
-.toast-box.t-warn  { border-color: rgba(212,150,26,.3); }
-.toast-box.t-err   { border-color: rgba(192,57,43,.3); }
-
-/* ══════════════════════════════════════════════
-   PRINT MENU POPUP (يظهر تحت الزرار)
-══════════════════════════════════════════════ */
-#printMenu {
-  position: fixed;
-  z-index: 500;
-  display: none;
-  min-width: 260px;
-}
+/* ══ PRINT MENU ══ */
+#printMenu { position: fixed; z-index: 500; display: none; min-width: 260px; }
 #printMenu.open { display: block; animation: menuIn .18s ease; }
-@keyframes menuIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.print-menu-box {
-  background: var(--ink2);
-  border: 1px solid var(--rule2);
-  border-radius: var(--r3);
-  box-shadow: var(--sh3);
-  overflow: hidden;
-  padding: 6px;
-}
-
-.pm-header {
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 6px;
-}
-.pm-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 14px;
-  color: var(--pearl);
-  letter-spacing: .5px;
-}
+@keyframes menuIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.print-menu-box { background: var(--ink2); border: 1px solid var(--rule2); border-radius: var(--r3); box-shadow: var(--sh3); overflow: hidden; padding: 6px; }
+.pm-header { padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
+.pm-title { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--pearl); letter-spacing: .5px; }
 .pm-sub { font-size: 10px; color: var(--mist); margin-top: 2px; }
-
 .pm-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--r2);
-  cursor: pointer;
-  transition: background .15s;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: right;
-  color: var(--ivory);
-  font-family: 'Cairo', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  min-height: unset;
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: var(--r2); cursor: pointer; transition: background .15s;
+  border: none; background: transparent; width: 100%; text-align: right;
+  color: var(--ivory); font-family: 'Cairo', sans-serif;
+  font-size: 12px; font-weight: 600; min-height: unset;
 }
 .pm-item:hover { background: rgba(255,255,255,.06); }
-
 .pm-count {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--r4);
-  border: 1px solid var(--rule);
-  background: rgba(255,255,255,.05);
-  color: var(--silver);
-  margin-inline-start: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: var(--r4);
+  border: 1px solid var(--rule); background: rgba(255,255,255,.05);
+  color: var(--silver); margin-inline-start: auto;
 }
+.pm-count.gold { border-color: rgba(201,168,76,.35); background: var(--gold-faint); color: var(--gold); }
 
-.pm-count.gold {
-  border-color: rgba(201,168,76,.35);
-  background: var(--gold-faint);
-  color: var(--gold);
-}
-
-/* ══════════════════════════════════════════════
-   TABLE
-══════════════════════════════════════════════ */
-.tbl-wrap {
-  width: 100%;
-  overflow-x: auto;
-  border-radius: var(--r2);
-  border: 1px solid var(--rule);
-}
-
+/* ══ TABLE ══ */
+.tbl-wrap { width: 100%; overflow-x: auto; border-radius: var(--r2); border: 1px solid var(--rule); }
 table { width: 100%; border-collapse: collapse; min-width: 820px; }
-
 thead { position: sticky; top: 0; z-index: 10; }
-
 thead th {
-  background: var(--ink3);
-  border-bottom: 1px solid var(--rule2);
-  padding: 9px 14px;
-  text-align: right;
-  font-size: 9px;
-  color: var(--mist);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-weight: 600;
-  white-space: nowrap;
+  background: var(--ink3); border-bottom: 1px solid var(--rule2);
+  padding: 9px 14px; text-align: right; font-size: 9px; color: var(--mist);
+  text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; white-space: nowrap;
 }
-
-tbody tr {
-  border-bottom: 1px solid var(--rule);
-  transition: background .12s;
-  break-inside: avoid;
-}
+tbody tr { border-bottom: 1px solid var(--rule); transition: background .12s; break-inside: avoid; }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(255,255,255,.025); }
+tbody td { padding: 11px 14px; font-size: 12px; color: var(--silver); vertical-align: top; }
 
-tbody td {
-  padding: 11px 14px;
-  font-size: 12px;
-  color: var(--silver);
-  vertical-align: top;
-}
-
-.td-id {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gold) !important;
-}
+.td-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--gold) !important; }
 .td-name { color: var(--ivory) !important; font-weight: 600; }
-.td-phone {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--pearl) !important;
-}
+.td-phone { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--pearl) !important; }
 .td-addr { font-size: 11px; line-height: 1.6; }
-.td-amount {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--white) !important;
-}
+.td-amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--white) !important; }
+.td-date { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mist) !important; }
 
-/* ── Badges ── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
-  border-radius: var(--r4);
-  font-size: 10px;
-  font-weight: 700;
-  border: 1px solid;
-  white-space: nowrap;
-  letter-spacing: .3px;
-}
+/* Phone + address inline for print */
+.addr-line { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+.addr-sep { color: var(--rule2); font-size: 10px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: var(--r4); font-size: 10px; font-weight: 700; border: 1px solid; white-space: nowrap; letter-spacing: .3px; }
 .badge-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-
 .b-ok   { color: var(--green); border-color: rgba(39,174,96,.3); background: var(--green-faint); }
 .b-ok .badge-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
 .b-warn { color: var(--amber); border-color: rgba(212,150,26,.3); background: var(--amber-faint); }
 .b-warn .badge-dot { background: var(--amber); }
 .b-err  { color: var(--red); border-color: rgba(192,57,43,.3); background: var(--red-faint); }
 .b-err .badge-dot { background: var(--red); }
+.b-cancel { color: var(--mist); border-color: rgba(136,136,136,.2); background: rgba(136,136,136,.06); }
+.b-cancel .badge-dot { background: var(--mist); }
 
-/* Days badge */
-.days-chip {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 9px;
-  border-radius: var(--r4);
-  border: 1px solid rgba(212,150,26,.3);
-  background: var(--amber-faint);
-  color: var(--amber);
-}
+.days-chip { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: var(--r4); border: 1px solid rgba(212,150,26,.3); background: var(--amber-faint); color: var(--amber); }
 .days-chip.danger { border-color: rgba(192,57,43,.3); background: var(--red-faint); color: var(--red); }
 .days-chip.safe   { border-color: rgba(39,174,96,.25); background: var(--green-faint); color: var(--green); }
 
-/* Courier chip */
-.courier-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: var(--r4);
-  font-size: 10px;
-  font-weight: 600;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-}
+.courier-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r4); font-size: 10px; font-weight: 600; border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); }
 .courier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
-/* ── Checkbox ── */
-input[type=checkbox] {
-  width: 15px;
-  height: 15px;
-  min-height: unset;
-  padding: 0;
-  border-radius: 3px;
-  background: var(--ink3);
-  border: 1px solid var(--rule2);
-  accent-color: var(--gold);
-  cursor: pointer;
-  flex-shrink: 0;
-}
+input[type=checkbox] { width: 15px; height: 15px; min-height: unset; padding: 0; border-radius: 3px; background: var(--ink3); border: 1px solid var(--rule2); accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
 
-/* ══════════════════════════════════════════════
-   QR Scanner
-══════════════════════════════════════════════ */
+/* ══ QR ══ */
 #qrWrap { display: none; margin-top: 12px; animation: fadeUp .3s ease; }
-
-.qr-shell {
-  position: relative;
-  max-width: 460px;
-  border-radius: var(--r2);
-  overflow: hidden;
-  border: 1px solid var(--rule2);
-  background: #000;
-}
-
+.qr-shell { position: relative; max-width: 460px; border-radius: var(--r2); overflow: hidden; border: 1px solid var(--rule2); background: #000; }
 #qr-reader { width: 100%; }
-
-.qr-overlay {
-  position: absolute; inset: 0;
-  pointer-events: none;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.qr-frame {
-  width: 200px; height: 200px;
-  position: relative;
-}
-
-.qr-frame::before, .qr-frame::after,
-.qr-br::before, .qr-br::after {
-  content: "";
-  position: absolute;
-  width: 22px; height: 22px;
-  border-color: var(--gold);
-  border-style: solid;
-}
+.qr-overlay { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.qr-frame { width: 200px; height: 200px; position: relative; }
+.qr-frame::before, .qr-frame::after, .qr-br::before, .qr-br::after { content: ""; position: absolute; width: 22px; height: 22px; border-color: var(--gold); border-style: solid; }
 .qr-frame::before { top:0; right:0; border-width: 2px 2px 0 0; }
 .qr-frame::after  { top:0; left:0;  border-width: 2px 0 0 2px; }
 .qr-br::before    { bottom:0; right:0; border-width: 0 2px 2px 0; }
 .qr-br::after     { bottom:0; left:0;  border-width: 0 0 2px 2px; }
-
-.qr-scan {
-  position: absolute; left: 5%; right: 5%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  box-shadow: 0 0 8px var(--gold);
-  animation: scan 2s ease-in-out infinite alternate;
-}
+.qr-scan { position: absolute; left: 5%; right: 5%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); box-shadow: 0 0 8px var(--gold); animation: scan 2s ease-in-out infinite alternate; }
 @keyframes scan { from { top: 8%; } to { top: 92%; } }
+.qr-mask { position: absolute; inset: 0; background: rgba(0,0,0,.4); mask-image: radial-gradient(ellipse 200px 200px at 50% 50%, transparent 50%, black 51%); -webkit-mask-image: radial-gradient(ellipse 200px 200px at 50% 50%, transparent 50%, black 51%); }
 
-.qr-mask {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,.4);
-  mask-image: radial-gradient(ellipse 200px 200px at 50% 50%, transparent 50%, black 51%);
-  -webkit-mask-image: radial-gradient(ellipse 200px 200px at 50% 50%, transparent 50%, black 51%);
-}
-
-/* ══════════════════════════════════════════════
-   SHIP MONITOR — tabs
-══════════════════════════════════════════════ */
-.ship-tabs {
-  display: flex;
-  gap: 4px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--rule);
-  border-radius: var(--r2);
-  padding: 3px;
-  width: fit-content;
-}
-
-.ship-tab {
-  padding: 7px 14px;
-  border-radius: var(--r1);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mist);
-  cursor: pointer;
-  transition: all .18s;
-  border: 1px solid transparent;
-  background: transparent;
-  min-height: unset;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  letter-spacing: .3px;
-}
+/* ══ SHIP MONITOR TABS ══ */
+.ship-tabs { display: flex; gap: 4px; background: rgba(255,255,255,.03); border: 1px solid var(--rule); border-radius: var(--r2); padding: 3px; width: fit-content; }
+.ship-tab { padding: 7px 14px; border-radius: var(--r1); font-size: 11px; font-weight: 700; color: var(--mist); cursor: pointer; transition: all .18s; border: 1px solid transparent; background: transparent; min-height: unset; display: flex; align-items: center; gap: 6px; letter-spacing: .3px; }
 .ship-tab:hover { color: var(--silver); }
-
 .ship-tab.tab-normal  { color: var(--green); background: var(--green-faint); border-color: rgba(39,174,96,.25); }
 .ship-tab.tab-follow  { color: var(--amber); background: var(--amber-faint); border-color: rgba(212,150,26,.25); }
 .ship-tab.tab-overdue { color: var(--red);   background: var(--red-faint);   border-color: rgba(192,57,43,.25); }
+.tab-n { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: var(--r4); background: rgba(255,255,255,.08); }
 
-.tab-n {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: var(--r4);
-  background: rgba(255,255,255,.08);
-}
-
-/* Courier filter badges */
 .c-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-
-.c-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: var(--r4);
-  border: 1px solid var(--rule);
-  background: rgba(255,255,255,.04);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--silver);
-  transition: all .15s;
-  min-height: unset;
-}
+.c-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r4); border: 1px solid var(--rule); background: rgba(255,255,255,.04); cursor: pointer; font-size: 11px; font-weight: 600; color: var(--silver); transition: all .15s; min-height: unset; }
 .c-badge:hover { border-color: var(--rule2); color: var(--ivory); }
 .c-badge.active { border-color: var(--gold); background: var(--gold-faint); color: var(--gold); }
 .c-badge.overdue-c { border-color: rgba(192,57,43,.3); background: var(--red-faint); color: #e74c3c; }
-@keyframes redBadgePulse {
-  0%,100% { box-shadow: 0 0 0 rgba(192,57,43,0); }
-  50% { box-shadow: 0 0 14px rgba(192,57,43,.3); }
-}
+@keyframes redBadgePulse { 0%,100% { box-shadow: 0 0 0 rgba(192,57,43,0); } 50% { box-shadow: 0 0 14px rgba(192,57,43,.3); } }
 .c-badge.overdue-c { animation: redBadgePulse 2s ease-in-out infinite; }
+.c-n { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 1px 6px; border-radius: var(--r4); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
 
-.c-n {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: var(--r4);
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.08);
+/* ══ SHIP SUMMARY BAR ══ */
+.ship-summary-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px; margin-bottom: 10px;
+  padding: 10px; background: var(--ink3);
+  border-radius: var(--r2); border: 1px solid var(--rule);
 }
+.ssb-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ssb-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--white); }
+.ssb-val.gold  { color: var(--gold); }
+.ssb-val.green { color: var(--green); }
+.ssb-val.red   { color: #e74c3c; }
+.ssb-lbl { font-size: 9px; color: var(--mist); text-transform: uppercase; letter-spacing: 1.5px; text-align: center; }
 
-/* ══════════════════════════════════════════════
-   SEARCH CARD highlight
-══════════════════════════════════════════════ */
-#searchCard {
-  border-color: rgba(201,168,76,.25);
-  box-shadow: var(--sh1), 0 0 30px var(--gold-faint);
-}
-#searchCard::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  border-radius: var(--r3) var(--r3) 0 0;
-}
+/* ══ SEARCH CARD ══ */
+#searchCard { border-color: rgba(201,168,76,.25); box-shadow: var(--sh1), 0 0 30px var(--gold-faint); }
+#searchCard::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); border-radius: var(--r3) var(--r3) 0 0; }
 
-/* ══════════════════════════════════════════════
-   EMPTY STATE
-══════════════════════════════════════════════ */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40px 20px;
-  gap: 8px;
-  color: var(--mist);
-  text-align: center;
-}
+/* ══ EMPTY STATE ══ */
+.empty { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 8px; color: var(--mist); text-align: center; }
 .empty-icon { font-size: 32px; opacity: .3; }
 .empty-text { font-family: 'Cormorant Garamond', serif; font-size: 16px; }
 .empty-sub  { font-size: 11px; opacity: .6; }
 
-/* ══════════════════════════════════════════════
-   PRINT & PDF
-══════════════════════════════════════════════ */
+/* ══ PRINT / PDF ══ */
 .print-header, .print-summary { display: none; }
-
 @page { margin: 9mm; size: A4 landscape; }
 
 @media print {
-  *, *::before, *::after {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  html, body {
-    background: #fff !important; color: #000 !important;
-    margin: 0 !important; padding: 0 !important;
-    font-family: 'Cairo', Arial, sans-serif !important;
-    font-size: 12px !important;
-  }
-
+  *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  html, body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; font-family: 'Cairo', Arial, sans-serif !important; font-size: 12px !important; }
   body::before, body::after { display: none !important; }
-
-  .no-print, .topbar, #ctrlCard, #indexCard,
-  #searchCard, #shipCard, button { display: none !important; }
-
+  .no-print, .topbar, #ctrlCard, #indexCard, #searchCard, #shipCard, #awaitCard, #dashCard, button { display: none !important; }
   .wrap { max-width: none !important; gap: 0 !important; padding: 0 !important; }
-
-  .card, #printArea {
-    background: #fff !important; border: none !important;
-    box-shadow: none !important; border-radius: 0 !important;
-    padding: 0 !important; margin: 0 !important;
-  }
-
-  .print-header { display: block !important; margin-bottom: 10px !important; color: #000 !important; }
-  .print-title { font-size: 16px !important; font-weight: 900 !important; color: #000 !important; }
-
-  .print-summary {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 8px !important; margin: 8px 0 14px !important;
-  }
-  .print-box {
-    border: 1px solid #bbb !important; border-radius: 6px !important;
-    padding: 8px 12px !important; font-size: 12px !important;
-    color: #000 !important; background: #fff !important; line-height: 1.8 !important;
-  }
-
+  .card, #printArea { background: #fff !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; }
+  .print-header { display: block !important; margin-bottom: 14px !important; padding-bottom:10px !important; border-bottom: 2px solid #111 !important; }
+  .print-title { font-size: 20px !important; font-weight: 900 !important; color: #111 !important; letter-spacing: 3px !important; text-transform: uppercase !important; }
+  #printDate { font-size: 11px !important; color: #666 !important; margin-top: 3px !important; }
+  .print-summary { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 8px !important; margin: 8px 0 14px !important; }
+  .print-box { border: 1px solid #bbb !important; border-radius: 6px !important; padding: 12px 16px !important; font-size: 12px !important; color: #000 !important; background: #fafafa !important; line-height: 1.8 !important; }
+  .print-box div { margin-bottom: 5px !important; line-height: 1.6 !important; }
+  .print-box b { margin-left: 3px !important; }
   .tbl-wrap { border: 1px solid #ccc !important; overflow: visible !important; box-shadow: none !important; }
   table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; }
-
-  thead th {
-    position: static !important; background: #f2f2f2 !important;
-    border: 1px solid #ccc !important; color: #000 !important;
-    font-size: 10px !important; padding: 7px 10px !important;
-    text-transform: uppercase !important; letter-spacing: .5px !important;
-  }
-
+  thead th { position: static !important; background: #111 !important; border: 1px solid #111 !important; color: #fff !important; font-size: 10px !important; padding: 8px 12px !important; text-transform: uppercase !important; letter-spacing: 1px !important; font-weight: 700 !important; }
   thead th:first-child, tbody td:first-child { display: none !important; }
-
-  tbody td {
-    border: 1px solid #ddd !important; padding: 8px 10px !important;
-    font-size: 11px !important; color: #000 !important; background: #fff !important;
-  }
-
-  tbody td *, .td-id, .td-phone, .td-amount, .td-name, .td-addr, .mono {
-    color: #000 !important; font-family: 'Cairo', Arial, sans-serif !important;
-  }
-
-  .badge {
-    border: 1px solid #bbb !important; background: #f5f5f5 !important;
-    color: #000 !important; font-size: 10px !important;
-    padding: 2px 8px !important; border-radius: 999px !important;
-    display: inline-block !important;
-  }
+  tbody td { border: 1px solid #ddd !important; padding: 8px 10px !important; font-size: 11px !important; color: #000 !important; background: #fff !important; }
+  tbody td *, .td-id, .td-phone, .td-amount, .td-name, .td-addr, .mono, .td-date { color: #000 !important; font-family: 'Cairo', Arial, sans-serif !important; }
+  .badge { border: 1px solid #bbb !important; background: #f5f5f5 !important; color: #000 !important; font-size: 10px !important; padding: 2px 8px !important; border-radius: 999px !important; display: inline-block !important; }
   .badge-dot { display: none !important; }
-
+  .addr-line { display: block !important; }
   tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
-  tbody tr   { break-inside: avoid !important; }
-  .empty     { display: none !important; }
+  tbody tr { break-inside: avoid !important; }
+  .empty { display: none !important; }
   .card-header { display: none !important; }
 }
 
-/* PDF Mode */
-body.pdf-mode {
-  background: #fff !important; color: #000 !important;
-  padding: 0 !important; margin: 0 !important;
-  font-family: 'Cairo', Arial, sans-serif !important;
-}
+/* ══ PDF MODE ══ */
+body.pdf-mode { background: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; font-family: 'Cairo', Arial, sans-serif !important; }
 body.pdf-mode::before, body.pdf-mode::after { display: none !important; }
-body.pdf-mode .no-print,
-body.pdf-mode .topbar,
-body.pdf-mode #ctrlCard,
-body.pdf-mode #indexCard,
-body.pdf-mode #searchCard,
-body.pdf-mode #shipCard { display: none !important; }
+body.pdf-mode .no-print, body.pdf-mode .topbar, body.pdf-mode #ctrlCard, body.pdf-mode #indexCard, body.pdf-mode #searchCard, body.pdf-mode #shipCard, body.pdf-mode #awaitCard, body.pdf-mode #dashCard { display: none !important; }
 body.pdf-mode .wrap { max-width: none !important; gap: 0 !important; padding: 0 !important; }
-body.pdf-mode .card, body.pdf-mode #printArea {
-  background: #fff !important; border: none !important;
-  box-shadow: none !important; border-radius: 0 !important;
-  padding: 6mm !important; margin: 0 !important;
-}
+body.pdf-mode .card, body.pdf-mode #printArea { background: #fff !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 6mm !important; margin: 0 !important; }
 body.pdf-mode .card-header { display: none !important; }
 body.pdf-mode .print-header { display: block !important; margin-bottom: 10px !important; }
-body.pdf-mode .print-summary {
-  display: grid !important; grid-template-columns: 1fr 1fr 1fr !important;
-  gap: 8px !important; margin: 8px 0 12px !important;
-}
-body.pdf-mode .print-box {
-  border: 1px solid #bbb !important; border-radius: 6px !important;
-  padding: 8px 12px !important; color: #000 !important;
-  background: #fff !important; font-size: 11px !important; line-height: 1.8 !important;
-}
-body.pdf-mode .tbl-wrap {
-  border: 1px solid #ccc !important; overflow: visible !important;
-  box-shadow: none !important; background: #fff !important;
-}
+body.pdf-mode .print-summary { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 8px !important; margin: 8px 0 12px !important; }
+body.pdf-mode .print-box { border: 1px solid #bbb !important; border-radius: 6px !important; padding: 8px 12px !important; color: #000 !important; background: #fff !important; font-size: 11px !important; line-height: 1.8 !important; }
+body.pdf-mode .tbl-wrap { border: 1px solid #ccc !important; overflow: visible !important; box-shadow: none !important; background: #fff !important; }
 body.pdf-mode table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; }
-body.pdf-mode thead th {
-  position: static !important; background: #f2f2f2 !important;
-  border: 1px solid #ccc !important; color: #000 !important;
-  font-size: 10px !important; padding: 7px 10px !important;
-  backdrop-filter: none !important; letter-spacing: .5px !important;
-  text-transform: uppercase !important;
-}
-body.pdf-mode thead th:first-child,
-body.pdf-mode tbody td:first-child { display: none !important; }
-body.pdf-mode tbody td {
-  border: 1px solid #ddd !important; padding: 8px 10px !important;
-  font-size: 11px !important; color: #000 !important; background: #fff !important;
-}
-body.pdf-mode tbody td *, body.pdf-mode .td-id, body.pdf-mode .td-phone,
-body.pdf-mode .td-amount, body.pdf-mode .td-name, body.pdf-mode .mono {
-  color: #000 !important; font-family: 'Cairo', Arial, sans-serif !important;
-}
-body.pdf-mode .badge {
-  border: 1px solid #bbb !important; background: #f5f5f5 !important;
-  color: #000 !important; font-size: 10px !important; padding: 2px 8px !important;
-  border-radius: 999px !important; display: inline-block !important;
-}
+body.pdf-mode thead th { position: static !important; background: #f2f2f2 !important; border: 1px solid #ccc !important; color: #000 !important; font-size: 10px !important; padding: 7px 10px !important; backdrop-filter: none !important; letter-spacing: .5px !important; text-transform: uppercase !important; }
+body.pdf-mode thead th:first-child, body.pdf-mode tbody td:first-child { display: none !important; }
+body.pdf-mode tbody td { border: 1px solid #ddd !important; padding: 8px 10px !important; font-size: 11px !important; color: #000 !important; background: #fff !important; }
+body.pdf-mode tbody td *, body.pdf-mode .td-id, body.pdf-mode .td-phone, body.pdf-mode .td-amount, body.pdf-mode .td-name, body.pdf-mode .mono, body.pdf-mode .td-date { color: #000 !important; font-family: 'Cairo', Arial, sans-serif !important; }
+body.pdf-mode .badge { border: 1px solid #bbb !important; background: #f5f5f5 !important; color: #000 !important; font-size: 10px !important; padding: 2px 8px !important; border-radius: 999px !important; display: inline-block !important; }
 body.pdf-mode .badge-dot { display: none !important; }
-body.pdf-mode tr, body.pdf-mode tbody tr {
-  break-inside: avoid !important; page-break-inside: avoid !important;
-}
+body.pdf-mode .addr-line { display: block !important; }
+body.pdf-mode tr, body.pdf-mode tbody tr { break-inside: avoid !important; page-break-inside: avoid !important; }
 body.pdf-mode .empty, body.pdf-mode button { display: none !important; }
 body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !important; }
 
-/* ── Shake ── */
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  20% { transform: translateX(-7px); }
-  40% { transform: translateX(7px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
-}
+/* ══ NOTIFICATION PANEL ══ */
+#notifPanel { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); width: min(480px, 94vw); z-index: 8500; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.notif-card { background: var(--ink2); border: 1px solid rgba(201,168,76,.35); border-radius: var(--r3); padding: 12px 16px; box-shadow: var(--sh3), 0 0 30px var(--gold-faint); display: flex; align-items: flex-start; gap: 12px; pointer-events: all; animation: notifSlideIn .35s cubic-bezier(.34,1.56,.64,1); position: relative; overflow: hidden; }
+@keyframes notifSlideIn { from { opacity:0; transform:translateY(-12px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+.notif-card::before { content:""; position:absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--gold), var(--amber)); }
+.notif-card.duplicate { border-color: rgba(192,57,43,.40); }
+.notif-card.duplicate::before { background: linear-gradient(90deg, var(--red), #e74c3c); }
+.notif-icon { font-size:22px; flex-shrink:0; line-height:1; }
+.notif-body { flex:1; min-width:0; }
+.notif-title { font-size:13px; font-weight:700; color:var(--white); margin-bottom:3px; }
+.notif-sub   { font-size:11px; color:var(--silver); line-height:1.5; }
+.notif-actions { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.notif-btn { font-size:11px; font-weight:700; padding:5px 12px; border-radius:var(--r4); border:1px solid var(--rule2); background: rgba(255,255,255,.07); color: var(--ivory); cursor:pointer; min-height:unset; transition: all .15s; }
+.notif-btn:hover { background: rgba(255,255,255,.13); }
+.notif-btn.gold { background: var(--gold-faint); border-color: rgba(201,168,76,.35); color: var(--gold); }
+.notif-btn.gold:hover { background: rgba(201,168,76,.20); }
+.notif-close { position:absolute; top:8px; left:10px; font-size:14px; color:var(--mist); cursor:pointer; background:none; border:none; min-height:unset; padding:2px 6px; }
+.notif-close:hover { color:var(--silver); }
+
+@keyframes dupShake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-3px)} 90%{transform:translateX(3px)} }
+.dup-shake { animation: dupShake .6s ease; }
+
+/* ══ SCROLL TOP ══ */
+#scrollTopBtn { position: fixed; bottom: 24px; left: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--ink2); border: 1px solid var(--rule2); color: var(--silver); font-size: 16px; cursor: pointer; box-shadow: var(--sh2); display: none; align-items: center; justify-content: center; z-index: 300; transition: all .2s; min-height: unset; padding: 0; }
+#scrollTopBtn:hover { background: var(--ink3); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px var(--gold-faint); }
+#scrollTopBtn.visible { display: flex; }
+
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 .shake { animation: shake .5s ease; }
 
-/* ── Mobile ── */
 @media (max-width: 640px) {
   body { padding: 8px; }
   .topbar { border-radius: 12px; padding: 8px 12px; top: 6px; }
@@ -1073,10 +524,10 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
   .metric { padding: 5px 8px; }
   .tb-btn { padding: 7px 10px; font-size: 10px; }
   .clock { display: none; }
+  .dash-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
-
 <body>
 
 <!-- ══ LOADING OVERLAY ══ -->
@@ -1084,6 +535,9 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
   <div class="spinner"></div>
   <div class="loading-txt" id="loadingTxt">جاري التحديث…</div>
 </div>
+
+<!-- ══ NOTIFICATION PANEL ══ -->
+<div id="notifPanel"></div>
 
 <!-- ══ STATUS TOAST ══ -->
 <div id="statusToast">
@@ -1105,113 +559,135 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       <div class="pm-sub">اختار الفواتير اللي عايز تطبعها</div>
     </div>
     <button class="pm-item" onclick="doPrintBatch('new')">
-      <span>🆕</span>
-      <span>الفواتير الجديدة (new)</span>
+      <span>🆕</span><span>الفواتير الجديدة (new)</span>
       <span class="pm-count gold" id="pmNewCount">0</span>
     </button>
     <button class="pm-item" onclick="doPrintBatch('pending')">
-      <span>🖨️</span>
-      <span>تحت الطباعة</span>
+      <span>🖨️</span><span>تحت الطباعة</span>
       <span class="pm-count gold" id="pmPendingCount">0</span>
     </button>
     <button class="pm-item" onclick="doPrintBatch('both')">
-      <span>📋</span>
-      <span>الكل (جديد + تحت الطباعة)</span>
+      <span>📋</span><span>الكل (جديد + تحت الطباعة)</span>
       <span class="pm-count gold" id="pmBothCount">0</span>
     </button>
   </div>
 </div>
 
+<!-- ══ INLINE MODAL ══ -->
+<div id="inlineModal" style="position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9500;display:none;align-items:center;justify-content:center;">
+  <div id="inlineModalBox" style="background:var(--ink2);border:1px solid var(--rule2);border-radius:var(--r3);padding:24px;min-width:320px;max-width:90vw;box-shadow:var(--sh3);position:relative;animation:fadeUp .25s ease;">
+    <div id="inlineModalContent"></div>
+  </div>
+</div>
+
 <div class="wrap">
 
-  <!-- ══════════ TOPBAR ══════════ -->
+  <!-- ══ TOPBAR ══ -->
   <div class="topbar no-print">
     <div class="topbar-row">
-
       <div class="brand">
         <div class="brand-logo">
-          <img src="/mnt/user-data/uploads/1752347012924190719.png" alt="WC" onerror="this.parentElement.innerHTML='<span class=\'brand-logo-fallback\'>WC</span>'">
+          <img src="logo.png" alt="WC" onerror="this.parentElement.innerHTML='<span class=\'brand-logo-fallback\'>WC</span>'">
         </div>
         <div class="brand-text">
           <div class="brand-name">White Clothes</div>
           <div class="brand-tagline">Delivery System</div>
         </div>
       </div>
-
       <div class="vr"></div>
-
-      <div class="metric">
-        <div class="metric-val" id="metricOrders">0</div>
-        <div class="metric-lbl">طلبات</div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-val" id="metricSubtotal">0</div>
-        <div class="metric-lbl">تحصيل</div>
-      </div>
-
-      <div class="metric">
-        <div class="metric-val" id="metricShipping">0</div>
-        <div class="metric-lbl">شحن</div>
-      </div>
-
+      <div class="metric"><div class="metric-val" id="metricOrders">0</div><div class="metric-lbl">طلبات</div></div>
+      <div class="metric"><div class="metric-val" id="metricSubtotal">0</div><div class="metric-lbl">تحصيل</div></div>
+      <div class="metric"><div class="metric-val" id="metricShipping">0</div><div class="metric-lbl">شحن</div></div>
       <div class="topbar-actions">
-
-        <!-- Print Pending -->
         <button class="tb-btn" id="printPendingBtn" onclick="togglePrintMenu(event)">
-          🖨️ فواتير
-          <span class="tb-badge" id="pendingTotal">0</span>
+          🖨️ فواتير <span class="tb-badge" id="pendingTotal">0</span>
         </button>
-
         <div class="vr"></div>
-
-        <!-- Ship Monitor -->
+        <button class="tb-btn" id="awaitBtn" onclick="toggleAwaitCard()" title="طلبات تم طباعتها وبتنتظر الشحن">
+          📦 انتظار الشحن <span class="tb-badge" id="awaitCountBadge">0</span>
+        </button>
+        <div class="vr"></div>
         <button class="tb-btn ship-normal" id="shipBtn" onclick="toggleShipCard()">
-          🚚 شحن
-          <span class="tb-badge" id="shipCountBadge">0</span>
+          🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span>
           <span class="ship-dot" id="shipDot"></span>
         </button>
-
         <div class="vr"></div>
-
         <span class="clock" id="clock"></span>
       </div>
     </div>
   </div>
 
-  <!-- ══════════ CONTROLS ══════════ -->
+  <!-- ══ DASHBOARD ══ -->
+  <div class="card no-print" id="dashCard">
+    <div class="card-header">
+      <div class="card-title">📊 لوحة التحكم</div>
+      <span class="card-badge" id="dashLastUpdate">—</span>
+    </div>
+    <div class="dash-grid" id="dashGrid">
+      <div class="dash-tile dt-gold">
+        <div class="dt-icon">📦</div>
+        <div class="dt-val dt-gold" id="dTotal">0</div>
+        <div class="dt-lbl">إجمالي الطلبات</div>
+      </div>
+      <div class="dash-tile dt-green">
+        <div class="dt-icon">✅</div>
+        <div class="dt-val dt-green" id="dDelivered">0</div>
+        <div class="dt-lbl">تم التسليم</div>
+        <div class="dt-sub" id="dDeliveredAmt">0 جنيه</div>
+      </div>
+      <div class="dash-tile dt-amber">
+        <div class="dt-icon">🚚</div>
+        <div class="dt-val dt-amber" id="dShipped">0</div>
+        <div class="dt-lbl">تم الشحن</div>
+        <div class="dt-sub" id="dShippedAmt">0 جنيه</div>
+      </div>
+      <div class="dash-tile dt-blue">
+        <div class="dt-icon">🖨️</div>
+        <div class="dt-val dt-blue" id="dPrinted">0</div>
+        <div class="dt-lbl">تم الطباعة</div>
+      </div>
+      <div class="dash-tile dt-red">
+        <div class="dt-icon">↩️</div>
+        <div class="dt-val dt-red" id="dReturned">0</div>
+        <div class="dt-lbl">مرتجع</div>
+        <div class="dt-sub" id="dReturnedAmt">0 جنيه</div>
+      </div>
+      <div class="dash-tile dt-pearl">
+        <div class="dt-icon">💰</div>
+        <div class="dt-val" id="dRevenue">0</div>
+        <div class="dt-lbl">إجمالي التحصيل</div>
+        <div class="dt-sub" id="dRevenueShip">+0 شحن</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CONTROLS ══ -->
   <div class="card no-print" id="ctrlCard">
     <div class="ctrl-grid">
-
       <div class="ctrl-group">
         <div class="ctrl-label">إضافة أوردر</div>
         <div class="input-row">
           <input id="orderIdInput" placeholder="Order ID — اكتب أو امسح QR" class="flex1"/>
-          <button class="btn-gold" onclick="addOne()">إضافة</button>
+          <button class="btn-gold" onclick="addOneWithDupCheck()">إضافة</button>
         </div>
         <div class="input-row">
           <button style="flex:1" onclick="startScan()">📷 تشغيل QR</button>
           <button style="flex:1" onclick="stopScan()">⏹ إيقاف</button>
         </div>
       </div>
-
       <div class="ctrl-group">
         <div class="ctrl-label">تحكم</div>
         <button class="btn-w100" onclick="showLoading('جاري التحديث…'); refreshMine().finally(hideLoading)">🔄 تحديث أوردراتي</button>
         <button class="btn-danger btn-w100" onclick="clearMine()">🧹 مسح أوردراتي</button>
       </div>
-
       <div class="ctrl-group">
         <div class="ctrl-label">تصدير</div>
         <button class="btn-w100" onclick="printA4()">🖨️ طباعة ورقة التسليم</button>
         <button class="btn-w100" onclick="downloadSelectedPDF()">⬇️ PDF المحدد</button>
         <button class="btn-w100" onclick="downloadAllXLSX()">⬇️ Excel المحدد</button>
       </div>
-
     </div>
-
     <div class="section-rule"></div>
-
     <div class="input-row" style="flex-wrap:wrap; gap:8px;">
       <select id="statusSelect" style="flex:1; min-width:200px;">
         <option value="">— تغيير الحالة للمحدد —</option>
@@ -1226,8 +702,6 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       <button class="btn-gold" onclick="bulkUpdate()">✏️ تحديث الحالة للمحدد</button>
       <span style="font-size:10px; color:var(--mist); align-self:center">(تم الشحن) يطلب مندوب + تاريخ</span>
     </div>
-
-    <!-- QR -->
     <div id="qrWrap">
       <div style="margin-top:10px; padding:10px; background:var(--ink3); border-radius:var(--r2); border:1px solid var(--rule); font-size:11px; color:var(--silver)">
         📌 ضع الـ QR أمام الكاميرا — يُضاف الأوردر فور الالتقاط
@@ -1236,11 +710,7 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
         <div class="qr-shell">
           <div id="qr-reader"></div>
           <div class="qr-overlay">
-            <div class="qr-frame">
-              <div class="qr-br"></div>
-              <div class="qr-scan"></div>
-              <div class="qr-mask"></div>
-            </div>
+            <div class="qr-frame"><div class="qr-br"></div><div class="qr-scan"></div><div class="qr-mask"></div></div>
           </div>
         </div>
         <div style="font-size:10px; color:var(--mist); margin-top:6px;">⚠️ يستلزم HTTPS + صلاحية الكاميرا</div>
@@ -1248,7 +718,7 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
     </div>
   </div>
 
-  <!-- ══════════ SEARCH ══════════ -->
+  <!-- ══ SEARCH ══ -->
   <div class="card no-print" id="indexCard">
     <div class="card-header">
       <div class="card-title">🔎 بحث سريع</div>
@@ -1261,7 +731,7 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
     </div>
   </div>
 
-  <!-- ══════════ SEARCH RESULTS ══════════ -->
+  <!-- ══ SEARCH RESULTS ══ -->
   <div class="card no-print" id="searchCard" style="display:none; position:relative;">
     <div class="card-header">
       <div class="card-title">📌 نتائج البحث</div>
@@ -1285,11 +755,19 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
     </div>
   </div>
 
-  <!-- ══════════ SHIP MONITOR ══════════ -->
+  <!-- ══ SHIP MONITOR ══ -->
   <div class="card no-print" id="shipCard" style="display:none;">
     <div class="card-header">
       <div class="card-title">🚚 مراقبة الشحنات</div>
       <span class="card-badge" id="shipStats"></span>
+    </div>
+
+    <!-- ✅ FIX: Summary bar above ship table -->
+    <div class="ship-summary-bar" id="shipSummaryBar">
+      <div class="ssb-item"><div class="ssb-val" id="ssTotal">0</div><div class="ssb-lbl">إجمالي الشحنات</div></div>
+      <div class="ssb-item"><div class="ssb-val gold" id="ssSubtotal">0</div><div class="ssb-lbl">تحصيل بدون شحن</div></div>
+      <div class="ssb-item"><div class="ssb-val" id="ssShipping">0</div><div class="ssb-lbl">إجمالي الشحن</div></div>
+      <div class="ssb-item"><div class="ssb-val green" id="ssTotal2">0</div><div class="ssb-lbl">الإجمالي الكلي</div></div>
     </div>
 
     <div class="input-row" style="flex-wrap:wrap; gap:8px; margin-bottom:10px;">
@@ -1304,13 +782,10 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       <button onclick="printShipCurrent()">🖨️ طباعة</button>
       <button onclick="toggleShipCard()">✖️ إغلاق</button>
     </div>
-
     <div class="c-badges" id="courierBadges"></div>
-
     <div style="margin-top:8px; padding:8px 12px; background:var(--ink3); border-radius:var(--r2); border:1px solid var(--rule); font-size:10px; color:var(--mist);">
       متأخر = أكثر من <b style="color:var(--silver)">10</b> أيام · متابعة = <b style="color:var(--silver)">6–9</b> أيام
     </div>
-
     <div class="tbl-wrap" style="margin-top:10px;">
       <table>
         <thead><tr>
@@ -1323,31 +798,52 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
     </div>
   </div>
 
-  <!-- ══════════ PRINT AREA ══════════ -->
-  <div class="card" id="printArea">
+  <!-- ══ AWAIT SHIPMENT ══ -->
+  <div class="card no-print" id="awaitCard" style="display:none;">
+    <div class="card-header">
+      <div class="card-title">📦 انتظار الشحن</div>
+      <span class="card-badge" id="awaitStats"></span>
+    </div>
+    <div style="font-size:11px; color:var(--mist); margin-bottom:10px; padding:8px 12px; background:var(--ink3); border-radius:var(--r2); border:1px solid var(--rule);">
+      الطلبات اللي حالتها <b style="color:var(--gold)">تم الطباعة</b> وبتنتظر يتشحنوا
+    </div>
+    <div class="input-row" style="margin-bottom:10px;">
+      <button onclick="toggleAwaitCard()">✖️ إغلاق</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Order ID</th><th>الاسم</th>
+          <th>الهاتف / المحافظة / العنوان</th>
+          <th>التحصيل</th><th>الشحن</th><th>الحالة</th>
+        </tr></thead>
+        <tbody id="awaitTbody"></tbody>
+      </table>
+    </div>
+  </div>
 
+  <!-- ══ PRINT AREA ══ -->
+  <div class="card" id="printArea">
     <div class="print-header">
       <div class="print-title">ورقة تسليم — White Clothes</div>
       <div id="printDate" style="font-size:12px; color:#333; margin-top:3px;"></div>
     </div>
-
     <div class="print-summary">
       <div class="print-box">
-        <div><b>عدد الطلبات:</b> <span id="pCount">0</span></div>
-        <div><b>إجمالي التحصيل (بدون شحن):</b> <span id="pSubtotal">0</span></div>
-        <div><b>إجمالي الشحن:</b> <span id="pShipping">0</span></div>
+        <div><b>عدد الطلبات: </b><span id="pCount">0</span></div>
+        <div><b>إجمالي التحصيل (بدون شحن): </b><span id="pSubtotal">0</span></div>
+        <div><b>إجمالي الشحن: </b><span id="pShipping">0</span></div>
       </div>
       <div class="print-box">
-        <div><b>الإجمالي (بالشحن):</b> <span id="pTotal">0</span></div>
-        <div><b>المسؤول:</b> ________________________</div>
-        <div><b>التوقيع:</b> ________________________</div>
+        <div><b>الإجمالي (بالشحن): </b><span id="pTotal">0</span></div>
+        <div><b>المسؤول: </b>________________________</div>
+        <div><b>التوقيع: </b>________________________</div>
       </div>
       <div class="print-box">
-        <div><b>ملاحظة:</b> مطبوع من نظام المسح</div>
-        <div><b>التاريخ:</b> <span id="pDate2"></span></div>
+        <div><b>ملاحظة: </b>مطبوع من نظام المسح</div>
+        <div><b>التاريخ: </b><span id="pDate2"></span></div>
       </div>
     </div>
-
     <div class="card-header no-print" style="justify-content:space-between; margin-bottom:10px;">
       <div style="display:flex; align-items:center; gap:8px;">
         <span class="card-title">📋 قائمة الأوردرات</span>
@@ -1355,7 +851,6 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       </div>
       <button class="btn-ghost no-print" id="toggleAllBtn" onclick="toggleAll()">تحديد الكل</button>
     </div>
-
     <div class="tbl-wrap">
       <table>
         <thead><tr>
@@ -1363,9 +858,10 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
           <th>Order ID</th><th>الاسم</th>
           <th>الهاتف / المحافظة / العنوان</th>
           <th>التحصيل</th><th>الشحن</th><th>الحالة</th>
+          <th>التاريخ</th>
         </tr></thead>
         <tbody id="tbody">
-          <tr><td colspan="7"><div class="empty">
+          <tr><td colspan="8"><div class="empty">
             <div class="empty-icon">📭</div>
             <div class="empty-text">لا يوجد أوردرات بعد</div>
             <div class="empty-sub">ابدأ بالإضافة أو مسح QR</div>
@@ -1377,37 +873,42 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
 
 </div><!-- /wrap -->
 
+<button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="للأعلى">↑</button>
+
 <script>
-/* ══════════════════════════════════════════
-   CONFIG
-══════════════════════════════════════════ */
+/* ══ CONFIG ══ */
 const WEB_APP_URL       = "https://script.google.com/macros/s/AKfycbwsMr7euLyvoHz0Sr_k26N_HJYG_O_W5mb061-ljwm-G6I2n0W_Wjb2aiXCk0hg0HkN/exec";
-const WEB_APP_PRINT_URL = "https://script.google.com/macros/s/AKfycbwsMr7euLyvoHz0Sr_k26N_HJYG_O_W5mb061-ljwm-G6I2n0W_Wjb2aiXCk0hg0HkN/exec";
+const WEB_APP_PRINT_URL = "https://script.google.com/macros/s/AKfycbwZ68iM4-HzCpfX3tRrVWzzZQIONDuDO2VKXyKxhRY/exec";
 const API_KEY           = "123";
 const FOLLOW_MIN        = 6;
 const FOLLOW_MAX        = 9;
 const OVERDUE_MIN       = 10;
 
-/* ══════════════════════════════════════════
-   STATE
-══════════════════════════════════════════ */
+/* ══ DUPLICATE WINDOW: 24 hours in ms ══ */
+const DUP_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/* ══ CANCELLED STATUSES — never count as duplicate ══ */
+const CANCELLED_STATUSES = new Set(["الغاء", "مرتجع", "مرتجع جزئي"]);
+
+/* ══ STATE ══ */
 let rows = [], selected = new Set(), mineIds = new Set();
 let qr = null, lastScan = { id:"", t:0 }, scanLockUntil = 0;
 let allCache = [], srSelected = new Set(), lastResults = [];
 let shipAll = [], shipTab = "overdue", courierStats = {};
+let awaitOrders = [];
 
-/* ══════════════════════════════════════════
-   CLOCK
-══════════════════════════════════════════ */
+/* ══ CLOCK ══ */
 function tickClock(){ const e=document.getElementById("clock"); if(e) e.textContent=new Date().toLocaleTimeString("ar-EG"); }
 tickClock(); setInterval(tickClock, 1000);
 
-/* ══════════════════════════════════════════
-   PERSISTENCE
-══════════════════════════════════════════ */
-const LS_KEY     = "wc_mine_ids_v2";
-const ODIDS_KEY  = "wc_overdue_ids";
-const COLORS_KEY = "wc_courier_colors";
+/* ══ PERSISTENCE ══ */
+const LS_KEY          = "wc_mine_ids_v2";
+const ODIDS_KEY       = "wc_overdue_ids";
+const COLORS_KEY      = "wc_courier_colors";
+const SEEN_IDS_KEY    = "wc_seen_order_ids_v1";
+const FOLLOWED_IDS_KEY= "wc_followed_ids_v1";
+// ✅ NEW: store {id -> timestamp} for 24h dup window
+const DUP_TIMES_KEY   = "wc_dup_scan_times_v1";
 
 function loadMine(){ try{ mineIds=new Set((JSON.parse(localStorage.getItem(LS_KEY)||"[]")).map(String)); }catch(e){ mineIds=new Set(); } }
 function saveMine(){ localStorage.setItem(LS_KEY, JSON.stringify([...mineIds])); }
@@ -1415,290 +916,239 @@ function getOldOverdueIds(){ try{ return JSON.parse(localStorage.getItem(ODIDS_K
 function setOldOverdueIds(a){ localStorage.setItem(ODIDS_KEY, JSON.stringify(a||[])); }
 function loadColors(){ try{ return JSON.parse(localStorage.getItem(COLORS_KEY)||"{}"); }catch(e){ return {}; } }
 function saveColors(m){ localStorage.setItem(COLORS_KEY, JSON.stringify(m||{})); }
+function getSeenIds(){ try{ return new Set(JSON.parse(localStorage.getItem(SEEN_IDS_KEY)||"[]")); }catch(e){ return new Set(); } }
+function saveSeenIds(s){ localStorage.setItem(SEEN_IDS_KEY, JSON.stringify([...s])); }
+function getFollowedIds(){ try{ return new Set(JSON.parse(localStorage.getItem(FOLLOWED_IDS_KEY)||"[]")); }catch(e){ return new Set(); } }
+function saveFollowedIds(s){ localStorage.setItem(FOLLOWED_IDS_KEY, JSON.stringify([...s])); }
 
-/* ══════════════════════════════════════════
-   LOADING OVERLAY
-══════════════════════════════════════════ */
-function showLoading(txt="جاري التحميل…"){
-  document.getElementById("loadingTxt").textContent = txt;
-  document.getElementById("loadingOverlay").classList.add("active");
-}
+/* ✅ NEW: 24h duplicate time tracking */
+function getDupTimes(){ try{ return JSON.parse(localStorage.getItem(DUP_TIMES_KEY)||"{}"); }catch(e){ return {}; } }
+function saveDupTimes(m){ localStorage.setItem(DUP_TIMES_KEY, JSON.stringify(m)); }
+function recordScanTime(id){ const m=getDupTimes(); m[String(id)]=Date.now(); saveDupTimes(m); }
+function wasScannedRecently(id){ const m=getDupTimes(); const t=m[String(id)]; if(!t) return false; return (Date.now()-t) < DUP_WINDOW_MS; }
+function pruneDupTimes(){ const m=getDupTimes(); const now=Date.now(); Object.keys(m).forEach(k=>{ if(now-m[k]>DUP_WINDOW_MS) delete m[k]; }); saveDupTimes(m); }
+
+/* ✅ NEW: Check if order is cancelled/returned (not a real dup) */
+function isCancelledStatus(status){ return CANCELLED_STATUSES.has(String(status||"").trim()); }
+
+/* ══ LOADING ══ */
+function showLoading(txt="جاري التحميل…"){ document.getElementById("loadingTxt").textContent=txt; document.getElementById("loadingOverlay").classList.add("active"); }
 function hideLoading(){ document.getElementById("loadingOverlay").classList.remove("active"); }
 
-/* ══════════════════════════════════════════
-   TOAST (animated, typed)
-══════════════════════════════════════════ */
+/* ══ TOAST ══ */
 let toastTimer = null;
 function toast(title, sub="", type="default", dur=2800){
-  const el   = document.getElementById("statusToast");
-  const box  = document.getElementById("toastBox");
-  const icon = document.getElementById("toastIcon");
-  const tEl  = document.getElementById("toastTitle");
-  const sEl  = document.getElementById("toastSub");
-  const prog = document.getElementById("toastProgress");
-
-  const icons = { ok:"✅", warn:"⚠️", err:"❌", default:"ℹ️" };
-  icon.textContent = icons[type] || "ℹ️";
-  tEl.textContent  = title;
-  sEl.textContent  = sub;
-  box.className    = "toast-box" + (type!=="default" ? " t-"+type : "");
-
-  // Reset progress animation
-  prog.style.animation = "none";
-  prog.offsetHeight;
-  prog.style.animation = `progressShrink ${dur}ms linear forwards`;
-
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), dur + 300);
+  const el=document.getElementById("statusToast"), box=document.getElementById("toastBox");
+  const icon=document.getElementById("toastIcon"), tEl=document.getElementById("toastTitle");
+  const sEl=document.getElementById("toastSub"), prog=document.getElementById("toastProgress");
+  const icons={ok:"✅",warn:"⚠️",err:"❌",default:"ℹ️"};
+  icon.textContent=icons[type]||"ℹ️"; tEl.textContent=title; sEl.textContent=sub;
+  box.className="toast-box"+(type!=="default"?" t-"+type:"");
+  prog.style.animation="none"; prog.offsetHeight;
+  prog.style.animation=`progressShrink ${dur}ms linear forwards`;
+  el.classList.add("show"); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"), dur+300);
 }
 
-/* ══════════════════════════════════════════
-   BEEP
-══════════════════════════════════════════ */
+/* ══ BEEP ══ */
 let audioCtx = null;
 function beep(){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.type="sine"; o.frequency.value=880; g.gain.value=0.07;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); setTimeout(()=>o.stop(), 110);
-  }catch(e){}
+  try{ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type="sine"; o.frequency.value=880; g.gain.value=0.07; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>o.stop(),110); }catch(e){}
   try{ navigator.vibrate?.([40]); }catch(e){}
 }
+function beepDuplicate(){
+  try{ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); [0,180,360].forEach(d=>{ setTimeout(()=>{ const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type="sawtooth"; o.frequency.value=440; g.gain.value=0.09; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.15); o.stop(audioCtx.currentTime+0.16); },140); },d); }); }catch(e){}
+  try{ navigator.vibrate?.([80,60,80,60,80]); }catch(e){}
+}
 
-/* ══════════════════════════════════════════
-   API (JSONP)
-══════════════════════════════════════════ */
-function jsonp(url){
-  return new Promise((res,rej)=>{
-    const cb="cb_"+Math.random().toString(36).slice(2);
-    window[cb]=(data)=>{ cleanup(); res(data); };
-    function cleanup(){ try{delete window[cb];}catch(e){window[cb]=undefined;} script.remove(); }
-    const script=document.createElement("script");
-    script.src=url+(url.includes("?")?"&":"?")+`callback=${cb}`;
-    script.onerror=()=>{ cleanup(); rej(new Error("JSONP fail")); };
-    document.body.appendChild(script);
-  });
-}
-async function api(action, params={}){
-  const qs=new URLSearchParams({ action, key:API_KEY, _t:Date.now(), ...params }).toString();
-  return jsonp(WEB_APP_URL+"?"+qs);
-}
+/* ══ API ══ */
+function jsonp(url){ return new Promise((res,rej)=>{ const cb="cb_"+Math.random().toString(36).slice(2); window[cb]=(data)=>{ cleanup(); res(data); }; function cleanup(){ try{delete window[cb];}catch(e){window[cb]=undefined;} script.remove(); } const script=document.createElement("script"); script.src=url+(url.includes("?")?"&":"?")+`callback=${cb}`; script.onerror=()=>{ cleanup(); rej(new Error("JSONP fail")); }; document.body.appendChild(script); }); }
+async function api(action, params={}){ const qs=new URLSearchParams({action,key:API_KEY,_t:Date.now(),...params}).toString(); return jsonp(WEB_APP_URL+"?"+qs); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function nextFrame(){ return new Promise(r=>requestAnimationFrame(r)); }
 
-/* ══════════════════════════════════════════
-   UTILS
-══════════════════════════════════════════ */
+/* ══ UTILS ══ */
 function esc(s){ return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function n(v){ const x=Number(v); return isNaN(x)?0:x; }
-function norm(s){ return String(s??"").trim().toLowerCase(); }
 function fmt(v){ return n(v).toLocaleString("ar-EG"); }
 function fmtYMD(dt){ return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; }
+function colorFor(name){ const m=loadColors(); const k=String(name||"غير محدد").trim()||"غير محدد"; if(!m[k]){ let h=0; for(let i=0;i<k.length;i++) h=(h*31+k.charCodeAt(i))>>>0; m[k]=`hsl(${h%360} 60% 55%)`; saveColors(m); } return m[k]; }
+function courierChip(name){ const n2=String(name||"غير محدد").trim()||"غير محدد",c=colorFor(n2); return `<span class="courier-chip"><span class="courier-dot" style="background:${c};box-shadow:0 0 5px ${c}80"></span>${esc(n2)}</span>`; }
 
-function colorFor(name){
-  const m=loadColors(); const k=String(name||"غير محدد").trim()||"غير محدد";
-  if(!m[k]){ let h=0; for(let i=0;i<k.length;i++) h=(h*31+k.charCodeAt(i))>>>0; m[k]=`hsl(${h%360} 60% 55%)`; saveColors(m); }
-  return m[k];
+/* ✅ FIX: Distinguish cancelled from other statuses in badge */
+function statusBadge(status){ 
+  const s=(status||"").trim(); 
+  if(s==="تم الشحن"||s==="تم التسليم") return `<span class="badge b-ok"><span class="badge-dot"></span>${esc(s||"—")}</span>`; 
+  if(s==="مرتجع"||s==="مرتجع جزئي") return `<span class="badge b-err"><span class="badge-dot"></span>${esc(s||"—")}</span>`; 
+  if(s==="الغاء") return `<span class="badge b-cancel"><span class="badge-dot"></span>${esc(s||"—")}</span>`; 
+  return `<span class="badge b-warn"><span class="badge-dot"></span>${esc(s||"—")}</span>`; 
 }
 
-function courierChip(name){
-  const n2=String(name||"غير محدد").trim()||"غير محدد", c=colorFor(n2);
-  return `<span class="courier-chip"><span class="courier-dot" style="background:${c};box-shadow:0 0 5px ${c}80"></span>${esc(n2)}</span>`;
+/* ✅ FIX: Format phone number — ensure leading 0 */
+function fmtPhone(p){ 
+  const clean=String(p||"").replace(/\s/g,""); 
+  if(!clean) return ""; 
+  // If starts with +20, convert to 0
+  if(clean.startsWith("+20")) return "0"+clean.slice(3); 
+  // If starts with 20 and length ~12, add 0
+  if(clean.startsWith("20")&&clean.length>=11) return "0"+clean.slice(2); 
+  // If 10 digits starting with 1 (mobile without 0)
+  if(/^1\d{9}$/.test(clean)) return "0"+clean;
+  return clean; 
 }
 
-function statusBadge(status){
-  const s=(status||"").trim();
-  if(s==="تم الشحن"||s==="تم التسليم") return `<span class="badge b-ok"><span class="badge-dot"></span>${esc(s||"—")}</span>`;
-  if(s==="مرتجع"||s==="مرتجع جزئي"||s==="الغاء") return `<span class="badge b-err"><span class="badge-dot"></span>${esc(s||"—")}</span>`;
-  return `<span class="badge b-warn"><span class="badge-dot"></span>${esc(s||"—")}</span>`;
+/* ✅ FIX: Format date from order */
+function fmtOrderDate(r){ 
+  const raw = String(r.orderDate||r.order_date||r.createdDate||r.created_date||r.date||"").trim();
+  if(!raw) return "—"; 
+  const dt = new Date(raw); 
+  if(isNaN(dt.getTime())) return raw.slice(0,10)||"—";
+  return fmtYMD(dt); 
 }
 
-/* ══════════════════════════════════════════
-   RENDER (Main Table)
-══════════════════════════════════════════ */
+/* ✅ NEW: Address cell — phone(s) + city + address inline */
+function addrCell(r){ 
+  const p1=fmtPhone(r.phone), p2=fmtPhone(r.altPhone); 
+  const city=String(r.city||"").trim(), addr=String(r.address||"").trim();
+  const phonePart=p2?`${esc(p1)} — ${esc(p2)}`:esc(p1);
+  const locPart=[city&&esc(city), addr&&esc(addr)].filter(Boolean).join(" / ");
+  return `<div class="addr-line"><span class="td-phone">${phonePart}</span>${locPart?`<span class="addr-sep">|</span><span style="font-size:11px;color:var(--mist)">${locPart}</span>`:""}</div>`;
+}
+
+/* ══ DASHBOARD UPDATE ══ */
+function updateDashboard(allRows){
+  if(!allRows||!allRows.length){ return; }
+  const total = allRows.length;
+  const delivered = allRows.filter(r=>String(r.status||"").trim()==="تم التسليم");
+  const shipped = allRows.filter(r=>String(r.status||"").trim()==="تم الشحن");
+  const printed = allRows.filter(r=>String(r.status||"").trim()==="تم الطباعة");
+  const returned = allRows.filter(r=>["مرتجع","مرتجع جزئي"].includes(String(r.status||"").trim()));
+  const sumSubtotal = arr => arr.reduce((a,r)=>a+n(r.subtotal),0);
+  const sumShipping = arr => arr.reduce((a,r)=>a+n(r.shipping),0);
+  const totalSub = sumSubtotal(allRows), totalShip = sumShipping(allRows);
+
+  document.getElementById("dTotal").textContent = total.toLocaleString("ar-EG");
+  document.getElementById("dDelivered").textContent = delivered.length;
+  document.getElementById("dDeliveredAmt").textContent = fmt(sumSubtotal(delivered))+" جنيه";
+  document.getElementById("dShipped").textContent = shipped.length;
+  document.getElementById("dShippedAmt").textContent = fmt(sumSubtotal(shipped))+" جنيه";
+  document.getElementById("dPrinted").textContent = printed.length;
+  document.getElementById("dReturned").textContent = returned.length;
+  document.getElementById("dReturnedAmt").textContent = fmt(sumSubtotal(returned))+" جنيه";
+  document.getElementById("dRevenue").textContent = fmt(totalSub);
+  document.getElementById("dRevenueShip").textContent = "+"+fmt(totalShip)+" شحن";
+  document.getElementById("dashLastUpdate").textContent = "آخر تحديث: "+new Date().toLocaleTimeString("ar-EG");
+}
+
+/* ══ RENDER ══ */
 function render(){
   updateToggleBtn();
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML = "";
-
-  const subtotalSum = rows.reduce((a,r)=>a+n(r.subtotal), 0);
-  const shippingSum = rows.reduce((a,r)=>a+n(r.shipping), 0);
-
-  document.getElementById("metricOrders").textContent   = rows.length;
-  document.getElementById("metricSubtotal").textContent = fmt(subtotalSum);
-  document.getElementById("metricShipping").textContent = fmt(shippingSum);
-
-  const si = document.getElementById("selectionInfo");
-  if(si) si.textContent = selected.size+" محدد";
-
-  if(!rows.length){
-    tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`;
-    return;
-  }
-
+  const tbody=document.getElementById("tbody"); tbody.innerHTML="";
+  const subtotalSum=rows.reduce((a,r)=>a+n(r.subtotal),0);
+  const shippingSum=rows.reduce((a,r)=>a+n(r.shipping),0);
+  document.getElementById("metricOrders").textContent=rows.length;
+  document.getElementById("metricSubtotal").textContent=fmt(subtotalSum);
+  document.getElementById("metricShipping").textContent=fmt(shippingSum);
+  const si=document.getElementById("selectionInfo"); if(si) si.textContent=selected.size+" محدد";
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`; return; }
   rows.forEach(r=>{
-    const tr=document.createElement("tr");
-    const checked=selected.has(String(r.orderId));
-    const p1=esc((r.phone||"").trim()), p2=esc((r.altPhone||"").trim());
-    const phones=p2?`${p1} — ${p2}`:p1;
-
-    tr.innerHTML=`
-      <td class="no-print" style="text-align:center"><input type="checkbox" ${checked?"checked":""}></td>
-      <td class="td-id"><b>${esc(r.orderId)}</b></td>
-      <td class="td-name">${esc(r.name||"")}</td>
-      <td class="td-addr">
-        <span class="td-phone">${phones}</span><br>
-        <span style="font-size:10px;color:var(--mist)">${esc(r.city||"")}${r.address?" / "+esc(r.address):""}</span>
-      </td>
-      <td class="td-amount">${fmt(r.subtotal)}</td>
-      <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping)}</td>
-      <td>${statusBadge(r.status)}</td>
-    `;
-    tr.querySelector("input").addEventListener("change",e=>{
-      const id=String(r.orderId);
-      e.target.checked?selected.add(id):selected.delete(id);
-      if(si) si.textContent=selected.size+" محدد";
-      updateToggleBtn();
-    });
+    const tr=document.createElement("tr"); const checked=selected.has(String(r.orderId));
+    tr.innerHTML=`<td class="no-print" style="text-align:center"><input type="checkbox" ${checked?"checked":""}></td>
+    <td class="td-id"><b>${esc(r.orderId)}</b></td>
+    <td class="td-name">${esc(r.name||"")}</td>
+    <td class="td-addr">${addrCell(r)}</td>
+    <td class="td-amount">${fmt(r.subtotal)}</td>
+    <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping)}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td class="td-date">${fmtOrderDate(r)}</td>`;
+    tr.querySelector("input").addEventListener("change",e=>{ const id=String(r.orderId); e.target.checked?selected.add(id):selected.delete(id); if(si) si.textContent=selected.size+" محدد"; updateToggleBtn(); });
     tbody.appendChild(tr);
   });
 }
+function toggleAll(){ const allIds=rows.map(r=>String(r.orderId)); const allSel=allIds.length&&allIds.every(id=>selected.has(id)); if(allSel) selected.clear(); else allIds.forEach(id=>selected.add(id)); updateToggleBtn(); render(); }
+function updateToggleBtn(){ const btn=document.getElementById("toggleAllBtn"); if(!btn) return; const allIds=rows.map(r=>String(r.orderId)); btn.textContent=(allIds.length&&allIds.every(id=>selected.has(id)))?"إلغاء الكل":"تحديد الكل"; }
 
-function toggleAll(){
-  const allIds=rows.map(r=>String(r.orderId));
-  const allSel=allIds.length&&allIds.every(id=>selected.has(id));
-  if(allSel) selected.clear(); else allIds.forEach(id=>selected.add(id));
-  updateToggleBtn(); render();
-}
-function updateToggleBtn(){
-  const btn=document.getElementById("toggleAllBtn");
-  if(!btn) return;
-  const allIds=rows.map(r=>String(r.orderId));
-  btn.textContent=(allIds.length&&allIds.every(id=>selected.has(id)))?"إلغاء الكل":"تحديد الكل";
-}
-
-/* ══════════════════════════════════════════
-   REFRESH MINE
-══════════════════════════════════════════ */
+/* ══ REFRESH ══ */
 async function refreshMine(){
   if(!mineIds.size){ rows=[]; selected=new Set(); render(); return; }
   const res=await api("scanList");
-  if(!res?.ok){ toast("خطأ في التحميل", res?.error||"", "err"); return; }
+  if(!res?.ok){ toast("خطأ في التحميل",res?.error||"","err"); return; }
   const mine=(res.rows||[]).filter(r=>mineIds.has(String(r.orderId)));
-  const order=[...mineIds];
-  mine.sort((a,b)=>order.indexOf(String(b.orderId))-order.indexOf(String(a.orderId)));
+  const order=[...mineIds]; mine.sort((a,b)=>order.indexOf(String(b.orderId))-order.indexOf(String(a.orderId)));
   rows=mine; selected=new Set(rows.map(r=>String(r.orderId))); render();
 }
 
-/* ══════════════════════════════════════════
-   ADD
-══════════════════════════════════════════ */
-async function addOne(){
-  const id=document.getElementById("orderIdInput").value.trim();
-  if(!id) return;
-  if(mineIds.has(String(id))){ toast("الأوردر موجود بالفعل","","warn"); return; }
-  mineIds.add(String(id)); saveMine(); beep();
-  toast("تم إضافة الأوردر", id, "ok");
-  const res=await api("scanAdd",{orderId:id});
-  if(!res?.ok){ toast("فشل الإضافة", res?.error||"", "err"); return; }
-  document.getElementById("orderIdInput").value="";
-  showLoading("جاري التحديث…");
-  await refreshMine();
-  hideLoading();
-}
-
-/* ══════════════════════════════════════════
-   BULK UPDATE — with animated loading
-══════════════════════════════════════════ */
+/* ══ BULK UPDATE ══ */
 async function bulkUpdate(){
   const status=document.getElementById("statusSelect").value.trim();
   if(!status){ toast("اختر الحالة أولاً","","warn"); return; }
-  const ids=[...selected];
-  if(!ids.length){ toast("لم تحدد أي أوردرات","","warn"); return; }
-
+  const ids=[...selected]; if(!ids.length){ toast("لم تحدد أي أوردرات","","warn"); return; }
   let courier="", shipDate="", deliveryDate="", partialAmount="";
-
-  if(status==="تم الشحن"){
-    courier=prompt("اسم المندوب؟","")||"";
-    shipDate=prompt("تاريخ الشحن (YYYY-MM-DD)؟",new Date().toISOString().slice(0,10))||"";
-    if(!courier){ toast("لازم اسم المندوب","","err"); return; }
-  }
-  if(status==="تم التسليم"){
-    deliveryDate=prompt("تاريخ التسليم (YYYY-MM-DD)؟",new Date().toISOString().slice(0,10))||"";
-  }
-  if(status==="مرتجع جزئي"){
-    partialAmount=prompt("المبلغ اللي دفعه العميل؟","")||"";
-    if(!partialAmount){ toast("لازم تكتب المبلغ","","err"); return; }
-  }
-
-  // ✅ Show loading while updating
+  if(status==="تم الشحن"){ const r=await showShipModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } courier=r.courier; shipDate=r.shipDate; if(!courier.trim()){ toast("⛔ لازم تكتب اسم المندوب","","err"); return; } if(!shipDate.trim()){ toast("⛔ لازم تكتب تاريخ الشحن","","err"); return; } }
+  if(status==="تم التسليم"){ const r=await showDeliveryModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } deliveryDate=r.deliveryDate; if(!deliveryDate.trim()){ toast("⛔ لازم تكتب تاريخ التسليم","","err"); return; } }
+  if(status==="مرتجع جزئي"){ const r=await showPartialModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } partialAmount=r.amount; if(!partialAmount.trim()){ toast("⛔ لازم تكتب المبلغ","","err"); return; } }
   showLoading(`جاري تغيير الحالة لـ ${ids.length} أوردر…`);
-
-  try {
-    const res=await api("bulkUpdate",{ ids:ids.join(","), status, courier, shipDate, deliveryDate, partialAmount });
+  try{
+    const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount});
     hideLoading();
-    if(!res?.ok){ toast("فشل التحديث", res?.error||"", "err"); return; }
-    toast(`تم تحديث الحالة`, `${res.updated??ids.length} أوردر — ${status}`, "ok", 3500);
-    await refreshMine();
-    refreshShipMonitor();
-  } catch(e){
-    hideLoading();
-    toast("خطأ في الاتصال","","err");
-  }
+    if(!res?.ok){ toast("فشل التحديث",res?.error||"","err"); return; }
+    toast("تم التحديث",`${res.updated??ids.length} أوردر — ${status}`,"ok",3500);
+    document.getElementById("statusSelect").value="";
+    // ✅ If marking as cancelled, remove from dup tracking so it won't trigger dup alert
+    if(["الغاء","مرتجع","مرتجع جزئي"].includes(status)){
+      const m=getDupTimes(); ids.forEach(id=>delete m[String(id)]); saveDupTimes(m);
+    }
+    await refreshMine(); refreshShipMonitor(); refreshPendingCount(); refreshAwaitCount();
+  }catch(e){ hideLoading(); toast("خطأ في الاتصال","","err"); }
 }
 
-/* ══════════════════════════════════════════
-   QR
-══════════════════════════════════════════ */
+/* ══ QR ══ */
 async function startScan(){
   document.getElementById("qrWrap").style.display="block";
   if(!qr) qr=new Html5Qrcode("qr-reader");
-  const cfg={fps:15, qrbox:{width:200,height:200}, aspectRatio:1.0};
-  let camId=null;
-  try{
-    const cams=await Html5Qrcode.getCameras();
-    if(cams?.length){ const bk=cams.find(c=>/back|rear|environment/i.test(c.label)); camId=(bk||cams[0]).id; }
-  }catch(e){}
+  const cfg={fps:15,qrbox:{width:200,height:200},aspectRatio:1.0}; let camId=null;
+  try{ const cams=await Html5Qrcode.getCameras(); if(cams?.length){ const bk=cams.find(c=>/back|rear|environment/i.test(c.label)); camId=(bk||cams[0]).id; } }catch(e){}
   try{ await qr.start(camId||{facingMode:"environment"},cfg,onQrSuccess,()=>{}); toast("الكاميرا شغالة","","ok"); }
   catch(e){ toast("فشل تشغيل الكاميرا",String(e),"err"); }
 }
-async function stopScan(){
-  document.getElementById("qrWrap").style.display="none";
-  if(qr){ try{await qr.stop();}catch(e){} }
-  toast("تم إيقاف الكاميرا");
-}
+async function stopScan(){ document.getElementById("qrWrap").style.display="none"; if(qr){ try{await qr.stop();}catch(e){} } toast("تم إيقاف الكاميرا"); }
+
 async function onQrSuccess(txt){
-  const now=Date.now();
-  if(now<scanLockUntil) return;
-  const raw=String(txt||"").trim();
-  const clean=raw.match(/\d+/)?raw.match(/\d+/)[0]:raw;
-  if(!clean) return;
-  if(lastScan.id===clean&&(now-lastScan.t)<2500) return;
-  lastScan={id:clean,t:now};
-  if(mineIds.has(String(clean))){ toast("الأوردر موجود بالفعل","","warn"); scanLockUntil=now+1200; return; }
-  scanLockUntil=now+1500;
-  beep(); toast("تم الالتقاط", clean, "ok");
-  mineIds.add(String(clean)); saveMine();
-  const res=await api("scanAdd",{orderId:clean});
-  if(!res?.ok){ toast("فشل الإضافة",res?.error||"","err"); return; }
-  await refreshMine();
-}
-function clearMine(){
-  if(!confirm("هتمسح أوردراتك من الصفحة (مش من الشيت). متأكد؟")) return;
-  mineIds=new Set(); saveMine(); rows=[]; selected=new Set(); render();
-  toast("تم مسح الأوردرات","","warn");
+  const now=Date.now(); if(now<scanLockUntil) return;
+  const raw=String(txt||"").trim(); const clean=raw.match(/\d+/)?raw.match(/\d+/)[0]:raw;
+  if(!clean) return; if(lastScan.id===clean&&(now-lastScan.t)<2500) return;
+  lastScan={id:clean,t:now}; scanLockUntil=now+1500;
+
+  // Already in my list
+  if(mineIds.has(String(clean))){ 
+    beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
+    const ex=allCache.find(r=>String(r.orderId).trim()===String(clean)); 
+    showDuplicateNotif(clean,ex||{name:"موجود في قائمتك بالفعل",status:"—"}); 
+    return; 
+  }
+
+  // ✅ FIX: Check cache — if cancelled/returned, NOT a duplicate
+  const inCache=allCache.find(r=>String(r.orderId).trim()===String(clean));
+  if(inCache && !isCancelledStatus(inCache.status)){
+    // ✅ FIX: Only warn as dup if scanned within last 24h
+    if(wasScannedRecently(clean)){
+      beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
+      showDuplicateNotif(clean,inCache); 
+      setTimeout(async()=>{ mineIds.add(String(clean)); saveMine(); recordScanTime(clean); await api("scanAdd",{orderId:clean}); await refreshMine(); },600); 
+      return;
+    }
+  }
+
+  // Normal add
+  beep(); toast("تم الالتقاط",clean,"ok"); mineIds.add(String(clean)); saveMine(); recordScanTime(clean);
+  const res=await api("scanAdd",{orderId:clean}); if(!res?.ok){ toast("فشل الإضافة",res?.error||"","err"); return; } await refreshMine();
 }
 
-/* ══════════════════════════════════════════
-   PRINT / PDF
-══════════════════════════════════════════ */
+function clearMine(){ if(!confirm("هتمسح أوردراتك من الصفحة (مش من الشيت). متأكد؟")) return; mineIds=new Set(); saveMine(); rows=[]; selected=new Set(); render(); toast("تم مسح الأوردرات","","warn"); }
+
+/* ══ PRINT / PDF ══ */
 function updatePrintSummary(){
-  const sub=rows.reduce((a,r)=>a+n(r.subtotal),0);
-  const shp=rows.reduce((a,r)=>a+n(r.shipping),0);
-  const now=new Date().toLocaleString("ar-EG");
+  const sub=rows.reduce((a,r)=>a+n(r.subtotal),0), shp=rows.reduce((a,r)=>a+n(r.shipping),0), now=new Date().toLocaleString("ar-EG");
   document.getElementById("printDate").textContent="تاريخ التسليم: "+now;
   document.getElementById("pDate2").textContent=now;
   document.getElementById("pCount").textContent=rows.length;
@@ -1709,151 +1159,66 @@ function updatePrintSummary(){
 function printA4(){ updatePrintSummary(); window.print(); }
 
 async function downloadSelectedPDF(){
-  const ids=[...selected];
-  if(!ids.length){ toast("حدد أوردرات أولاً","","warn"); return; }
+  const ids=[...selected]; if(!ids.length){ toast("حدد أوردرات أولاً","","warn"); return; }
   const prevRows=rows.slice(), prevSel=new Set(selected);
-  rows=rows.filter(r=>ids.includes(String(r.orderId)));
-  selected=new Set(ids);
+  rows=rows.filter(r=>ids.includes(String(r.orderId))); selected=new Set(ids);
   updatePrintSummary(); render();
   document.body.classList.add("pdf-mode");
   const area=document.getElementById("printArea");
-  await nextFrame(); await nextFrame(); await sleep(200);
-  area.offsetHeight; await nextFrame();
-
-  const opt={
-    margin:[6,6,6,6],
-    filename:`wc-delivery-${new Date().toISOString().slice(0,10)}.pdf`,
-    image:{type:"jpeg",quality:1.0},
-    html2canvas:{
-      scale:2, useCORS:true, backgroundColor:"#ffffff",
-      scrollX:0, scrollY:0, logging:false,
-      onclone(doc){
-        const s=doc.createElement("style");
-        s.textContent=`
-          *{color:#000!important;background:transparent!important;font-family:'Cairo',Arial,sans-serif!important}
-          body,#printArea,.card,.tbl-wrap,table{background:#fff!important}
-          thead th{background:#f2f2f2!important;border:1px solid #ccc!important;color:#000!important;font-size:10px!important;padding:7px 10px!important}
-          tbody td{border:1px solid #ddd!important;background:#fff!important;color:#000!important;padding:8px 10px!important;font-size:11px!important}
-          .badge{border:1px solid #bbb!important;background:#f5f5f5!important;color:#000!important;display:inline-block!important;padding:2px 8px!important;border-radius:999px!important}
-          .badge-dot{display:none!important}
-          .no-print,button,.card-header{display:none!important}
-          .print-header{display:block!important}
-          .print-summary{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:8px!important;margin:8px 0 12px!important}
-          .print-box{border:1px solid #bbb!important;border-radius:6px!important;padding:8px 12px!important;background:#fff!important;color:#000!important}
-          thead th:first-child,tbody td:first-child{display:none!important}
-          .tbl-wrap{border:1px solid #ccc!important;overflow:visible!important}
-          #printArea{padding:6mm!important;background:#fff!important}
-          .empty,.card-header{display:none!important}
-        `;
-        doc.head.appendChild(s);
-      }
-    },
-    jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},
-    pagebreak:{mode:["css","legacy"],avoid:["tr","td"]}
-  };
-
-  try{
-    await html2pdf().set(opt).from(area).save();
-    toast("تم تحميل PDF","","ok");
-  }catch(e){ toast("خطأ في PDF","","err"); }
-  finally{
-    document.body.classList.remove("pdf-mode");
-    rows=prevRows; selected=prevSel; render();
-  }
+  await nextFrame(); await nextFrame(); await sleep(200); area.offsetHeight; await nextFrame();
+  const opt={ margin:[6,6,6,6], filename:`wc-delivery-${new Date().toISOString().slice(0,10)}.pdf`, enableLinks:false, image:{type:"jpeg",quality:1.0}, html2canvas:{scale:2.5,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,logging:false, onclone(doc){ const s=doc.createElement("style"); s.textContent=`*{color:#111!important;background:transparent!important;font-family:'Cairo',Arial,sans-serif!important;box-shadow:none!important;text-shadow:none!important;backdrop-filter:none!important;}html,body{background:#fff!important;margin:0!important;padding:0!important;direction:rtl!important;}.no-print,.topbar,#ctrlCard,#indexCard,#searchCard,#shipCard,#awaitCard,#dashCard,#notifPanel,button{display:none!important}.wrap{max-width:none!important;padding:0!important;gap:0!important;}.card,#printArea{background:#fff!important;border:none!important;border-radius:0!important;padding:8mm!important;margin:0!important;}.card-header{display:none!important;}.print-header{display:block!important;margin-bottom:14px!important;}.print-title{font-size:22px!important;font-weight:900!important;color:#111!important;}.print-summary{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:10px!important;margin:12px 0 16px!important;}.print-box{border:1px solid #ddd!important;border-radius:6px!important;padding:10px 14px!important;background:#fafafa!important;color:#111!important;line-height:2!important;font-size:11px!important;}.tbl-wrap{border:1px solid #ccc!important;overflow:visible!important;background:#fff!important;}.tbl-wrap table{width:100%!important;min-width:0!important;border-collapse:collapse!important;}thead th:first-child,tbody td:first-child{display:none!important;}thead th{position:static!important;background:#111!important;color:#fff!important;border:1px solid #111!important;padding:9px 12px!important;font-size:10px!important;font-weight:700!important;text-align:right!important;}tbody tr:nth-child(even) td{background:#f9f9f9!important;}tbody td{border:1px solid #e0e0e0!important;padding:9px 12px!important;font-size:11px!important;color:#111!important;background:#fff!important;vertical-align:top!important;}.addr-line{display:block!important;}.badge{border:1px solid #999!important;background:#f0f0f0!important;color:#111!important;font-size:10px!important;padding:2px 10px!important;border-radius:999px!important;display:inline-block!important;}.badge-dot,.courier-chip,.courier-dot{display:none!important;}.empty,#selectionInfo,#toggleAllBtn{display:none!important;}`; doc.head.appendChild(s); } }, jsPDF:{unit:"mm",format:"a4",orientation:"landscape"}, pagebreak:{mode:["css","legacy"],avoid:["tr","td"]} };
+  try{ await html2pdf().set(opt).from(area).save(); toast("تم تحميل PDF","","ok"); }
+  catch(e){ toast("خطأ في PDF","","err"); }
+  finally{ document.body.classList.remove("pdf-mode"); rows=prevRows; selected=prevSel; render(); }
 }
 
 function downloadAllXLSX(){
-  const ids=[...selected];
-  if(!ids.length){ toast("حدد أوردرات أولاً","","warn"); return; }
+  const ids=[...selected]; if(!ids.length){ toast("حدد أوردرات أولاً","","warn"); return; }
   const exp=rows.filter(r=>ids.includes(String(r.orderId)));
-  const sub=exp.reduce((a,r)=>a+(Number(r.subtotal)||0),0);
-  const shp=exp.reduce((a,r)=>a+(Number(r.shipping)||0),0);
-  const now=new Date().toLocaleString("ar-EG");
-  const header=["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل","الشحن","الحالة"];
+  const sub=exp.reduce((a,r)=>a+(Number(r.subtotal)||0),0), shp=exp.reduce((a,r)=>a+(Number(r.shipping)||0),0), now=new Date().toLocaleString("ar-EG");
+  const header=["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل","الشحن","الحالة","التاريخ"];
   const aoa=[];
-  aoa.push(["ورقة تسليم — White Clothes"]);
-  aoa.push([`التاريخ: ${now}`]);
-  aoa.push([""]);
+  aoa.push(["ورقة تسليم — White Clothes"]); aoa.push([`التاريخ: ${now}`]); aoa.push([""]);
   aoa.push(["عدد الطلبات:",exp.length,"","الإجمالي (بالشحن):",sub+shp,"","ملاحظة:","مطبوع من نظام المسح",""]);
   aoa.push(["إجمالي التحصيل:",sub,"","المسؤول:","___________","","التاريخ:",now,""]);
   aoa.push(["إجمالي الشحن:",shp,"","التوقيع:","___________","","",""]);
-  aoa.push([""]);
-  const hRow=aoa.length;
-  aoa.push(header);
-  exp.forEach(r=>aoa.push([String(r.orderId??""),String(r.name??""),String(r.phone??""),String(r.altPhone??""),String(r.city??""),String(r.address??""),Number(r.subtotal||0),Number(r.shipping||0),String(r.status??"")] ));
-  const wb=XLSX.utils.book_new();
-  wb.Workbook={Views:[{RTL:true}]};
+  aoa.push([""]); const hRow=aoa.length; aoa.push(header);
+  exp.forEach(r=>aoa.push([String(r.orderId??""),String(r.name??""),fmtPhone(r.phone),fmtPhone(r.altPhone),String(r.city??""),String(r.address??""),Number(r.subtotal||0),Number(r.shipping||0),String(r.status??""),fmtOrderDate(r)]));
+  const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws["!rows"]=[{hpt:36},{hpt:22}];
-  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:8}},{s:{r:1,c:0},e:{r:1,c:8}}];
-  ws["!cols"]=[{wch:12},{wch:20},{wch:14},{wch:14},{wch:12},{wch:55},{wch:16},{wch:10},{wch:14}];
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:9}},{s:{r:1,c:0},e:{r:1,c:9}}];
+  ws["!cols"]=[{wch:12},{wch:20},{wch:14},{wch:14},{wch:12},{wch:40},{wch:16},{wch:10},{wch:14},{wch:12}];
   ws["!freeze"]={xSplit:0,ySplit:hRow+1};
-  ws["!pageSetup"]={orientation:"landscape",fitToWidth:1,fitToHeight:0};
   const bdr=(s="thin")=>{ const b={style:s,color:{rgb:"000000"}}; return{top:b,bottom:b,left:b,right:b}; };
   const range=XLSX.utils.decode_range(ws["!ref"]);
-  for(let R=range.s.r;R<=range.e.r;R++){
-    for(let C=range.s.c;C<=range.e.c;C++){
-      const a=XLSX.utils.encode_cell({r:R,c:C});
-      if(!ws[a]) continue;
-      ws[a].s={alignment:{wrapText:true,vertical:"top",horizontal:"right"}};
-      if(R===0){ ws[a].s.font={bold:true,sz:16}; ws[a].s.alignment.horizontal="center"; ws[a].s.alignment.vertical="center"; }
-      if(R===1){ ws[a].s.font={bold:true,sz:11}; }
-      if(R>=3&&R<=5){ ws[a].s.border=bdr(); }
-      if(R===hRow){ ws[a].s.font={bold:true}; ws[a].s.fill={patternType:"solid",fgColor:{rgb:"EFEFEF"}}; ws[a].s.border=bdr("medium"); }
-      if(R>hRow){ ws[a].s.border=bdr(); }
-      if(R>=hRow&&R<=range.e.r){
-        if(R===hRow) ws[a].s.border.top={style:"medium",color:{rgb:"000000"}};
-        if(R===range.e.r) ws[a].s.border.bottom={style:"medium",color:{rgb:"000000"}};
-        if(C===0) ws[a].s.border.right={style:"medium",color:{rgb:"000000"}};
-        if(C===8) ws[a].s.border.left={style:"medium",color:{rgb:"000000"}};
-      }
-    }
-  }
+  for(let R=range.s.r;R<=range.e.r;R++) for(let C=range.s.c;C<=range.e.c;C++){ const a=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[a]) continue; ws[a].s={alignment:{wrapText:true,vertical:"top",horizontal:"right"}}; if(R===0){ws[a].s.font={bold:true,sz:16};ws[a].s.alignment.horizontal="center";ws[a].s.alignment.vertical="center";} if(R===1){ws[a].s.font={bold:true,sz:11};} if(R>=3&&R<=5){ws[a].s.border=bdr();} if(R===hRow){ws[a].s.font={bold:true};ws[a].s.fill={patternType:"solid",fgColor:{rgb:"EFEFEF"}};ws[a].s.border=bdr("medium");} if(R>hRow){ws[a].s.border=bdr();} }
   XLSX.utils.book_append_sheet(wb,ws,"Delivery Sheet");
   XLSX.writeFile(wb,`wc-${new Date().toISOString().slice(0,10)}.xlsx`);
   toast("تم تحميل Excel","","ok");
 }
 
-/* ══════════════════════════════════════════
-   PRINT MENU (فواتير زرار)
-══════════════════════════════════════════ */
-let printMenuOpen = false;
-let pendingCache  = { newOrders:[], pending:[] };
-
-function togglePrintMenu(e){
-  e.stopPropagation();
-  const menu=document.getElementById("printMenu");
-  const btn=document.getElementById("printPendingBtn");
-  if(printMenuOpen){ closePrintMenu(); return; }
-  const rect=btn.getBoundingClientRect();
-  menu.style.top  = (rect.bottom+6+window.scrollY)+"px";
-  menu.style.left = rect.left+"px";
-  menu.classList.add("open");
-  printMenuOpen=true;
-}
-
-function closePrintMenu(){
-  document.getElementById("printMenu").classList.remove("open");
-  printMenuOpen=false;
-}
-
-document.addEventListener("click", ()=>closePrintMenu());
+/* ══ PRINT MENU ══ */
+let printMenuOpen=false, pendingCache={newOrders:[],pending:[]};
+function togglePrintMenu(e){ e.stopPropagation(); const menu=document.getElementById("printMenu"),btn=document.getElementById("printPendingBtn"); if(printMenuOpen){closePrintMenu();return;} const rect=btn.getBoundingClientRect(); menu.style.top=(rect.bottom+6+window.scrollY)+"px"; menu.style.left=rect.left+"px"; menu.classList.add("open"); printMenuOpen=true; }
+function closePrintMenu(){ document.getElementById("printMenu").classList.remove("open"); printMenuOpen=false; }
+document.addEventListener("click",()=>closePrintMenu());
 
 async function refreshPendingCount(){
   try{
-    const res=await api("scanList");
-    if(!res?.ok) return;
+    const res=await api("scanList"); if(!res?.ok) return;
     const all=res.rows||[];
-    pendingCache.newOrders = all.filter(r=>{ const s=String(r.status||"").trim(); return s===""||s.toLowerCase()==="new"||s==="جديد"; });
-    pendingCache.pending   = all.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
+    pendingCache.newOrders=all.filter(r=>{const s=String(r.status||"").trim();return s===""||s.toLowerCase()==="new"||s==="جديد";});
+    pendingCache.pending=all.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
     const total=pendingCache.newOrders.length+pendingCache.pending.length;
-    document.getElementById("pmNewCount").textContent  = pendingCache.newOrders.length;
-    document.getElementById("pmPendingCount").textContent = pendingCache.pending.length;
-    document.getElementById("pmBothCount").textContent = total;
-    document.getElementById("pendingTotal").textContent = total;
+    document.getElementById("pmNewCount").textContent=pendingCache.newOrders.length;
+    document.getElementById("pmPendingCount").textContent=pendingCache.pending.length;
+    document.getElementById("pmBothCount").textContent=total;
+    document.getElementById("pendingTotal").textContent=total;
     const btn=document.getElementById("printPendingBtn");
-    if(total>0) btn.classList.add("pending-active");
-    else btn.classList.remove("pending-active");
+    if(total>0) btn.classList.add("pending-active"); else btn.classList.remove("pending-active");
+    // Update dashboard with fresh data
+    updateDashboard(all);
   }catch(e){}
 }
 
@@ -1863,322 +1228,266 @@ async function doPrintBatch(which){
   if(which==="new")     ids=pendingCache.newOrders.map(r=>r.orderId).filter(Boolean);
   if(which==="pending") ids=pendingCache.pending.map(r=>r.orderId).filter(Boolean);
   if(which==="both")    ids=[...pendingCache.newOrders,...pendingCache.pending].map(r=>r.orderId).filter(Boolean);
-
   if(!ids.length){ toast("لا يوجد فواتير في هذه الفئة","","warn"); return; }
-
-  const btn=document.getElementById("printPendingBtn");
-  btn.disabled=true;
-  showLoading(`جاري تجهيز ${ids.length} فاتورة…`);
-
+  const btn=document.getElementById("printPendingBtn"); btn.disabled=true;
+  showLoading(`جاري تجهيز ${ids.length} فاتورة للطباعة…`);
   try{
     const url=WEB_APP_PRINT_URL+"?action=printBatch&ids="+encodeURIComponent(ids.join(","))+"&v="+Date.now();
-    const w=window.open(url,"_blank");
-    hideLoading();
+    const w=window.open(url,"_blank"); hideLoading();
     if(!w){ toast("المتصفح يمنع النوافذ","اسمح بـ Pop-up وأعد المحاولة","err"); return; }
-    toast(`جاري طباعة ${ids.length} فاتورة…`,"","ok",3500);
-    setTimeout(refreshPendingCount, 5000);
-  }catch(e){
-    hideLoading();
-    toast("خطأ في الطباعة","","err");
-  }finally{
-    btn.disabled=false;
-  }
+    showPrintConfirmPanel(ids);
+  }catch(e){ hideLoading(); toast("خطأ في الطباعة","","err"); }
+  finally{ btn.disabled=false; }
 }
 
-/* ══════════════════════════════════════════
-   SEARCH INDEX
-══════════════════════════════════════════ */
+function showPrintConfirmPanel(ids){
+  const old=document.getElementById("printConfirmPanel"); if(old) old.remove();
+  const panel=document.getElementById("notifPanel"); const div=document.createElement("div");
+  div.id="printConfirmPanel"; div.className="notif-card"; div.style.borderColor="rgba(201,168,76,.45)";
+  div.innerHTML=`<div class="notif-icon">🖨️</div><div class="notif-body"><div class="notif-title">تم إرسال ${ids.length} فاتورة للطباعة</div><div class="notif-sub">بعد ما الطباعة تخلص — اضغط "تأكيد" لتحويل حالتهم لـ <b>تم الطباعة</b></div><div class="notif-actions"><button class="notif-btn gold" onclick="confirmMarkPrinted(${JSON.stringify(ids)}, 'printConfirmPanel')">✅ تأكيد — حوّل لـ "تم الطباعة"</button><button class="notif-btn" onclick="dismissNotif('printConfirmPanel')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('printConfirmPanel')">✕</button>`;
+  panel.appendChild(div);
+}
+
+async function confirmMarkPrinted(ids, notifId){
+  dismissNotif(notifId); showLoading(`جاري تحديث الحالة لـ ${ids.length} أوردر…`);
+  try{ const res=await api("bulkUpdate",{ids:ids.join(","),status:"تم الطباعة",courier:"",shipDate:"",deliveryDate:"",partialAmount:""}); hideLoading(); if(!res?.ok){toast("فشل تحديث الحالة",res?.error||"","err");return;} toast("تم التحديث",`${res.updated??ids.length} أوردر → تم الطباعة`,"ok",3500); await refreshMine(); refreshPendingCount(); refreshAwaitCount(); }
+  catch(e){ hideLoading(); toast("خطأ في الاتصال","","err"); }
+}
+
+/* ══ SEARCH ══ */
 async function loadAllForIndex(){
-  const el=document.getElementById("indexStats");
-  el.textContent="⏳ جاري التحضير…";
-  try{
-    const res=await api("scanList");
-    if(!res?.ok){ el.textContent="❌ فشل"; return; }
-    allCache=res.rows||[];
-    el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`;
-  }catch(e){ el.textContent="❌ خطأ"; }
+  const el=document.getElementById("indexStats"); el.textContent="⏳ جاري التحضير…";
+  try{ const res=await api("scanList"); if(!res?.ok){el.textContent="❌ فشل";return;} allCache=res.rows||[]; el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`; updateDashboard(allCache); }
+  catch(e){ el.textContent="❌ خطأ"; }
 }
-
 function searchIndex(){
-  const q=norm(document.getElementById("idx_q").value);
-  if(!q){ closeSearch(); return; }
-  if(!allCache.length){ toast("الداتا لسه بتتحمّل","","warn"); return; }
-  const digits=q.replace(/\D/g,""), isD=digits.length>=4;
-  lastResults=allCache.filter(r=>{
-    const h=norm([r.orderId,r.name,r.phone,r.altPhone,r.city,r.address,r.status].join("|"));
-    if(isD) return String(r.orderId??"").includes(digits)||String(r.phone??"").includes(digits)||String(r.altPhone??"").includes(digits)||h.includes(q);
-    return h.includes(q);
-  });
-  srSelected.clear();
-  renderSearchResults();
+  const q=(document.getElementById("idx_q").value||"").trim().toLowerCase(); if(!q){closeSearch();return;}
+  if(!allCache.length){toast("الداتا لسه بتتحمّل","","warn");return;}
+  const digits=q.replace(/\D/g,""),isD=digits.length>=4;
+  lastResults=allCache.filter(r=>{ const h=[r.orderId,r.name,r.phone,r.altPhone,r.city,r.address,r.status].join("|").toLowerCase(); if(isD) return String(r.orderId??"").includes(digits)||String(r.phone??"").includes(digits)||String(r.altPhone??"").includes(digits)||h.includes(q); return h.includes(q); });
+  srSelected.clear(); renderSearchResults();
   document.getElementById("searchCard")?.scrollIntoView({behavior:"smooth",block:"start"});
 }
-
 function renderSearchResults(){
-  const card=document.getElementById("searchCard");
-  const tbody=document.getElementById("srTbody");
-  const cnt=document.getElementById("srCount");
-  if(!lastResults?.length){ card.style.display="none"; tbody.innerHTML=""; return; }
-  card.style.display="block";
-  cnt.textContent=lastResults.length+" نتيجة";
-  tbody.innerHTML="";
-  lastResults.forEach(r=>{
-    const id=String(r.orderId??""), tr=document.createElement("tr");
-    const p1=esc((r.phone||"").trim()), p2=esc((r.altPhone||"").trim());
-    const phones=p2?`${p1} — ${p2}`:p1;
-    tr.innerHTML=`
-      <td style="text-align:center"><input type="checkbox" ${srSelected.has(id)?"checked":""}></td>
-      <td class="td-id"><b>${esc(id)}</b></td>
-      <td class="td-name">${esc(r.name||"")}</td>
-      <td class="td-addr"><span class="td-phone">${phones}</span><br><span style="font-size:10px;color:var(--mist)">${esc(r.city||"")}${r.address?" / "+esc(r.address):""}</span></td>
-      <td class="td-amount">${fmt(r.subtotal)}</td>
-      <td class="mono" style="font-size:11px">${fmt(r.shipping)}</td>
-      <td>${statusBadge(r.status)}</td>
-    `;
-    tr.querySelector("input").addEventListener("change",e=>{ e.target.checked?srSelected.add(id):srSelected.delete(id); });
-    tbody.appendChild(tr);
-  });
+  const card=document.getElementById("searchCard"),tbody=document.getElementById("srTbody"),cnt=document.getElementById("srCount");
+  if(!lastResults?.length){card.style.display="none";tbody.innerHTML="";return;}
+  card.style.display="block"; cnt.textContent=lastResults.length+" نتيجة"; tbody.innerHTML="";
+  lastResults.forEach(r=>{ const id=String(r.orderId??""),tr=document.createElement("tr"); tr.innerHTML=`<td style="text-align:center"><input type="checkbox" ${srSelected.has(id)?"checked":""}></td><td class="td-id"><b>${esc(id)}</b></td><td class="td-name">${esc(r.name||"")}</td><td class="td-addr">${addrCell(r)}</td><td class="td-amount">${fmt(r.subtotal)}</td><td class="mono" style="font-size:11px">${fmt(r.shipping)}</td><td>${statusBadge(r.status)}</td>`; tr.querySelector("input").addEventListener("change",e=>{e.target.checked?srSelected.add(id):srSelected.delete(id);}); tbody.appendChild(tr); });
 }
+function srToggleAll(){ if(!lastResults?.length) return; const allIds=lastResults.map(r=>String(r.orderId)); const allSel=allIds.every(id=>srSelected.has(id)); if(allSel) srSelected.clear(); else allIds.forEach(id=>srSelected.add(id)); renderSearchResults(); }
+function closeSearch(){ lastResults=[];srSelected.clear();document.getElementById("searchCard").style.display="none";document.getElementById("srTbody").innerHTML="";document.getElementById("idx_q").value="";document.getElementById("indexStats").textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`; }
+async function srAddToMine(){ const ids=[...srSelected]; if(!ids.length){toast("حدد نتائج أولاً","","warn");return;} let added=0; ids.forEach(id=>{if(!mineIds.has(String(id))){mineIds.add(String(id));added++;}}); saveMine(); toast(`تم إضافة ${added} أوردر`,"","ok"); closeSearch(); showLoading("جاري التحديث…"); await refreshMine(); hideLoading(); }
+document.getElementById("idx_q").addEventListener("input",()=>{ const q=document.getElementById("idx_q").value.trim().toLowerCase(); const el=document.getElementById("indexStats"); if(!q){el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`;return;} const cnt=allCache.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))).length; el.textContent=`🔎 ${cnt.toLocaleString("ar-EG")} متوقع`; });
 
-function srToggleAll(){
-  if(!lastResults?.length) return;
-  const allIds=lastResults.map(r=>String(r.orderId));
-  const allSel=allIds.every(id=>srSelected.has(id));
-  if(allSel) srSelected.clear(); else allIds.forEach(id=>srSelected.add(id));
-  renderSearchResults();
-}
-
-function closeSearch(){
-  lastResults=[]; srSelected.clear();
-  document.getElementById("searchCard").style.display="none";
-  document.getElementById("srTbody").innerHTML="";
-  document.getElementById("idx_q").value="";
-  document.getElementById("indexStats").textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`;
-}
-
-async function srAddToMine(){
-  const ids=[...srSelected];
-  if(!ids.length){ toast("حدد نتائج أولاً","","warn"); return; }
-  let added=0;
-  ids.forEach(id=>{ if(!mineIds.has(String(id))){ mineIds.add(String(id)); added++; } });
-  saveMine();
-  toast(`تم إضافة ${added} أوردر`,"","ok");
-  closeSearch();
-  showLoading("جاري التحديث…");
-  await refreshMine();
-  hideLoading();
-}
-
-document.getElementById("idx_q").addEventListener("input",()=>{
-  const q=document.getElementById("idx_q").value.trim().toLowerCase();
-  const el=document.getElementById("indexStats");
-  if(!q){ el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`; return; }
-  const cnt=allCache.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))).length;
-  el.textContent=`🔎 ${cnt.toLocaleString("ar-EG")} متوقع`;
-});
-
-/* ══════════════════════════════════════════
-   SHIP MONITOR
-══════════════════════════════════════════ */
-function parseShipDate(r){
-  const raw=String(r.shipDate??r.ship_date??r.shippedDate??r.shipped_date??r.shipDateText??"").trim();
-  if(!raw) return null;
-  const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m){ const dt=new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`); return isNaN(dt.getTime())?null:dt; }
-  const dt=new Date(raw); return isNaN(dt.getTime())?null:dt;
-}
+/* ══ SHIP MONITOR ══ */
+function parseShipDate(r){ const raw=String(r.shipDate??r.ship_date??r.shippedDate??r.shipped_date??r.shipDateText??"").trim(); if(!raw) return null; const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){const dt=new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);return isNaN(dt.getTime())?null:dt;} const dt=new Date(raw); return isNaN(dt.getTime())?null:dt; }
 function daysSince(dt){ if(!dt) return null; return Math.floor((Date.now()-dt.getTime())/86400000); }
+function setShipBtn({total=0,follow=0,overdue=0}){ const btn=document.getElementById("shipBtn"),dot=document.getElementById("shipDot"); document.getElementById("shipCountBadge").textContent=total; btn.className="tb-btn "+(overdue>0?"ship-overdue":follow>0?"ship-follow":"ship-normal"); if(overdue>0){dot.textContent=overdue;dot.style.display="inline-flex";}else{dot.style.display="none";} }
 
-function setShipBtn({ total=0, follow=0, overdue=0 }){
-  const btn=document.getElementById("shipBtn");
-  const dot=document.getElementById("shipDot");
-  document.getElementById("shipCountBadge").textContent=total;
-  btn.className="tb-btn "+(overdue>0?"ship-overdue":follow>0?"ship-follow":"ship-normal");
-  if(overdue>0){ dot.textContent=overdue; dot.style.display="inline-flex"; }
-  else { dot.style.display="none"; }
+/* ✅ FIX: Update ship summary bar with totals */
+function updateShipSummary(list){
+  const total = list.length;
+  const subtotal = list.reduce((a,x)=>a+n(x.r.subtotal),0);
+  const shipping = list.reduce((a,x)=>a+n(x.r.shipping),0);
+  document.getElementById("ssTotal").textContent = total.toLocaleString("ar-EG");
+  document.getElementById("ssSubtotal").textContent = fmt(subtotal)+" ج";
+  document.getElementById("ssShipping").textContent = fmt(shipping)+" ج";
+  document.getElementById("ssTotal2").textContent = fmt(subtotal+shipping)+" ج";
 }
 
 async function refreshShipMonitor(){
   try{
-    const res=await api("scanList");
-    if(!res?.ok) return;
-    const all=res.rows||[];
-    shipAll=all.filter(r=>String(r.status||"").trim()==="تم الشحن");
-    let ov=0,fw=0,nm=0;
-    shipAll.forEach(r=>{ const d=daysSince(parseShipDate(r)); if(d===null){nm++;return;} if(d>=OVERDUE_MIN)ov++; else if(d>=FOLLOW_MIN)fw++; else nm++; });
-
-    // Smart overdue alert
+    const res=await api("scanList"); if(!res?.ok) return;
+    const all=res.rows||[]; shipAll=all.filter(r=>String(r.status||"").trim()==="تم الشحن");
+    let ov=0,fw=0,nm=0; shipAll.forEach(r=>{const d=daysSince(parseShipDate(r));if(d===null){nm++;return;}if(d>=OVERDUE_MIN)ov++;else if(d>=FOLLOW_MIN)fw++;else nm++;});
     const ovIds=shipAll.filter(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;}).map(r=>String(r.orderId));
-    const lastIds=getOldOverdueIds();
-    const newOv=ovIds.filter(id=>!lastIds.includes(id));
-    if(newOv.length){
-      const names=new Set(shipAll.filter(r=>newOv.includes(String(r.orderId))).map(r=>String(r.courier||"غير محدد")));
-      toast("متأخر جديد 🚨",[...names].join(" ، "),"err",5000);
-      document.body.classList.add("shake");
-      setTimeout(()=>document.body.classList.remove("shake"),600);
-    }
+    const lastIds=getOldOverdueIds(); const newOv=ovIds.filter(id=>!lastIds.includes(id));
+    if(newOv.length){ const names=new Set(shipAll.filter(r=>newOv.includes(String(r.orderId))).map(r=>String(r.courier||"غير محدد"))); toast("متأخر جديد 🚨",[...names].join(" ، "),"err",5000); document.body.classList.add("shake"); setTimeout(()=>document.body.classList.remove("shake"),600); }
     setOldOverdueIds(ovIds);
-
-    courierStats={};
-    shipAll.forEach(r=>{
-      const nm2=String(r.courier||"غير محدد").trim()||"غير محدد";
-      const d=daysSince(parseShipDate(r));
-      if(!courierStats[nm2]) courierStats[nm2]={total:0,overdue:0};
-      courierStats[nm2].total++;
-      if(d!==null&&d>=OVERDUE_MIN) courierStats[nm2].overdue++;
-    });
-
+    courierStats={}; shipAll.forEach(r=>{ const nm2=String(r.courier||"غير محدد").trim()||"غير محدد"; const d=daysSince(parseShipDate(r)); if(!courierStats[nm2]) courierStats[nm2]={total:0,overdue:0}; courierStats[nm2].total++; if(d!==null&&d>=OVERDUE_MIN) courierStats[nm2].overdue++; });
     setShipBtn({total:shipAll.length,follow:fw,overdue:ov});
-    document.getElementById("bNormal").textContent=nm;
-    document.getElementById("bFollow").textContent=fw;
-    document.getElementById("bOverdue").textContent=ov;
-
-    buildCourierFilter(shipAll);
-    renderCourierBadges();
-    const card=document.getElementById("shipCard");
-    if(card?.style.display!=="none") renderShipTable();
+    document.getElementById("bNormal").textContent=nm; document.getElementById("bFollow").textContent=fw; document.getElementById("bOverdue").textContent=ov;
+    buildCourierFilter(shipAll); renderCourierBadges();
+    const card=document.getElementById("shipCard"); if(card?.style.display!=="none") renderShipTable();
+    // Update dashboard
+    updateDashboard(all);
   }catch(e){}
 }
 
-function toggleShipCard(){
-  const card=document.getElementById("shipCard");
-  if(!card) return;
-  if(card.style.display!=="none"){ card.style.display="none"; return; }
-  card.style.display="block";
-  const hasOv=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;});
-  const hasFw=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=FOLLOW_MIN&&d<=FOLLOW_MAX;});
-  shipTab=hasOv?"overdue":hasFw?"follow":"normal";
-  setShipTab(shipTab);
-  card.scrollIntoView({behavior:"smooth",block:"start"});
-}
-
-function setShipTab(tab){
-  shipTab=tab;
-  ["normal","follow","overdue"].forEach(t=>{
-    const btn=document.getElementById("tab"+t.charAt(0).toUpperCase()+t.slice(1));
-    if(btn) btn.className="ship-tab"+(t===tab?" tab-"+t:"");
-  });
-  renderShipTable();
-}
-
+function toggleShipCard(){ const card=document.getElementById("shipCard"); if(!card) return; if(card.style.display!=="none"){card.style.display="none";return;} card.style.display="block"; const hasOv=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;}); const hasFw=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=FOLLOW_MIN&&d<=FOLLOW_MAX;}); shipTab=hasOv?"overdue":hasFw?"follow":"normal"; setShipTab(shipTab); card.scrollIntoView({behavior:"smooth",block:"start"}); }
+function setShipTab(tab){ shipTab=tab; ["normal","follow","overdue"].forEach(t=>{const btn=document.getElementById("tab"+t.charAt(0).toUpperCase()+t.slice(1));if(btn) btn.className="ship-tab"+(t===tab?" tab-"+t:"");}); renderShipTable(); }
 function renderShipTable(){
-  const tbody=document.getElementById("shipTbody"); if(!tbody) return;
-  tbody.innerHTML="";
+  const tbody=document.getElementById("shipTbody"); if(!tbody) return; tbody.innerHTML="";
   const cf=(document.getElementById("shipCourierFilter")?.value||"").trim();
   let list=shipAll.map(r=>({r,dt:parseShipDate(r),days:daysSince(parseShipDate(r))}));
-  list=list.filter(x=>{ if(x.days===null) return shipTab==="normal"; if(shipTab==="overdue") return x.days>=OVERDUE_MIN; if(shipTab==="follow") return x.days>=FOLLOW_MIN&&x.days<=FOLLOW_MAX; return x.days<FOLLOW_MIN; });
+  list=list.filter(x=>{if(x.days===null) return shipTab==="normal";if(shipTab==="overdue") return x.days>=OVERDUE_MIN;if(shipTab==="follow") return x.days>=FOLLOW_MIN&&x.days<=FOLLOW_MAX;return x.days<FOLLOW_MIN;});
   if(cf) list=list.filter(x=>(String(x.r.courier||"غير محدد").trim()||"غير محدد")===cf);
-  list.sort((a,b)=>{ const da=a.days??-1,db=b.days??-1; return shipTab==="normal"?da-db:db-da; });
-  if(!list.length){ tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">لا يوجد في هذه الفئة</div></div></td></tr>`; return; }
-  list.forEach(x=>{
-    const r=x.r; const isOv=x.days!==null&&x.days>=OVERDUE_MIN; const isWrn=!isOv&&x.days!==null&&x.days>=FOLLOW_MIN;
-    const dc=isOv?"danger":isWrn?"":"safe";
-    const p1=esc((r.phone||"").trim()), p2=esc((r.altPhone||"").trim());
-    const phones=p2?`${p1} — ${p2}`:p1;
-    const tr=document.createElement("tr");
-    if(isOv) tr.style.background="rgba(192,57,43,.04)";
-    tr.innerHTML=`
-      <td class="td-id"><b>${esc(r.orderId)}</b></td>
-      <td class="td-name">${esc(r.name||"")}</td>
-      <td class="td-addr"><span class="td-phone">${phones}</span><br><span style="font-size:10px;color:var(--mist)">${esc(r.city||"")}${r.address?" / "+esc(r.address):""}</span></td>
-      <td>${courierChip(r.courier)}</td>
-      <td class="mono" style="font-size:11px;color:var(--silver)">${x.dt?fmtYMD(x.dt):"—"}</td>
-      <td><span class="days-chip ${dc}">${x.days??"—"} يوم</span></td>
-      <td>${statusBadge(r.status)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+  list.sort((a,b)=>{const da=a.days??-1,db=b.days??-1;return shipTab==="normal"?da-db:db-da;});
+  
+  // ✅ FIX: Update summary with current filtered list (all tab, not just current)
+  const allFiltered = shipAll.map(r=>({r,dt:parseShipDate(r),days:daysSince(parseShipDate(r))}))
+    .filter(x=>!cf || (String(x.r.courier||"غير محدد").trim()||"غير محدد")===cf);
+  updateShipSummary(allFiltered);
 
-function buildCourierFilter(list){
-  const sel=document.getElementById("shipCourierFilter"); if(!sel) return;
-  const prev=(sel.value||"").trim();
-  const arr=[...new Set(list.map(r=>String(r.courier||"غير محدد").trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar"));
-  sel.innerHTML=`<option value="">كل المندوبين</option>`+arr.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
-  if(prev&&arr.includes(prev)) sel.value=prev; else sel.value="";
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">لا يوجد في هذه الفئة</div></div></td></tr>`;return;}
+  list.forEach(x=>{ const r=x.r,isOv=x.days!==null&&x.days>=OVERDUE_MIN,isWrn=!isOv&&x.days!==null&&x.days>=FOLLOW_MIN,dc=isOv?"danger":isWrn?"":"safe"; const tr=document.createElement("tr"); if(isOv) tr.style.background="rgba(192,57,43,.04)"; tr.innerHTML=`<td class="td-id"><b>${esc(r.orderId)}</b></td><td class="td-name">${esc(r.name||"")}</td><td class="td-addr">${addrCell(r)}</td><td>${courierChip(r.courier)}</td><td class="mono" style="font-size:11px;color:var(--silver)">${x.dt?fmtYMD(x.dt):"—"}</td><td><span class="days-chip ${dc}">${x.days??"—"} يوم</span></td><td>${statusBadge(r.status)}</td>`; tbody.appendChild(tr); });
 }
-
-function renderCourierBadges(){
-  const wrap=document.getElementById("courierBadges"); if(!wrap) return;
-  const cur=(document.getElementById("shipCourierFilter")?.value||"").trim();
-  const names=Object.keys(courierStats).sort((a,b)=>a.localeCompare(b,"ar"));
-  let html=`<button class="c-badge${cur===""?" active":""}" onclick="setCourierFilter('')">كل المندوبين <span class="c-n">${names.reduce((s,n2)=>s+(courierStats[n2]?.total||0),0)}</span></button>`;
-  names.forEach(nm=>{
-    const st=courierStats[nm]||{total:0,overdue:0};
-    const cls=["c-badge",st.overdue>0?"overdue-c":"",cur===nm?"active":""].filter(Boolean).join(" ");
-    html+=`<button class="${cls}" onclick='setCourierFilter(${JSON.stringify(nm)})'>${esc(nm)} <span class="c-n">${st.total}</span></button>`;
-  });
-  wrap.innerHTML=html;
-}
-
-function setCourierFilter(name){
-  const sel=document.getElementById("shipCourierFilter");
-  if(sel) sel.value=(name||"").trim();
-  renderCourierBadges(); renderShipTable();
-}
+function buildCourierFilter(list){ const sel=document.getElementById("shipCourierFilter");if(!sel) return; const prev=(sel.value||"").trim(); const arr=[...new Set(list.map(r=>String(r.courier||"غير محدد").trim()||"غير محدد"))].sort((a,b)=>a.localeCompare(b,"ar")); sel.innerHTML=`<option value="">كل المندوبين</option>`+arr.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(""); if(prev&&arr.includes(prev)) sel.value=prev; else sel.value=""; }
+function renderCourierBadges(){ const wrap=document.getElementById("courierBadges");if(!wrap) return; const cur=(document.getElementById("shipCourierFilter")?.value||"").trim(); const names=Object.keys(courierStats).sort((a,b)=>a.localeCompare(b,"ar")); let html=`<button class="c-badge${cur===""?" active":""}" onclick="setCourierFilter('')">كل المندوبين <span class="c-n">${names.reduce((s,n2)=>s+(courierStats[n2]?.total||0),0)}</span></button>`; names.forEach(nm=>{const st=courierStats[nm]||{total:0,overdue:0};const cls=["c-badge",st.overdue>0?"overdue-c":"",cur===nm?"active":""].filter(Boolean).join(" ");html+=`<button class="${cls}" onclick='setCourierFilter(${JSON.stringify(nm)})'>${esc(nm)} <span class="c-n">${st.total}</span></button>`;}); wrap.innerHTML=html; }
+function setCourierFilter(name){ const sel=document.getElementById("shipCourierFilter");if(sel) sel.value=(name||"").trim(); renderCourierBadges();renderShipTable(); }
 
 function printShipCurrent(){
   const cf=(document.getElementById("shipCourierFilter")?.value||"").trim();
   let list=shipAll.map(r=>({r,dt:parseShipDate(r),days:daysSince(parseShipDate(r))}));
   if(cf) list=list.filter(x=>(String(x.r.courier||"غير محدد").trim()||"غير محدد")===cf);
-  list=list.filter(x=>{ if(x.days===null) return shipTab==="normal"; if(shipTab==="overdue") return x.days>=OVERDUE_MIN; if(shipTab==="follow") return x.days>=FOLLOW_MIN&&x.days<=FOLLOW_MAX; return x.days<FOLLOW_MIN; });
-  list.sort((a,b)=>{ const da=a.days??-1,db=b.days??-1; return shipTab==="normal"?da-db:db-da; });
-  if(!list.length){ toast("لا يوجد بيانات","","warn"); return; }
-
-  const rowsHtml=list.map(x=>{
-    const r=x.r; const isOv=x.days!==null&&x.days>=OVERDUE_MIN;
-    const p1=(r.phone||"").trim(), p2=(r.altPhone||"").trim();
-    return `<tr style="${isOv?"background:#fff8f8":""}">
-      <td><b>${esc(r.orderId??"")}</b></td>
-      <td>${esc(r.name||"")}</td>
-      <td>${p2?esc(p1)+" - "+esc(p2):esc(p1)} / ${esc(r.city||"")} / ${esc(r.address||"")}</td>
-      <td>${esc(String(r.courier||""))}</td>
-      <td>${x.dt?fmtYMD(x.dt):"—"}</td>
-      <td style="${isOv?"color:#c0392b;font-weight:800":""}">${x.days??"—"} يوم</td>
-      <td>${esc(r.status||"")}</td>
-    </tr>`;
-  }).join("");
-
-  const now=new Date().toLocaleString("ar-EG");
-  const tabLabel={overdue:"متأخر",follow:"متابعة",normal:"طبيعي"}[shipTab]||"";
-  const w=window.open("","_blank");
-  if(!w){ toast("المتصفح يمنع النوافذ","","err"); return; }
-  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
-<title>شحنات — ${tabLabel}</title>
-<style>
+  // ✅ FIX: Print ALL shipped (not filtered by tab) but compute totals
+  const allForPrint = [...list];
+  list=list.filter(x=>{if(x.days===null) return shipTab==="normal";if(shipTab==="overdue") return x.days>=OVERDUE_MIN;if(shipTab==="follow") return x.days>=FOLLOW_MIN&&x.days<=FOLLOW_MAX;return x.days<FOLLOW_MIN;});
+  list.sort((a,b)=>{const da=a.days??-1,db=b.days??-1;return shipTab==="normal"?da-db:db-da;});
+  if(!list.length){toast("لا يوجد بيانات","","warn");return;}
+  const totalSubtotal = allForPrint.reduce((a,x)=>a+n(x.r.subtotal),0);
+  const totalShipping = allForPrint.reduce((a,x)=>a+n(x.r.shipping),0);
+  const rowsHtml=list.map(x=>{const r=x.r,isOv=x.days!==null&&x.days>=OVERDUE_MIN;const p1=fmtPhone(r.phone),p2=fmtPhone(r.altPhone);return`<tr style="${isOv?"background:#fff8f8":""}"><td><b>${esc(r.orderId??"")}</b></td><td>${esc(r.name||"")}</td><td>${p2?esc(p1)+" - "+esc(p2):esc(p1)}<br>${esc(r.city||"")} / ${esc(r.address||"")}</td><td>${esc(String(r.courier||""))}</td><td>${x.dt?fmtYMD(x.dt):"—"}</td><td style="${isOv?"color:#c0392b;font-weight:800":""}">${x.days??"—"} يوم</td><td>${esc(r.status||"")}</td></tr>`;}).join("");
+  const now=new Date().toLocaleString("ar-EG"),tabLabel={overdue:"متأخر",follow:"متابعة",normal:"طبيعي"}[shipTab]||"";
+  const w=window.open("","_blank");if(!w){toast("المتصفح يمنع النوافذ","","err");return;}
+  w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>شحنات</title><style>
 body{font-family:Cairo,Arial,sans-serif;margin:0;padding:12px;background:#fff;color:#000}
-h1{font-size:15px;margin:0 0 6px}
-.meta{font-size:11px;color:#555;margin-bottom:10px}
+h1{font-size:15px;margin:0 0 4px}
+.meta{font-size:11px;color:#555;margin-bottom:8px}
+.summary-bar{display:flex;gap:16px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:10px 16px;margin-bottom:12px;flex-wrap:wrap}
+.sb-item{display:flex;flex-direction:column;align-items:center;min-width:100px}
+.sb-val{font-size:18px;font-weight:800;color:#111}
+.sb-val.gold{color:#b8941e}
+.sb-val.green{color:#27ae60}
+.sb-lbl{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 table{width:100%;border-collapse:collapse}
 th,td{border:1px solid #ddd;padding:7px 10px;font-size:11px;text-align:right;vertical-align:top}
 th{background:#f5f5f5;font-weight:700}
-@media print{body{padding:0}tr,td,th{page-break-inside:avoid}tbody tr{break-inside:avoid}}
-</style></head>
-<body onload="window.print()">
+@media print{body{padding:0}.summary-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr,td,th{page-break-inside:avoid}tbody tr{break-inside:avoid}}</style></head><body onload="window.print()">
 <h1>🚚 مراقبة الشحنات — ${esc(tabLabel)}</h1>
-<div class="meta">التاريخ: ${esc(now)} · الفلتر: ${cf?"المندوب: "+esc(cf):"كل المندوبين"} · عدد: <b>${list.length}</b></div>
-<table><thead><tr><th>Order ID</th><th>الاسم</th><th>الهاتف/محافظة/عنوان</th><th>المندوب</th><th>تاريخ الشحن</th><th>الأيام</th><th>الحالة</th></tr></thead>
-<tbody>${rowsHtml}</tbody></table></body></html>`);
+<div class="meta">التاريخ: ${esc(now)} · الفلتر: ${cf?"المندوب: "+esc(cf):"كل المندوبين"} · عدد القائمة الحالية: <b>${list.length}</b></div>
+<div class="summary-bar">
+  <div class="sb-item"><div class="sb-val">${allForPrint.length}</div><div class="sb-lbl">إجمالي الشحنات</div></div>
+  <div class="sb-item"><div class="sb-val gold">${totalSubtotal.toLocaleString("ar-EG")}</div><div class="sb-lbl">تحصيل بدون شحن</div></div>
+  <div class="sb-item"><div class="sb-val">${totalShipping.toLocaleString("ar-EG")}</div><div class="sb-lbl">إجمالي الشحن</div></div>
+  <div class="sb-item"><div class="sb-val green">${(totalSubtotal+totalShipping).toLocaleString("ar-EG")}</div><div class="sb-lbl">الإجمالي الكلي</div></div>
+</div>
+<table><thead><tr><th>Order ID</th><th>الاسم</th><th>الهاتف/محافظة/عنوان</th><th>المندوب</th><th>تاريخ الشحن</th><th>الأيام</th><th>الحالة</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
   w.document.close();
 }
 
-/* ══════════════════════════════════════════
-   KEYBOARD
-══════════════════════════════════════════ */
-document.getElementById("orderIdInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addOne(); });
-document.getElementById("idx_q").addEventListener("keydown", e=>{ if(e.key==="Enter") searchIndex(); });
+/* ══ MODALS ══ */
+function openModal(contentHtml){ const el=document.getElementById("inlineModal"); document.getElementById("inlineModalContent").innerHTML=contentHtml; el.style.display="flex"; }
+function closeModal(){ document.getElementById("inlineModal").style.display="none"; }
+function showShipModal(){ return new Promise(resolve=>{const today=new Date().toISOString().slice(0,10); openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">🚚 تأكيد الشحن</div><div style="font-size:11px;color:var(--mist);">الحقول دي مطلوبة — مش هيتسجل من غيرها</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">اسم المندوب *</div><input id="m_courier" placeholder="مثال: أحمد" style="width:100%;" autofocus/></div><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ الشحن *</div><input id="m_shipDate" type="date" value="${today}" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalShipOk()">✅ تأكيد الشحن</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div><div id="m_err" style="color:var(--red);font-size:11px;display:none;margin-top:-4px;"></div></div>`); setTimeout(()=>document.getElementById("m_courier")?.focus(),80); window._modalShipOk=()=>{ const courier=(document.getElementById("m_courier")?.value||"").trim(),shipDate=(document.getElementById("m_shipDate")?.value||"").trim(),errEl=document.getElementById("m_err"); if(!courier){errEl.textContent="⛔ اكتب اسم المندوب";errEl.style.display="block";return;} if(!shipDate){errEl.textContent="⛔ اختر تاريخ الشحن";errEl.style.display="block";return;} closeModal();resolve({courier,shipDate});delete window._modalShipOk;delete window._modalCancel; }; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalShipOk;delete window._modalCancel;}; }); }
+function showDeliveryModal(){ return new Promise(resolve=>{const today=new Date().toISOString().slice(0,10); openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">📦 تأكيد التسليم</div><div style="font-size:11px;color:var(--mist);">اكتب تاريخ التسليم للمتابعة</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ التسليم *</div><input id="m_delivDate" type="date" value="${today}" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalDelivOk()">✅ تأكيد التسليم</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div></div>`); window._modalDelivOk=()=>{const deliveryDate=(document.getElementById("m_delivDate")?.value||"").trim();if(!deliveryDate){toast("اختر تاريخ التسليم","","err");return;}closeModal();resolve({deliveryDate});delete window._modalDelivOk;delete window._modalCancel;}; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalDelivOk;delete window._modalCancel;}; }); }
+function showPartialModal(){ return new Promise(resolve=>{openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">↩️ مرتجع جزئي</div><div style="font-size:11px;color:var(--mist);">المبلغ اللي دفعه العميل فعلاً</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">المبلغ المدفوع *</div><input id="m_partial" type="number" placeholder="مثال: 250" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalPartOk()">✅ تأكيد</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div></div>`); setTimeout(()=>document.getElementById("m_partial")?.focus(),80); window._modalPartOk=()=>{const amount=(document.getElementById("m_partial")?.value||"").trim();if(!amount){toast("اكتب المبلغ","","err");return;}closeModal();resolve({amount});delete window._modalPartOk;delete window._modalCancel;}; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalPartOk;delete window._modalCancel;}; }); }
 
-/* ══════════════════════════════════════════
-   BOOT
-══════════════════════════════════════════ */
-loadMine();
-render();
-showLoading("جاري تحميل البيانات…");
-Promise.all([refreshMine(), loadAllForIndex(), refreshShipMonitor(), refreshPendingCount()])
-  .finally(hideLoading);
+/* ══ NOTIFICATIONS ══ */
+let lastKnownIds = new Set();
+
+function showDuplicateNotif(orderId, existingOrder){
+  const panel=document.getElementById("notifPanel"); if(!panel) return;
+  const notifId="dup_"+orderId+"_"+Date.now(), status=existingOrder?existingOrder.status||"—":"—", name=existingOrder?existingOrder.name||"":"", phone=existingOrder?fmtPhone(existingOrder.phone)||"":"";
+  const div=document.createElement("div"); div.id=notifId; div.className="notif-card duplicate";
+  div.innerHTML=`<div class="notif-icon">⚠️</div><div class="notif-body"><div class="notif-title">أوردر مكرر — ${esc(String(orderId))}</div><div class="notif-sub">${name?"الاسم: <b>"+esc(name)+"</b><br>":""}${phone?"📞 "+esc(phone)+"<br>":""}الحالة الحالية: <b>${esc(status)}</b></div><div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${notifId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="dismissNotif('${notifId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${notifId}')">✕</button>`;
+  panel.appendChild(div); setTimeout(()=>dismissNotif(notifId),30000);
+}
+function showNewOrderNotif(orderId, info={}){
+  const panel=document.getElementById("notifPanel");if(!panel) return;
+  const notifId="new_"+orderId+"_"+Date.now(); const div=document.createElement("div"); div.id=notifId; div.className="notif-card";
+  div.innerHTML=`<div class="notif-icon">🆕</div><div class="notif-body"><div class="notif-title">أوردر جديد — ${esc(String(orderId))}</div><div class="notif-sub">${info.name?"الاسم: <b>"+esc(info.name)+"</b><br>":""}${info.phone?"📞 "+esc(fmtPhone(info.phone))+"<br>":""}${info.status?"الحالة: <b>"+esc(info.status)+"</b>":""}</div><div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${notifId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="addOrderFromNotif('${esc(String(orderId))}','${notifId}')">➕ أضف لأوردراتي</button><button class="notif-btn" onclick="dismissNotif('${notifId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${notifId}')">✕</button>`;
+  panel.appendChild(div); setTimeout(()=>dismissNotif(notifId),60000);
+}
+function dismissNotif(id){ const el=document.getElementById(id);if(!el) return; el.style.animation="none";el.style.transition="all .25s ease";el.style.opacity="0";el.style.transform="translateY(-8px) scale(.96)"; setTimeout(()=>el.remove(),280); }
+function markFollowed(orderId,notifId){ const followed=getFollowedIds();followed.add(String(orderId));saveFollowedIds(followed);dismissNotif(notifId);toast("تم المتابعة","Order ID: "+orderId,"ok"); }
+async function addOrderFromNotif(orderId,notifId){ const id=String(orderId).trim(); if(!mineIds.has(id)){mineIds.add(id);saveMine();recordScanTime(id);const res=await api("scanAdd",{orderId:id});if(res?.ok){toast("تم الإضافة",id,"ok");await refreshMine();}} dismissNotif(notifId); }
+
+/* ✅ FIX: checkForNewOrders — skip cancelled orders in dup detection */
+async function checkForNewOrders(){
+  try{
+    const res=await api("scanList");if(!res?.ok) return;
+    const all=res.rows||[]; allCache=all;
+    const currentIds=new Set(all.map(r=>String(r.orderId)));
+    const seenIds=getSeenIds(),followedIds=getFollowedIds();
+    if(lastKnownIds.size===0){ all.forEach(r=>lastKnownIds.add(String(r.orderId)));all.forEach(r=>seenIds.add(String(r.orderId)));saveSeenIds(seenIds);return; }
+    const newIds=[...currentIds].filter(id=>!lastKnownIds.has(id));
+    newIds.forEach(id=>{ 
+      const order=all.find(r=>String(r.orderId)===id);if(!order) return; 
+      // ✅ FIX: If status is cancelled/returned, don't show as duplicate ever
+      if(isCancelledStatus(order.status)){ seenIds.add(id); saveSeenIds(seenIds); lastKnownIds.add(id); return; }
+      if(seenIds.has(id)&&!followedIds.has(id)){
+        // ✅ FIX: Only show dup warning if within 24h window
+        if(wasScannedRecently(id)){
+          beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);showDuplicateNotif(id,order);
+        }
+      }else if(!seenIds.has(id)){
+        seenIds.add(id);saveSeenIds(seenIds);beep();showNewOrderNotif(id,{name:order.name,phone:order.phone,status:order.status}); 
+      }
+      lastKnownIds.add(id); 
+    });
+    updateDashboard(all);
+  }catch(e){}
+}
+
+/* ✅ FIX: addOneWithDupCheck — respect cancelled status + 24h window */
+async function addOneWithDupCheck(){
+  const id=document.getElementById("orderIdInput").value.trim(); if(!id) return;
+  if(mineIds.has(String(id))){ toast("الأوردر موجود في قائمتك","","warn"); return; }
+  const inCache=allCache.find(r=>String(r.orderId).trim()===String(id));
+  
+  // Only show dup warning if: exists in cache, NOT cancelled, AND scanned within 24h
+  const shouldWarnDup = inCache && !isCancelledStatus(inCache.status) && wasScannedRecently(id);
+  
+  if(shouldWarnDup){ 
+    beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
+    showDuplicateNotif(id,inCache); 
+    const proceed=await confirmDupProceed(); 
+    if(!proceed) return; 
+  }
+  mineIds.add(String(id));saveMine();beep();toast("تم إضافة الأوردر",id,"ok");
+  recordScanTime(id);
+  const res=await api("scanAdd",{orderId:id}); if(!res?.ok){toast("فشل الإضافة",res?.error||"","err");return;}
+  document.getElementById("orderIdInput").value=""; showLoading("جاري التحديث…"); await refreshMine(); hideLoading(); refreshPendingCount();
+}
+
+function confirmDupProceed(){ return new Promise(resolve=>{ const panel=document.getElementById("notifPanel"),id="confirm_"+Date.now(),div=document.createElement("div"); div.id=id;div.className="notif-card";div.style.borderColor="rgba(212,150,26,.4)"; div.innerHTML=`<div class="notif-icon">❓</div><div class="notif-body"><div class="notif-title">الأوردر موجود بالفعل — تكمّل؟</div><div class="notif-sub">الأوردر ده موجود في الشيت. عايز تضيفه لقائمتك برده؟</div><div class="notif-actions"><button class="notif-btn gold" onclick="_dupResolve('${id}',true)">نعم، أضف</button><button class="notif-btn" onclick="_dupResolve('${id}',false)">لأ، إلغاء</button></div></div>`; panel.appendChild(div); window["_dupResolve"]=(nId,val)=>{dismissNotif(nId);resolve(val);delete window["_dupResolve"];}; }); }
+
+/* ══ AWAIT SHIPMENT ══ */
+async function refreshAwaitCount(){
+  try{
+    const res=await api("scanList");if(!res?.ok) return;
+    awaitOrders=(res.rows||[]).filter(r=>String(r.status||"").trim()==="تم الطباعة");
+    const count=awaitOrders.length,badge=document.getElementById("awaitCountBadge"),btn=document.getElementById("awaitBtn");
+    if(badge) badge.textContent=count;
+    if(btn){if(count>0){btn.style.borderColor="rgba(201,168,76,.35)";btn.style.background="rgba(201,168,76,.08)";btn.style.color="var(--gold)";}else{btn.style.borderColor="";btn.style.background="";btn.style.color="";}}
+    const card=document.getElementById("awaitCard"); if(card&&card.style.display!=="none") renderAwaitTable();
+  }catch(e){}
+}
+function toggleAwaitCard(){ const card=document.getElementById("awaitCard");if(!card) return; if(card.style.display!=="none"){card.style.display="none";return;} card.style.display="block"; renderAwaitTable(); card.scrollIntoView({behavior:"smooth",block:"start"}); }
+function renderAwaitTable(){
+  const tbody=document.getElementById("awaitTbody");if(!tbody) return; tbody.innerHTML="";
+  const stats=document.getElementById("awaitStats");if(stats) stats.textContent=awaitOrders.length+" طلب";
+  if(!awaitOrders.length){tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">لا يوجد طلبات تنتظر الشحن</div></div></td></tr>`;return;}
+  awaitOrders.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td class="td-id"><b>${esc(r.orderId)}</b></td><td class="td-name">${esc(r.name||"")}</td><td class="td-addr">${addrCell(r)}</td><td class="td-amount">${fmt(r.subtotal)}</td><td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping)}</td><td>${statusBadge(r.status)}</td>`;tbody.appendChild(tr);});
+}
+
+/* ══ KEYBOARD ══ */
+document.getElementById("orderIdInput").addEventListener("keydown",e=>{if(e.key==="Enter") addOneWithDupCheck();});
+document.getElementById("idx_q").addEventListener("keydown",e=>{if(e.key==="Enter") searchIndex();});
+
+/* ══ SCROLL TOP ══ */
+window.addEventListener("scroll",()=>{ const btn=document.getElementById("scrollTopBtn");if(!btn) return; if(window.scrollY>300) btn.classList.add("visible"); else btn.classList.remove("visible"); });
+
+/* ══ BOOT ══ */
+loadMine(); pruneDupTimes(); render(); showLoading("جاري تحميل البيانات…");
+Promise.all([refreshMine(),loadAllForIndex(),refreshShipMonitor(),refreshPendingCount(),refreshAwaitCount(),checkForNewOrders()]).finally(hideLoading);
 
 setInterval(refreshShipMonitor, 60000);
 setInterval(refreshPendingCount, 90000);
+setInterval(refreshAwaitCount, 90000);
+setInterval(checkForNewOrders, 45000);
+setInterval(pruneDupTimes, 300000); // clean old dup times every 5 min
 </script>
 </body>
 </html>
