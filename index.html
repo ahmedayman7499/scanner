@@ -305,21 +305,30 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none !important; 
 .toast-box.t-err  { border-color: rgba(192,57,43,.3); }
 
 /* ══ PRINT MENU ══ */
+/* ✅ CENTER PRINT MENU (CSS ONLY) */
 #printMenu{
   position: fixed;
+  inset: 0;                 /* يملأ الشاشة */
   z-index: 9000;
   display: none;
+  padding: 16px;
 
-  /* السنترة الكاملة */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-
-  /* حجم مناسب للموبايل */
-  width: min(360px, 92vw);
-  max-width: 92vw;
+  /* اختياري: خلفية خفيفة */
+  /* background: rgba(0,0,0,.35); */
+  /* backdrop-filter: blur(6px); */
 }
-}#printMenu.open { display: block; animation: menuIn .18s ease; }
+
+#printMenu.open{
+  display: flex !important; /* مهم عشان يتغلب على أي display قديم */
+  align-items: center;
+  justify-content: center;
+  animation: menuIn .18s ease;
+}
+
+/* المربع نفسه */
+#printMenu .print-menu-box{
+  width: min(380px, 92vw);
+}
 @keyframes menuIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 .print-menu-box { background: var(--ink2); border: 1px solid var(--rule2); border-radius: var(--r3); box-shadow: var(--sh3); overflow: hidden; padding: 6px; }
 .pm-header { padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
