@@ -599,17 +599,17 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       <div class="metric"><div class="metric-val" id="metricSubtotal">0</div><div class="metric-lbl">تحصيل</div></div>
       <div class="metric"><div class="metric-val" id="metricShipping">0</div><div class="metric-lbl">شحن</div></div>
       <div class="topbar-actions">
-        <button class="tb-btn" id="printPendingBtn" onclick="togglePrintMenu(event)">
-          🖨️ فواتير <span class="tb-badge" id="pendingTotal">0</span>
+        <button class="tb-btn ship-normal" id="shipBtn" onclick="toggleShipCard()">
+          🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span>
+          <span class="ship-dot" id="shipDot"></span>
         </button>
         <div class="vr"></div>
         <button class="tb-btn" id="awaitBtn" onclick="toggleAwaitCard()" title="طلبات تم طباعتها وبتنتظر الشحن">
           📦 انتظار الشحن <span class="tb-badge" id="awaitCountBadge">0</span>
         </button>
         <div class="vr"></div>
-        <button class="tb-btn ship-normal" id="shipBtn" onclick="toggleShipCard()">
-          🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span>
-          <span class="ship-dot" id="shipDot"></span>
+        <button class="tb-btn" id="printPendingBtn" onclick="togglePrintMenu(event)">
+          🖨️ فواتير <span class="tb-badge" id="pendingTotal">0</span>
         </button>
         <div class="vr"></div>
         <span class="clock" id="clock"></span>
