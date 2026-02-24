@@ -105,21 +105,68 @@ body {
 /* ══ TOPBAR ══ */
 .topbar {
   position: sticky; top: 8px; z-index: 200;
-  background: rgba(10,10,10,.92);
+  background: rgba(10,10,10,.95);
   backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid var(--rule2);
   border-radius: var(--r3);
-  padding: 10px 16px;
+  padding: 10px 14px;
   box-shadow: var(--sh2);
+  /* FIX: overflow visible so print menu not clipped */
+  overflow: visible;
 }
 .topbar::before {
   content: "";
   position: absolute; top: 0; left: 20%; right: 20%;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: .7;
+  opacity: .7; border-radius: var(--r3);
 }
-.topbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* FIX: Two-row topbar - row1: brand+metrics, row2: action buttons centered */
+.topbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 8px; }
+.topbar-btn-row { display: flex; align-items: center; gap: 6px; justify-content: center; flex-wrap: wrap; }
+
+/* Bell button */
+.bell-btn { position: relative; font-size: 16px; padding: 7px 11px; }
+.bell-dot {
+  position: absolute; top: -4px; right: -4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--red); border: 2px solid var(--ink);
+  display: none;
+}
+.bell-dot.active { display: block; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+/* Notification drawer */
+#notifDrawer {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9200; pointer-events: none;
+}
+#notifDrawer.open { pointer-events: all; }
+.nd-backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.5);
+  opacity: 0; transition: opacity .2s;
+}
+#notifDrawer.open .nd-backdrop { opacity: 1; }
+.nd-panel {
+  position: absolute; top: 72px; left: 50%; transform: translateX(-50%) translateY(-10px);
+  width: min(420px, 92vw); background: var(--ink2);
+  border: 1px solid var(--rule2); border-radius: var(--r3);
+  box-shadow: var(--sh3); overflow: hidden;
+  max-height: 60vh; display: flex; flex-direction: column;
+  opacity: 0; transition: all .25s cubic-bezier(.34,1.2,.64,1);
+}
+#notifDrawer.open .nd-panel { opacity: 1; transform: translateX(-50%) translateY(0); }
+.nd-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--rule); flex-shrink:0; }
+.nd-title { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--pearl); font-weight:600; }
+.nd-clear { font-size:10px; color:var(--mist); background:none; border:none; cursor:pointer; min-height:unset; padding:3px 8px; border-radius:var(--r1); }
+.nd-clear:hover { color:var(--silver); background:rgba(255,255,255,.05); }
+.nd-list { overflow-y: auto; flex:1; }
+.nd-item { display:flex; align-items:flex-start; gap:10px; padding:11px 16px; border-bottom:1px solid var(--rule); }
+.nd-item:last-child { border-bottom:none; }
+.nd-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.nd-body { flex:1; min-width:0; }
+.nd-txt { font-size:12px; color:var(--ivory); font-weight:600; }
+.nd-sub { font-size:10px; color:var(--mist); margin-top:2px; }
+.nd-empty { padding:28px; text-align:center; color:var(--mist); font-size:12px; }
 
 .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .brand-logo {
@@ -153,7 +200,7 @@ body {
 .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; color: var(--white); line-height: 1; }
 .metric-lbl { font-size: 9px; color: var(--mist); text-transform: uppercase; letter-spacing: 1.5px; }
 
-.topbar-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.topbar-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 
 .tb-btn {
   font-family: 'Cairo', sans-serif; font-size: 11px; font-weight: 700;
@@ -305,9 +352,14 @@ button:disabled { opacity: .4; cursor: not-allowed; transform: none !important; 
 .toast-box.t-err  { border-color: rgba(192,57,43,.3); }
 
 /* ══ PRINT MENU ══ */
-#printMenu { position: fixed; z-index: 500; display: none; min-width: 260px; }
+#printMenu {
+  position: fixed; z-index: 9100; display: none;
+  /* FIX: centered on screen by default */
+  left: 50%; transform: translateX(-50%);
+  min-width: min(300px, 92vw);
+}
 #printMenu.open { display: block; animation: menuIn .18s ease; }
-@keyframes menuIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes menuIn { from { opacity: 0; transform: translateX(-50%) translateY(-6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 .print-menu-box { background: var(--ink2); border: 1px solid var(--rule2); border-radius: var(--r3); box-shadow: var(--sh3); overflow: hidden; padding: 6px; }
 .pm-header { padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
 .pm-title { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--pearl); letter-spacing: .5px; }
@@ -508,6 +560,48 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
 @keyframes dupShake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-3px)} 90%{transform:translateX(3px)} }
 .dup-shake { animation: dupShake .6s ease; }
 
+/* ══ QUICK ACTION BUTTONS ══ */
+.qa-wrap { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.qa-btn {
+  font-size: 10px; font-weight: 700; padding: 3px 7px;
+  border-radius: var(--r4); border: 1px solid var(--rule2);
+  background: rgba(255,255,255,.05); color: var(--silver);
+  cursor: pointer; min-height: unset; transition: all .15s;
+  white-space: nowrap; font-family: 'Cairo', sans-serif;
+}
+.qa-btn:hover { background: rgba(255,255,255,.12); color: var(--white); }
+.qa-btn.qa-ship  { border-color:rgba(243,156,18,.35); color:#f39c12; }
+.qa-btn.qa-ship:hover  { background:rgba(243,156,18,.12); }
+.qa-btn.qa-done  { border-color:rgba(39,174,96,.35);  color:#27ae60; }
+.qa-btn.qa-done:hover  { background:rgba(39,174,96,.12); }
+.qa-btn.qa-ret   { border-color:rgba(192,57,43,.35);  color:var(--red); }
+.qa-btn.qa-ret:hover   { background:rgba(192,57,43,.12); }
+.qa-btn.qa-print { border-color:rgba(201,168,76,.35); color:var(--gold); }
+.qa-btn.qa-print:hover { background:var(--gold-faint); }
+.qa-btn.qa-cancel{ border-color:rgba(127,140,141,.3); color:var(--mist); }
+.qa-btn.qa-cancel:hover{ background:rgba(127,140,141,.1); }
+.qa-btn:disabled { opacity:.35; cursor:not-allowed; }
+
+/* Quick action column */
+td.td-qa { min-width: 120px; }
+@media(max-width:640px){ td.td-qa { display:none; } }
+
+/* ══ COURIER MEMORY BAR ══ */
+.courier-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 7px 12px; background: var(--ink3); border-radius: var(--r2);
+  border: 1px solid var(--rule); margin-bottom: 8px; font-size: 11px;
+}
+.cb-label { color: var(--mist); flex-shrink:0; }
+.cb-chip {
+  padding: 3px 10px; border-radius: var(--r4);
+  border: 1px solid var(--rule2); background: rgba(255,255,255,.05);
+  color: var(--silver); cursor: pointer; font-size:11px; font-weight:600;
+  transition: all .15s; min-height:unset;
+}
+.cb-chip:hover { background: var(--gold-faint); border-color: rgba(201,168,76,.35); color: var(--gold); }
+.cb-chip.active { background: var(--gold-faint); border-color: rgba(201,168,76,.45); color: var(--gold); }
+
 /* ══ SCROLL TOP ══ */
 #scrollTopBtn { position: fixed; bottom: 24px; left: 24px; width: 42px; height: 42px; border-radius: 50%; background: var(--ink2); border: 1px solid var(--rule2); color: var(--silver); font-size: 16px; cursor: pointer; box-shadow: var(--sh2); display: none; align-items: center; justify-content: center; z-index: 300; transition: all .2s; min-height: unset; padding: 0; }
 #scrollTopBtn:hover { background: var(--ink3); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px var(--gold-faint); }
@@ -518,13 +612,16 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
 
 @media (max-width: 640px) {
   body { padding: 8px; }
-  .topbar { border-radius: 12px; padding: 8px 12px; top: 6px; }
-  .brand-name { font-size: 13px; }
-  .metric-val { font-size: 15px; }
-  .metric { padding: 5px 8px; }
+  .topbar { border-radius: 12px; padding: 8px 10px; top: 6px; }
+  .brand-name { font-size: 13px; letter-spacing: 1px; }
+  .brand-tagline { display: none; }
+  .metric-val { font-size: 14px; }
+  .metric { padding: 4px 8px; }
   .tb-btn { padding: 7px 10px; font-size: 10px; }
   .clock { display: none; }
+  .vr { display: none; }
   .dash-grid { grid-template-columns: repeat(2, 1fr); }
+  .topbar-row { margin-bottom: 6px; }
 }
 </style>
 </head>
@@ -538,6 +635,23 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
 
 <!-- ══ NOTIFICATION PANEL ══ -->
 <div id="notifPanel"></div>
+
+<!-- ══ NOTIFICATION DRAWER (Bell) ══ -->
+<div id="notifDrawer">
+  <div class="nd-backdrop" onclick="closeNotifDrawer()"></div>
+  <div class="nd-panel">
+    <div class="nd-header">
+      <span class="nd-title">🔔 التنبيهات</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="nd-clear" onclick="clearNotifHistory()">مسح الكل</button>
+        <button class="nd-clear" onclick="closeNotifDrawer()" style="font-size:16px;padding:2px 6px;">✕</button>
+      </div>
+    </div>
+    <div class="nd-list" id="ndList">
+      <div class="nd-empty">لا يوجد تنبيهات</div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ STATUS TOAST ══ -->
 <div id="statusToast">
@@ -584,6 +698,7 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
 
   <!-- ══ TOPBAR ══ -->
   <div class="topbar no-print">
+    <!-- Row 1: Brand + Metrics -->
     <div class="topbar-row">
       <div class="brand">
         <div class="brand-logo">
@@ -594,26 +709,31 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
           <div class="brand-tagline">Delivery System</div>
         </div>
       </div>
-      <div class="vr"></div>
-      <div class="metric"><div class="metric-val" id="metricOrders">0</div><div class="metric-lbl">طلبات</div></div>
-      <div class="metric"><div class="metric-val" id="metricSubtotal">0</div><div class="metric-lbl">تحصيل</div></div>
-      <div class="metric"><div class="metric-val" id="metricShipping">0</div><div class="metric-lbl">شحن</div></div>
       <div class="topbar-actions">
-        <button class="tb-btn ship-normal" id="shipBtn" onclick="toggleShipCard()">
-          🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span>
-          <span class="ship-dot" id="shipDot"></span>
-        </button>
-        <div class="vr"></div>
-        <button class="tb-btn" id="awaitBtn" onclick="toggleAwaitCard()" title="طلبات تم طباعتها وبتنتظر الشحن">
-          📦 انتظار الشحن <span class="tb-badge" id="awaitCountBadge">0</span>
-        </button>
-        <div class="vr"></div>
-        <button class="tb-btn" id="printPendingBtn" onclick="togglePrintMenu(event)">
-          🖨️ فواتير <span class="tb-badge" id="pendingTotal">0</span>
-        </button>
-        <div class="vr"></div>
+        <div class="metric"><div class="metric-val" id="metricOrders">0</div><div class="metric-lbl">طلبات</div></div>
+        <div class="metric"><div class="metric-val" id="metricSubtotal">0</div><div class="metric-lbl">تحصيل</div></div>
+        <div class="metric"><div class="metric-val" id="metricShipping">0</div><div class="metric-lbl">شحن</div></div>
         <span class="clock" id="clock"></span>
       </div>
+    </div>
+    <!-- Row 2: Action Buttons - centered -->
+    <div class="topbar-btn-row">
+      <!-- Bell / Notifications -->
+      <button class="tb-btn bell-btn" onclick="toggleNotifDrawer(event)" title="التنبيهات">
+        🔔
+        <span class="bell-dot" id="bellDot"></span>
+      </button>
+      <div class="vr"></div>
+      <button class="tb-btn" id="printPendingBtn" onclick="togglePrintMenu(event)">
+        🖨️ فواتير <span class="tb-badge" id="pendingTotal">0</span>
+      </button>
+      <button class="tb-btn" id="awaitBtn" onclick="toggleAwaitCard()" title="طلبات تم طباعتها وبتنتظر الشحن">
+        📦 انتظار <span class="tb-badge" id="awaitCountBadge">0</span>
+      </button>
+      <button class="tb-btn ship-normal" id="shipBtn" onclick="toggleShipCard()">
+        🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span>
+        <span class="ship-dot" id="shipDot"></span>
+      </button>
     </div>
   </div>
 
@@ -688,6 +808,12 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
       </div>
     </div>
     <div class="section-rule"></div>
+    <!-- ✅ Courier memory bar — بيتذكر المندوبين السابقين -->
+    <div class="courier-bar" id="courierBar" style="display:none;">
+      <span class="cb-label">🚚 المندوب:</span>
+      <div id="courierChips" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+      <span style="color:var(--mist);font-size:10px;margin-inline-start:auto;">اضغط عشان تحدد</span>
+    </div>
     <div class="input-row" style="flex-wrap:wrap; gap:8px;">
       <select id="statusSelect" style="flex:1; min-width:200px;">
         <option value="">— تغيير الحالة للمحدد —</option>
@@ -858,7 +984,8 @@ body.pdf-mode #selectionInfo, body.pdf-mode #toggleAllBtn { display: none !impor
           <th>Order ID</th><th>الاسم</th>
           <th>الهاتف / المحافظة / العنوان</th>
           <th>التحصيل</th><th>الشحن</th><th>الحالة</th>
-          <th>التاريخ</th>
+          <th class="no-print">التاريخ</th>
+          <th class="no-print">إجراء سريع</th>
         </tr></thead>
         <tbody id="tbody">
           <tr><td colspan="8"><div class="empty">
@@ -896,6 +1023,8 @@ let qr = null, lastScan = { id:"", t:0 }, scanLockUntil = 0;
 let allCache = [], srSelected = new Set(), lastResults = [];
 let shipAll = [], shipTab = "overdue", courierStats = {};
 let awaitOrders = [];
+let lastKnownIds = new Set();
+let notifHistory = []; // bell drawer history
 
 /* ══ CLOCK ══ */
 function tickClock(){ const e=document.getElementById("clock"); if(e) e.textContent=new Date().toLocaleTimeString("ar-EG"); }
@@ -909,6 +1038,9 @@ const SEEN_IDS_KEY    = "wc_seen_order_ids_v1";
 const FOLLOWED_IDS_KEY= "wc_followed_ids_v1";
 // ✅ NEW: store {id -> timestamp} for 24h dup window
 const DUP_TIMES_KEY   = "wc_dup_scan_times_v1";
+const NOTIF_HIST_KEY  = "wc_notif_history_v1";
+const COURIERS_KEY    = "wc_couriers_v1";     // ✅ NEW: remembered couriers
+const LAST_COURIER_KEY= "wc_last_courier_v1"; // ✅ NEW: last selected courier
 
 function loadMine(){ try{ mineIds=new Set((JSON.parse(localStorage.getItem(LS_KEY)||"[]")).map(String)); }catch(e){ mineIds=new Set(); } }
 function saveMine(){ localStorage.setItem(LS_KEY, JSON.stringify([...mineIds])); }
@@ -930,6 +1062,65 @@ function pruneDupTimes(){ const m=getDupTimes(); const now=Date.now(); Object.ke
 
 /* ✅ NEW: Check if order is cancelled/returned (not a real dup) */
 function isCancelledStatus(status){ return CANCELLED_STATUSES.has(String(status||"").trim()); }
+
+/* ══ COURIER MEMORY ══ */
+function getSavedCouriers(){ try{ return JSON.parse(localStorage.getItem(COURIERS_KEY)||"[]"); }catch(e){ return []; } }
+function saveCourier(name){
+  if(!name) return;
+  let list = getSavedCouriers();
+  list = [name, ...list.filter(c=>c!==name)].slice(0,8); // آخر 8 مندوبين
+  localStorage.setItem(COURIERS_KEY, JSON.stringify(list));
+  localStorage.setItem(LAST_COURIER_KEY, name);
+  renderCourierBar();
+}
+function getLastCourier(){ return localStorage.getItem(LAST_COURIER_KEY)||""; }
+function setActiveCourier(name){
+  localStorage.setItem(LAST_COURIER_KEY, name);
+  renderCourierBar();
+}
+function renderCourierBar(){
+  const list = getSavedCouriers();
+  const bar = document.getElementById("courierBar");
+  const chips = document.getElementById("courierChips");
+  if(!bar||!chips) return;
+  if(!list.length){ bar.style.display="none"; return; }
+  bar.style.display="flex";
+  const cur = getLastCourier();
+  chips.innerHTML = list.map(c=>`<button class="cb-chip${c===cur?" active":""}" onclick="setActiveCourier('${esc(c)}')">${esc(c)}</button>`).join("");
+}
+
+/* ══ NOTIFICATION HISTORY (Bell drawer) ══ */
+function loadNotifHistory(){ try{ notifHistory=JSON.parse(localStorage.getItem(NOTIF_HIST_KEY)||"[]"); }catch(e){ notifHistory=[]; } }
+function saveNotifHistory(){ localStorage.setItem(NOTIF_HIST_KEY, JSON.stringify(notifHistory.slice(0,60))); }
+function addNotifHistory(icon, txt, sub=""){
+  notifHistory.unshift({icon, txt, sub, ts:Date.now()});
+  if(notifHistory.length>60) notifHistory.pop();
+  saveNotifHistory();
+  updateBellDot();
+  if(document.getElementById("notifDrawer")?.classList.contains("open")) renderNotifDrawer();
+}
+function clearNotifHistory(){ notifHistory=[]; saveNotifHistory(); updateBellDot(); renderNotifDrawer(); }
+function updateBellDot(){
+  const dot=document.getElementById("bellDot"); if(!dot) return;
+  dot.className="bell-dot"+(notifHistory.length>0?" active":"");
+}
+function renderNotifDrawer(){
+  const list=document.getElementById("ndList"); if(!list) return;
+  if(!notifHistory.length){ list.innerHTML='<div class="nd-empty">لا يوجد تنبيهات</div>'; return; }
+  const now=Date.now();
+  list.innerHTML=notifHistory.map(n=>{
+    const mins=Math.round((now-n.ts)/60000);
+    const ago=mins<1?"الآن":mins<60?mins+" دقيقة":Math.round(mins/60)+" ساعة";
+    return `<div class="nd-item"><div class="nd-icon">${esc(n.icon)}</div><div class="nd-body"><div class="nd-txt">${esc(n.txt)}</div><div class="nd-sub">${esc(n.sub||"")}${n.sub?" · ":""}${ago}</div></div></div>`;
+  }).join("");
+}
+function toggleNotifDrawer(e){
+  e.stopPropagation();
+  const d=document.getElementById("notifDrawer");
+  const isOpen=d.classList.toggle("open");
+  if(isOpen) renderNotifDrawer();
+}
+function closeNotifDrawer(){ document.getElementById("notifDrawer")?.classList.remove("open"); }
 
 /* ══ LOADING ══ */
 function showLoading(txt="جاري التحميل…"){ document.getElementById("loadingTxt").textContent=txt; document.getElementById("loadingOverlay").classList.add("active"); }
@@ -966,6 +1157,180 @@ function jsonp(url){ return new Promise((res,rej)=>{ const cb="cb_"+Math.random(
 async function api(action, params={}){ const qs=new URLSearchParams({action,key:API_KEY,_t:Date.now(),...params}).toString(); return jsonp(WEB_APP_URL+"?"+qs); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function nextFrame(){ return new Promise(r=>requestAnimationFrame(r)); }
+
+/* ══ SMART DATA CACHE — طلب واحد بس وتوزيع على الكل ══ */
+const CACHE_KEY     = "wc_data_cache_v1";
+const CACHE_TTL_MS  = 30000; // 30 ثانية قبل ما نطلب من السيرفر تاني
+let   _fetchPromise = null;  // لو في طلب شغال، مستنناه بدل ما نعمل تاني
+
+/* حمّل الكاش المحلي فوراً (Stale-While-Revalidate) */
+function loadCachedData(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const {rows, ts} = JSON.parse(raw);
+    if(!rows||!rows.length) return null;
+    return {rows, ts, stale: (Date.now()-ts) > CACHE_TTL_MS};
+  }catch(e){ return null; }
+}
+function saveCachedData(rows){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({rows, ts:Date.now()})); }catch(e){}
+}
+
+/* الطلب المركزي — مشترك بين كل الـ functions */
+async function fetchAllRows(forceRefresh=false){
+  // لو في طلب شغال دلوقتي، استنى نتيجته بدل ما تعمل request تاني
+  if(_fetchPromise) return _fetchPromise;
+
+  // لو الكاش لسه طازج ومش مضطرين نحدث
+  if(!forceRefresh){
+    const cached = loadCachedData();
+    if(cached && !cached.stale) return {ok:true, rows:cached.rows, fromCache:true};
+  }
+
+  _fetchPromise = (async()=>{
+    try{
+      const res = await api("scanList");
+      if(res?.ok && res.rows){
+        saveCachedData(res.rows);
+      }
+      return res;
+    }finally{
+      _fetchPromise = null;
+    }
+  })();
+
+  return _fetchPromise;
+}
+
+/* processAllRows — بيأخذ الداتا ويحدث كل section */
+function processAllRows(all){
+  if(!all?.length) return;
+  allCache = all;
+
+  // أوردراتي
+  const mine = all.filter(r=>mineIds.has(String(r.orderId)));
+  const order = [...mineIds];
+  mine.sort((a,b)=>order.indexOf(String(b.orderId))-order.indexOf(String(a.orderId)));
+  rows = mine; selected = new Set(rows.map(r=>String(r.orderId)));
+
+  // شحنات
+  shipAll = all.filter(r=>String(r.status||"").trim()==="تم الشحن");
+
+  // انتظار الشحن
+  awaitOrders = all.filter(r=>String(r.status||"").trim()==="تم الطباعة");
+
+  // pending counts
+  const newOrders  = all.filter(r=>{const s=String(r.status||"").trim();return s===""||s.toLowerCase()==="new"||s==="جديد";});
+  const underPrint = all.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
+  pendingCache.newOrders = newOrders;
+  pendingCache.pending   = underPrint;
+  const total = newOrders.length + underPrint.length;
+  document.getElementById("pmNewCount").textContent     = newOrders.length;
+  document.getElementById("pmPendingCount").textContent = underPrint.length;
+  document.getElementById("pmBothCount").textContent    = total;
+  document.getElementById("pendingTotal").textContent   = total;
+  const printBtn = document.getElementById("printPendingBtn");
+  if(total>0) printBtn.classList.add("pending-active"); else printBtn.classList.remove("pending-active");
+
+  // await badge
+  const awaitCount = awaitOrders.length;
+  const awaitBadge = document.getElementById("awaitCountBadge");
+  const awaitBtn   = document.getElementById("awaitBtn");
+  if(awaitBadge) awaitBadge.textContent = awaitCount;
+  if(awaitBtn){
+    if(awaitCount>0){ awaitBtn.style.borderColor="rgba(201,168,76,.35)"; awaitBtn.style.background="rgba(201,168,76,.08)"; awaitBtn.style.color="var(--gold)"; }
+    else { awaitBtn.style.borderColor=""; awaitBtn.style.background=""; awaitBtn.style.color=""; }
+  }
+
+  // ship monitor stats
+  let ov=0,fw=0,nm=0;
+  shipAll.forEach(r=>{const d=daysSince(parseShipDate(r));if(d===null){nm++;return;}if(d>=OVERDUE_MIN)ov++;else if(d>=FOLLOW_MIN)fw++;else nm++;});
+  const ovIds = shipAll.filter(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;}).map(r=>String(r.orderId));
+  const lastIds = getOldOverdueIds(); const newOv = ovIds.filter(id=>!lastIds.includes(id));
+  if(newOv.length){
+    const names=new Set(shipAll.filter(r=>newOv.includes(String(r.orderId))).map(r=>String(r.courier||"غير محدد")));
+    toast("متأخر جديد 🚨",[...names].join(" ، "),"err",5000);
+    addNotifHistory("🚨","شحنات متأخرة",[...names].join(" ، "));
+    document.body.classList.add("shake"); setTimeout(()=>document.body.classList.remove("shake"),600);
+  }
+  setOldOverdueIds(ovIds);
+  courierStats={};
+  shipAll.forEach(r=>{const nm2=String(r.courier||"غير محدد").trim()||"غير محدد";const d=daysSince(parseShipDate(r));if(!courierStats[nm2]) courierStats[nm2]={total:0,overdue:0};courierStats[nm2].total++;if(d!==null&&d>=OVERDUE_MIN) courierStats[nm2].overdue++;});
+  setShipBtn({total:shipAll.length,follow:fw,overdue:ov});
+  document.getElementById("bNormal").textContent=nm;
+  document.getElementById("bFollow").textContent=fw;
+  document.getElementById("bOverdue").textContent=ov;
+  buildCourierFilter(shipAll); renderCourierBadges();
+
+  // dashboard + search index
+  updateDashboard(all);
+  document.getElementById("indexStats").textContent=`✅ ${all.length.toLocaleString("ar-EG")} أوردر`;
+
+  // render UI
+  render();
+  if(document.getElementById("shipCard")?.style.display!=="none") renderShipTable();
+  if(document.getElementById("awaitCard")?.style.display!=="none") renderAwaitTable();
+
+  // check for new orders
+  _checkNewOrders(all);
+}
+
+/* ══ الدالة المركزية للتحديث ══ */
+async function refreshAll(forceRefresh=false){
+  const cached = loadCachedData();
+
+  // عرض الكاش فوراً (بدون شاشة تحميل لو عندنا بيانات)
+  if(cached && cached.rows.length){
+    processAllRows(cached.rows);
+  }
+
+  // لو الكاش طازج ومش محتاجين نحدث
+  if(!forceRefresh && cached && !cached.stale) return;
+
+  // جيب بيانات جديدة في الخلفية
+  try{
+    const res = await fetchAllRows(forceRefresh);
+    if(res?.ok && res.rows && !res.fromCache){
+      processAllRows(res.rows);
+    }
+  }catch(e){ toast("خطأ في التحديث","","err"); }
+}
+
+/* ══ REFRESH WRAPPERS — بيستخدموا refreshAll بدل ما يعملوا requests منفصلة ══ */
+async function refreshMine(){ await refreshAll(true); }
+async function loadAllForIndex(){ await refreshAll(); }
+async function refreshShipMonitor(){ await refreshAll(); }
+async function refreshPendingCount(){ await refreshAll(); }
+async function refreshAwaitCount(){ await refreshAll(); }
+async function checkForNewOrders(){ await refreshAll(); }
+
+/* ══ NEW ORDER DETECTION ══ */
+function _checkNewOrders(all){
+  const currentIds = new Set(all.map(r=>String(r.orderId)));
+  const seenIds = getSeenIds(), followedIds = getFollowedIds();
+  if(lastKnownIds.size===0){
+    all.forEach(r=>lastKnownIds.add(String(r.orderId)));
+    all.forEach(r=>seenIds.add(String(r.orderId)));
+    saveSeenIds(seenIds); return;
+  }
+  const newIds = [...currentIds].filter(id=>!lastKnownIds.has(id));
+  newIds.forEach(id=>{
+    const order=all.find(r=>String(r.orderId)===id); if(!order) return;
+    if(isCancelledStatus(order.status)){ seenIds.add(id); saveSeenIds(seenIds); lastKnownIds.add(id); return; }
+    if(seenIds.has(id)&&!followedIds.has(id)){
+      if(wasScannedRecently(id)){
+        beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700);
+        showDuplicateNotif(id,order);
+      }
+    } else if(!seenIds.has(id)){
+      seenIds.add(id); saveSeenIds(seenIds);
+      beep(); showNewOrderNotif(id,{name:order.name,phone:order.phone,status:order.status});
+    }
+    lastKnownIds.add(id);
+  });
+  updateDashboard(all);
+}
 
 /* ══ UTILS ══ */
 function esc(s){ return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -1041,6 +1406,24 @@ function updateDashboard(allRows){
 }
 
 /* ══ RENDER ══ */
+function quickActionBtn(r){
+  const s = String(r.status||"").trim();
+  const id = String(r.orderId);
+  if(s===""||s==="جديد"||s.toLowerCase()==="new")
+    return `<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button></div>`;
+  if(s==="تحت الطباعة")
+    return `<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button></div>`;
+  if(s==="تم الطباعة")
+    return `<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button></div>`;
+  if(s==="تم الشحن")
+    return `<div class="qa-wrap"><button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button><button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️</button></div>`;
+  if(s==="تم التسليم")
+    return `<div class="qa-wrap" style="color:var(--mist);font-size:10px;">✓ مكتمل</div>`;
+  if(s==="مرتجع"||s==="مرتجع جزئي"||s==="الغاء")
+    return `<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button></div>`;
+  return "";
+}
+
 function render(){
   updateToggleBtn();
   const tbody=document.getElementById("tbody"); tbody.innerHTML="";
@@ -1050,7 +1433,7 @@ function render(){
   document.getElementById("metricSubtotal").textContent=fmt(subtotalSum);
   document.getElementById("metricShipping").textContent=fmt(shippingSum);
   const si=document.getElementById("selectionInfo"); if(si) si.textContent=selected.size+" محدد";
-  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`; return; }
+  if(!rows.length){ tbody.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`; return; }
   rows.forEach(r=>{
     const tr=document.createElement("tr"); const checked=selected.has(String(r.orderId));
     tr.innerHTML=`<td class="no-print" style="text-align:center"><input type="checkbox" ${checked?"checked":""}></td>
@@ -1060,7 +1443,8 @@ function render(){
     <td class="td-amount">${fmt(r.subtotal)}</td>
     <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping)}</td>
     <td>${statusBadge(r.status)}</td>
-    <td class="td-date">${fmtOrderDate(r)}</td>`;
+    <td class="td-date no-print">${fmtOrderDate(r)}</td>
+    <td class="td-qa no-print">${quickActionBtn(r)}</td>`;
     tr.querySelector("input").addEventListener("change",e=>{ const id=String(r.orderId); e.target.checked?selected.add(id):selected.delete(id); if(si) si.textContent=selected.size+" محدد"; updateToggleBtn(); });
     tbody.appendChild(tr);
   });
@@ -1068,14 +1452,95 @@ function render(){
 function toggleAll(){ const allIds=rows.map(r=>String(r.orderId)); const allSel=allIds.length&&allIds.every(id=>selected.has(id)); if(allSel) selected.clear(); else allIds.forEach(id=>selected.add(id)); updateToggleBtn(); render(); }
 function updateToggleBtn(){ const btn=document.getElementById("toggleAllBtn"); if(!btn) return; const allIds=rows.map(r=>String(r.orderId)); btn.textContent=(allIds.length&&allIds.every(id=>selected.has(id)))?"إلغاء الكل":"تحديد الكل"; }
 
-/* ══ REFRESH ══ */
-async function refreshMine(){
-  if(!mineIds.size){ rows=[]; selected=new Set(); render(); return; }
-  const res=await api("scanList");
-  if(!res?.ok){ toast("خطأ في التحميل",res?.error||"","err"); return; }
-  const mine=(res.rows||[]).filter(r=>mineIds.has(String(r.orderId)));
-  const order=[...mineIds]; mine.sort((a,b)=>order.indexOf(String(b.orderId))-order.indexOf(String(a.orderId)));
-  rows=mine; selected=new Set(rows.map(r=>String(r.orderId))); render();
+/* ══ QUICK SINGLE-ORDER UPDATE ══ */
+async function quickUpdate(orderId, status){
+  const id = String(orderId);
+  // Optimistic
+  const prevCache=allCache.map(r=>({...r})), prevRows=rows.map(r=>({...r}));
+  allCache=allCache.map(r=>String(r.orderId)===id?{...r,status}:r);
+  rows=rows.map(r=>String(r.orderId)===id?{...r,status}:r);
+  saveCachedData(allCache); render();
+  toast(status, "Order "+id, "ok", 2200);
+  if(["الغاء","مرتجع","مرتجع جزئي"].includes(status)){
+    const m=getDupTimes(); delete m[id]; saveDupTimes(m);
+  }
+  try{
+    const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
+    if(!res?.ok){ allCache=prevCache; rows=prevRows; saveCachedData(allCache); render(); toast("فشل التحديث","","err"); return; }
+    refreshAll(true);
+  }catch(e){ allCache=prevCache; rows=prevRows; saveCachedData(allCache); render(); toast("خطأ في الاتصال","","err"); }
+}
+
+async function quickShip(orderId){
+  // بيجيب المندوب المحفوظ — لو مفيش بيسأل
+  const savedCourier = getLastCourier();
+  const today = new Date().toISOString().slice(0,10);
+  if(savedCourier){
+    // عنده مندوب محفوظ → بيسأل تأكيد سريع
+    const confirmed = await showQuickShipConfirm(orderId, savedCourier, today);
+    if(!confirmed) return;
+    await _doQuickShip(orderId, confirmed.courier, confirmed.shipDate);
+  } else {
+    // مفيش مندوب → يفتح modal العادي
+    const r = await showShipModal();
+    if(!r) return;
+    saveCourier(r.courier);
+    await _doQuickShip(orderId, r.courier, r.shipDate);
+  }
+}
+
+function showQuickShipConfirm(orderId, defaultCourier, defaultDate){
+  return new Promise(resolve=>{
+    const couriers = getSavedCouriers();
+    const chipsHtml = couriers.map(c=>`<button class="cb-chip${c===defaultCourier?" active":""}" onclick="this.closest('.qsc-couriers').querySelectorAll('.cb-chip').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('qsc_courier').value='${esc(c)}'">${esc(c)}</button>`).join("");
+    openModal(`
+      <div style="margin-bottom:12px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:3px;">🚚 تأكيد الشحن</div>
+        <div style="font-size:11px;color:var(--mist);">Order ID: <b style="color:var(--silver)">${esc(String(orderId))}</b></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${chipsHtml?`<div class="qsc-couriers" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:2px;">${chipsHtml}</div>`:""}
+        <div>
+          <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">اسم المندوب *</div>
+          <input id="qsc_courier" value="${esc(defaultCourier)}" placeholder="اسم المندوب" style="width:100%;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ الشحن *</div>
+          <input id="qsc_date" type="date" value="${defaultDate}" style="width:100%;"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn-gold" style="flex:1" onclick="_qscOk()">✅ تأكيد</button>
+          <button style="flex:1" onclick="_qscCancel()">إلغاء</button>
+        </div>
+        <div id="qsc_err" style="color:var(--red);font-size:11px;display:none;"></div>
+      </div>
+    `);
+    setTimeout(()=>document.getElementById("qsc_courier")?.select(),80);
+    window._qscOk=()=>{
+      const courier=(document.getElementById("qsc_courier")?.value||"").trim();
+      const shipDate=(document.getElementById("qsc_date")?.value||"").trim();
+      const err=document.getElementById("qsc_err");
+      if(!courier){err.textContent="⛔ اكتب اسم المندوب";err.style.display="block";return;}
+      if(!shipDate){err.textContent="⛔ اختر تاريخ الشحن";err.style.display="block";return;}
+      saveCourier(courier); closeModal(); resolve({courier,shipDate});
+      delete window._qscOk; delete window._qscCancel;
+    };
+    window._qscCancel=()=>{ closeModal(); resolve(null); delete window._qscOk; delete window._qscCancel; };
+  });
+}
+
+async function _doQuickShip(orderId, courier, shipDate){
+  const id=String(orderId);
+  const prevCache=allCache.map(r=>({...r})), prevRows=rows.map(r=>({...r}));
+  allCache=allCache.map(r=>String(r.orderId)===id?{...r,status:"تم الشحن",courier,shipDate}:r);
+  rows=rows.map(r=>String(r.orderId)===id?{...r,status:"تم الشحن",courier,shipDate}:r);
+  saveCachedData(allCache); render();
+  toast("تم الشحن","المندوب: "+courier,"ok",2500);
+  try{
+    const res=await api("bulkUpdate",{ids:id,status:"تم الشحن",courier,shipDate,deliveryDate:"",partialAmount:""});
+    if(!res?.ok){ allCache=prevCache; rows=prevRows; saveCachedData(allCache); render(); toast("فشل التحديث","","err"); return; }
+    refreshAll(true);
+  }catch(e){ allCache=prevCache; rows=prevRows; saveCachedData(allCache); render(); toast("خطأ في الاتصال","","err"); }
 }
 
 /* ══ BULK UPDATE ══ */
@@ -1087,19 +1552,52 @@ async function bulkUpdate(){
   if(status==="تم الشحن"){ const r=await showShipModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } courier=r.courier; shipDate=r.shipDate; if(!courier.trim()){ toast("⛔ لازم تكتب اسم المندوب","","err"); return; } if(!shipDate.trim()){ toast("⛔ لازم تكتب تاريخ الشحن","","err"); return; } }
   if(status==="تم التسليم"){ const r=await showDeliveryModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } deliveryDate=r.deliveryDate; if(!deliveryDate.trim()){ toast("⛔ لازم تكتب تاريخ التسليم","","err"); return; } }
   if(status==="مرتجع جزئي"){ const r=await showPartialModal(); if(!r){ toast("تم الإلغاء","","warn"); return; } partialAmount=r.amount; if(!partialAmount.trim()){ toast("⛔ لازم تكتب المبلغ","","err"); return; } }
-  showLoading(`جاري تغيير الحالة لـ ${ids.length} أوردر…`);
+
+  // ══ OPTIMISTIC UPDATE: حدّث الشاشة فوراً ══
+  const idSet = new Set(ids.map(String));
+
+  // احفظ نسخة قديمة للـ rollback لو فشل
+  const prevRows = rows.map(r=>({...r}));
+  const prevCache = allCache.map(r=>({...r}));
+
+  // حدّث الـ state المحلي فوراً
+  const now = new Date().toISOString();
+  allCache = allCache.map(r=>{
+    if(!idSet.has(String(r.orderId))) return r;
+    return {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate, deliveryDate:deliveryDate||r.deliveryDate};
+  });
+  rows = rows.map(r=>{
+    if(!idSet.has(String(r.orderId))) return r;
+    return {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate, deliveryDate:deliveryDate||r.deliveryDate};
+  });
+
+  // حدّث الكاش المحلي فوراً
+  saveCachedData(allCache);
+
+  // ارسم الشاشة فوراً بدون استنناء السيرفر
+  render();
+  toast("تم التحديث",`${ids.length} أوردر — ${status}`,"ok",3500);
+  document.getElementById("statusSelect").value="";
+
+  if(["الغاء","مرتجع","مرتجع جزئي"].includes(status)){
+    const m=getDupTimes(); ids.forEach(id=>delete m[String(id)]); saveDupTimes(m);
+  }
+
+  // ابعت للسيرفر في الخلفية
   try{
     const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount});
-    hideLoading();
-    if(!res?.ok){ toast("فشل التحديث",res?.error||"","err"); return; }
-    toast("تم التحديث",`${res.updated??ids.length} أوردر — ${status}`,"ok",3500);
-    document.getElementById("statusSelect").value="";
-    // ✅ If marking as cancelled, remove from dup tracking so it won't trigger dup alert
-    if(["الغاء","مرتجع","مرتجع جزئي"].includes(status)){
-      const m=getDupTimes(); ids.forEach(id=>delete m[String(id)]); saveDupTimes(m);
+    if(!res?.ok){
+      // فشل → ارجع للقديم
+      allCache=prevCache; rows=prevRows; saveCachedData(allCache); render();
+      toast("فشل التحديث — تم الإلغاء",res?.error||"","err"); return;
     }
-    await refreshMine(); refreshShipMonitor(); refreshPendingCount(); refreshAwaitCount();
-  }catch(e){ hideLoading(); toast("خطأ في الاتصال","","err"); }
+    // نجح → حدّث في الخلفية بهدوء (بدون loading)
+    refreshAll(true);
+  }catch(e){
+    // خطأ في الاتصال → ارجع للقديم
+    allCache=prevCache; rows=prevRows; saveCachedData(allCache); render();
+    toast("خطأ في الاتصال — تم الإلغاء","","err");
+  }
 }
 
 /* ══ QR ══ */
@@ -1116,31 +1614,37 @@ async function stopScan(){ document.getElementById("qrWrap").style.display="none
 async function onQrSuccess(txt){
   const now=Date.now(); if(now<scanLockUntil) return;
   const raw=String(txt||"").trim(); const clean=raw.match(/\d+/)?raw.match(/\d+/)[0]:raw;
-  if(!clean) return; if(lastScan.id===clean&&(now-lastScan.t)<2500) return;
-  lastScan={id:clean,t:now}; scanLockUntil=now+1500;
+  if(!clean) return; if(lastScan.id===clean&&(now-lastScan.t)<3000) return;
+  lastScan={id:clean,t:now}; scanLockUntil=now+2000;
 
-  // Already in my list
+  // Already in my list = definite duplicate
   if(mineIds.has(String(clean))){ 
     beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
     const ex=allCache.find(r=>String(r.orderId).trim()===String(clean)); 
     showDuplicateNotif(clean,ex||{name:"موجود في قائمتك بالفعل",status:"—"}); 
+    addNotifHistory("⚠️","أوردر مكرر في قائمتك","ID: "+clean);
     return; 
   }
 
-  // ✅ FIX: Check cache — if cancelled/returned, NOT a duplicate
+  // ✅ FIX: Check cache — if cancelled/returned, NOT a duplicate warning — add normally
   const inCache=allCache.find(r=>String(r.orderId).trim()===String(clean));
   if(inCache && !isCancelledStatus(inCache.status)){
     // ✅ FIX: Only warn as dup if scanned within last 24h
     if(wasScannedRecently(clean)){
       beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
-      showDuplicateNotif(clean,inCache); 
+      showDuplicateNotif(clean,inCache);
+      addNotifHistory("⚠️","أوردر مكرر","ID: "+clean+" | "+inCache.name);
+      // Still add to list after short delay
       setTimeout(async()=>{ mineIds.add(String(clean)); saveMine(); recordScanTime(clean); await api("scanAdd",{orderId:clean}); await refreshMine(); },600); 
       return;
     }
   }
 
-  // Normal add
-  beep(); toast("تم الالتقاط",clean,"ok"); mineIds.add(String(clean)); saveMine(); recordScanTime(clean);
+  // Normal add — record scan time so next scan within 24h triggers dup warning
+  beep(); toast("تم الالتقاط",clean,"ok");
+  mineIds.add(String(clean)); saveMine();
+  recordScanTime(clean);  // ✅ record AFTER confirming normal add
+  addNotifHistory("✅","تم إضافة الأوردر","ID: "+clean+(inCache?" | "+inCache.name:""));
   const res=await api("scanAdd",{orderId:clean}); if(!res?.ok){ toast("فشل الإضافة",res?.error||"","err"); return; } await refreshMine();
 }
 
@@ -1176,14 +1680,14 @@ function downloadAllXLSX(){
   const ids=[...selected]; if(!ids.length){ toast("حدد أوردرات أولاً","","warn"); return; }
   const exp=rows.filter(r=>ids.includes(String(r.orderId)));
   const sub=exp.reduce((a,r)=>a+(Number(r.subtotal)||0),0), shp=exp.reduce((a,r)=>a+(Number(r.shipping)||0),0), now=new Date().toLocaleString("ar-EG");
-  const header=["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل","الشحن","الحالة","التاريخ"];
+  const header=["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل","الشحن","الحالة"];
   const aoa=[];
   aoa.push(["ورقة تسليم — White Clothes"]); aoa.push([`التاريخ: ${now}`]); aoa.push([""]);
   aoa.push(["عدد الطلبات:",exp.length,"","الإجمالي (بالشحن):",sub+shp,"","ملاحظة:","مطبوع من نظام المسح",""]);
   aoa.push(["إجمالي التحصيل:",sub,"","المسؤول:","___________","","التاريخ:",now,""]);
   aoa.push(["إجمالي الشحن:",shp,"","التوقيع:","___________","","",""]);
   aoa.push([""]); const hRow=aoa.length; aoa.push(header);
-  exp.forEach(r=>aoa.push([String(r.orderId??""),String(r.name??""),fmtPhone(r.phone),fmtPhone(r.altPhone),String(r.city??""),String(r.address??""),Number(r.subtotal||0),Number(r.shipping||0),String(r.status??""),fmtOrderDate(r)]));
+  exp.forEach(r=>aoa.push([String(r.orderId??""),String(r.name??""),fmtPhone(r.phone),fmtPhone(r.altPhone),String(r.city??""),String(r.address??""),Number(r.subtotal||0),Number(r.shipping||0),String(r.status??"")]));
   const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws["!rows"]=[{hpt:36},{hpt:22}];
@@ -1200,27 +1704,20 @@ function downloadAllXLSX(){
 
 /* ══ PRINT MENU ══ */
 let printMenuOpen=false, pendingCache={newOrders:[],pending:[]};
-function togglePrintMenu(e){ e.stopPropagation(); const menu=document.getElementById("printMenu"),btn=document.getElementById("printPendingBtn"); if(printMenuOpen){closePrintMenu();return;} const rect=btn.getBoundingClientRect(); menu.style.top=(rect.bottom+6+window.scrollY)+"px"; menu.style.left=rect.left+"px"; menu.classList.add("open"); printMenuOpen=true; }
-function closePrintMenu(){ document.getElementById("printMenu").classList.remove("open"); printMenuOpen=false; }
-document.addEventListener("click",()=>closePrintMenu());
-
-async function refreshPendingCount(){
-  try{
-    const res=await api("scanList"); if(!res?.ok) return;
-    const all=res.rows||[];
-    pendingCache.newOrders=all.filter(r=>{const s=String(r.status||"").trim();return s===""||s.toLowerCase()==="new"||s==="جديد";});
-    pendingCache.pending=all.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
-    const total=pendingCache.newOrders.length+pendingCache.pending.length;
-    document.getElementById("pmNewCount").textContent=pendingCache.newOrders.length;
-    document.getElementById("pmPendingCount").textContent=pendingCache.pending.length;
-    document.getElementById("pmBothCount").textContent=total;
-    document.getElementById("pendingTotal").textContent=total;
-    const btn=document.getElementById("printPendingBtn");
-    if(total>0) btn.classList.add("pending-active"); else btn.classList.remove("pending-active");
-    // Update dashboard with fresh data
-    updateDashboard(all);
-  }catch(e){}
+function togglePrintMenu(e){
+  e.stopPropagation();
+  const menu=document.getElementById("printMenu");
+  if(printMenuOpen){ closePrintMenu(); return; }
+  // FIX: position below the button but centered on screen
+  const btn=document.getElementById("printPendingBtn");
+  const rect=btn.getBoundingClientRect();
+  menu.style.top=(rect.bottom+window.scrollY+6)+"px";
+  menu.classList.add("open"); printMenuOpen=true;
 }
+function closePrintMenu(){ document.getElementById("printMenu").classList.remove("open"); printMenuOpen=false; }
+document.addEventListener("click",e=>{
+  if(!e.target.closest("#printMenu") && !e.target.closest("#printPendingBtn")) closePrintMenu();
+});
 
 async function doPrintBatch(which){
   closePrintMenu();
@@ -1244,22 +1741,42 @@ function showPrintConfirmPanel(ids){
   const old=document.getElementById("printConfirmPanel"); if(old) old.remove();
   const panel=document.getElementById("notifPanel"); const div=document.createElement("div");
   div.id="printConfirmPanel"; div.className="notif-card"; div.style.borderColor="rgba(201,168,76,.45)";
-  div.innerHTML=`<div class="notif-icon">🖨️</div><div class="notif-body"><div class="notif-title">تم إرسال ${ids.length} فاتورة للطباعة</div><div class="notif-sub">بعد ما الطباعة تخلص — اضغط "تأكيد" لتحويل حالتهم لـ <b>تم الطباعة</b></div><div class="notif-actions"><button class="notif-btn gold" onclick="confirmMarkPrinted(${JSON.stringify(ids)}, 'printConfirmPanel')">✅ تأكيد — حوّل لـ "تم الطباعة"</button><button class="notif-btn" onclick="dismissNotif('printConfirmPanel')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('printConfirmPanel')">✕</button>`;
+  div.innerHTML=`<div class="notif-icon">🖨️</div><div class="notif-body"><div class="notif-title">تم إرسال ${ids.length} فاتورة للطباعة</div><div class="notif-sub">بعد ما الطباعة تخلص — اضغط "تأكيد" لتحويل حالتهم لـ <b>تم الطباعة</b></div><div class="notif-actions"><button class="notif-btn gold" id="confirmPrintedBtn">✅ تأكيد — حوّل لـ "تم الطباعة"</button><button class="notif-btn" onclick="dismissNotif('printConfirmPanel')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('printConfirmPanel')">✕</button>`;
   panel.appendChild(div);
+  document.getElementById("confirmPrintedBtn").addEventListener("click", function(){
+    confirmMarkPrinted(ids, "printConfirmPanel");
+  });
 }
 
 async function confirmMarkPrinted(ids, notifId){
-  dismissNotif(notifId); showLoading(`جاري تحديث الحالة لـ ${ids.length} أوردر…`);
-  try{ const res=await api("bulkUpdate",{ids:ids.join(","),status:"تم الطباعة",courier:"",shipDate:"",deliveryDate:"",partialAmount:""}); hideLoading(); if(!res?.ok){toast("فشل تحديث الحالة",res?.error||"","err");return;} toast("تم التحديث",`${res.updated??ids.length} أوردر → تم الطباعة`,"ok",3500); await refreshMine(); refreshPendingCount(); refreshAwaitCount(); }
-  catch(e){ hideLoading(); toast("خطأ في الاتصال","","err"); }
+  dismissNotif(notifId);
+
+  // ══ OPTIMISTIC UPDATE فوري ══
+  const idSet=new Set(ids.map(String));
+  const prevCache=allCache.map(r=>({...r}));
+  const prevRows=rows.map(r=>({...r}));
+
+  allCache=allCache.map(r=>idSet.has(String(r.orderId))?{...r,status:"تم الطباعة"}:r);
+  rows=rows.map(r=>idSet.has(String(r.orderId))?{...r,status:"تم الطباعة"}:r);
+  saveCachedData(allCache);
+  render();
+  toast("تم التحديث",`${ids.length} أوردر → تم الطباعة`,"ok",3500);
+
+  // ابعت للسيرفر في الخلفية
+  try{
+    const res=await api("bulkUpdate",{ids:ids.join(","),status:"تم الطباعة",courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
+    if(!res?.ok){
+      allCache=prevCache; rows=prevRows; saveCachedData(allCache); render();
+      toast("فشل تحديث الحالة",res?.error||"","err"); return;
+    }
+    refreshAll(true);
+  }catch(e){
+    allCache=prevCache; rows=prevRows; saveCachedData(allCache); render();
+    toast("خطأ في الاتصال","","err");
+  }
 }
 
 /* ══ SEARCH ══ */
-async function loadAllForIndex(){
-  const el=document.getElementById("indexStats"); el.textContent="⏳ جاري التحضير…";
-  try{ const res=await api("scanList"); if(!res?.ok){el.textContent="❌ فشل";return;} allCache=res.rows||[]; el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`; updateDashboard(allCache); }
-  catch(e){ el.textContent="❌ خطأ"; }
-}
 function searchIndex(){
   const q=(document.getElementById("idx_q").value||"").trim().toLowerCase(); if(!q){closeSearch();return;}
   if(!allCache.length){toast("الداتا لسه بتتحمّل","","warn");return;}
@@ -1295,24 +1812,6 @@ function updateShipSummary(list){
   document.getElementById("ssTotal2").textContent = fmt(subtotal+shipping)+" ج";
 }
 
-async function refreshShipMonitor(){
-  try{
-    const res=await api("scanList"); if(!res?.ok) return;
-    const all=res.rows||[]; shipAll=all.filter(r=>String(r.status||"").trim()==="تم الشحن");
-    let ov=0,fw=0,nm=0; shipAll.forEach(r=>{const d=daysSince(parseShipDate(r));if(d===null){nm++;return;}if(d>=OVERDUE_MIN)ov++;else if(d>=FOLLOW_MIN)fw++;else nm++;});
-    const ovIds=shipAll.filter(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;}).map(r=>String(r.orderId));
-    const lastIds=getOldOverdueIds(); const newOv=ovIds.filter(id=>!lastIds.includes(id));
-    if(newOv.length){ const names=new Set(shipAll.filter(r=>newOv.includes(String(r.orderId))).map(r=>String(r.courier||"غير محدد"))); toast("متأخر جديد 🚨",[...names].join(" ، "),"err",5000); document.body.classList.add("shake"); setTimeout(()=>document.body.classList.remove("shake"),600); }
-    setOldOverdueIds(ovIds);
-    courierStats={}; shipAll.forEach(r=>{ const nm2=String(r.courier||"غير محدد").trim()||"غير محدد"; const d=daysSince(parseShipDate(r)); if(!courierStats[nm2]) courierStats[nm2]={total:0,overdue:0}; courierStats[nm2].total++; if(d!==null&&d>=OVERDUE_MIN) courierStats[nm2].overdue++; });
-    setShipBtn({total:shipAll.length,follow:fw,overdue:ov});
-    document.getElementById("bNormal").textContent=nm; document.getElementById("bFollow").textContent=fw; document.getElementById("bOverdue").textContent=ov;
-    buildCourierFilter(shipAll); renderCourierBadges();
-    const card=document.getElementById("shipCard"); if(card?.style.display!=="none") renderShipTable();
-    // Update dashboard
-    updateDashboard(all);
-  }catch(e){}
-}
 
 function toggleShipCard(){ const card=document.getElementById("shipCard"); if(!card) return; if(card.style.display!=="none"){card.style.display="none";return;} card.style.display="block"; const hasOv=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=OVERDUE_MIN;}); const hasFw=shipAll.some(r=>{const d=daysSince(parseShipDate(r));return d!==null&&d>=FOLLOW_MIN&&d<=FOLLOW_MAX;}); shipTab=hasOv?"overdue":hasFw?"follow":"normal"; setShipTab(shipTab); card.scrollIntoView({behavior:"smooth",block:"start"}); }
 function setShipTab(tab){ shipTab=tab; ["normal","follow","overdue"].forEach(t=>{const btn=document.getElementById("tab"+t.charAt(0).toUpperCase()+t.slice(1));if(btn) btn.className="ship-tab"+(t===tab?" tab-"+t:"");}); renderShipTable(); }
@@ -1379,66 +1878,77 @@ th{background:#f5f5f5;font-weight:700}
 /* ══ MODALS ══ */
 function openModal(contentHtml){ const el=document.getElementById("inlineModal"); document.getElementById("inlineModalContent").innerHTML=contentHtml; el.style.display="flex"; }
 function closeModal(){ document.getElementById("inlineModal").style.display="none"; }
-function showShipModal(){ return new Promise(resolve=>{const today=new Date().toISOString().slice(0,10); openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">🚚 تأكيد الشحن</div><div style="font-size:11px;color:var(--mist);">الحقول دي مطلوبة — مش هيتسجل من غيرها</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">اسم المندوب *</div><input id="m_courier" placeholder="مثال: أحمد" style="width:100%;" autofocus/></div><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ الشحن *</div><input id="m_shipDate" type="date" value="${today}" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalShipOk()">✅ تأكيد الشحن</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div><div id="m_err" style="color:var(--red);font-size:11px;display:none;margin-top:-4px;"></div></div>`); setTimeout(()=>document.getElementById("m_courier")?.focus(),80); window._modalShipOk=()=>{ const courier=(document.getElementById("m_courier")?.value||"").trim(),shipDate=(document.getElementById("m_shipDate")?.value||"").trim(),errEl=document.getElementById("m_err"); if(!courier){errEl.textContent="⛔ اكتب اسم المندوب";errEl.style.display="block";return;} if(!shipDate){errEl.textContent="⛔ اختر تاريخ الشحن";errEl.style.display="block";return;} closeModal();resolve({courier,shipDate});delete window._modalShipOk;delete window._modalCancel; }; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalShipOk;delete window._modalCancel;}; }); }
+function showShipModal(){ 
+  return new Promise(resolve=>{
+    const today=new Date().toISOString().slice(0,10);
+    const lastCourier=getLastCourier();
+    const couriers=getSavedCouriers();
+    const chipsHtml=couriers.map(c=>`<button class="cb-chip${c===lastCourier?" active":""}" onclick="this.closest('.qsc-couriers').querySelectorAll('.cb-chip').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('m_courier').value='${esc(c)}'">${esc(c)}</button>`).join("");
+    openModal(`
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">🚚 تأكيد الشحن</div>
+        <div style="font-size:11px;color:var(--mist);">الحقول دي مطلوبة — مش هيتسجل من غيرها</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${chipsHtml?`<div class="qsc-couriers" style="display:flex;gap:5px;flex-wrap:wrap;">${chipsHtml}</div>`:""}
+        <div>
+          <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">اسم المندوب *</div>
+          <input id="m_courier" value="${esc(lastCourier)}" placeholder="مثال: أحمد" style="width:100%;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ الشحن *</div>
+          <input id="m_shipDate" type="date" value="${today}" style="width:100%;"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="btn-gold" style="flex:1;" onclick="_modalShipOk()">✅ تأكيد الشحن</button>
+          <button style="flex:1;" onclick="_modalCancel()">إلغاء</button>
+        </div>
+        <div id="m_err" style="color:var(--red);font-size:11px;display:none;margin-top:-4px;"></div>
+      </div>
+    `);
+    setTimeout(()=>{ const el=document.getElementById("m_courier"); if(el){el.focus();if(lastCourier)el.select();} },80);
+    window._modalShipOk=()=>{
+      const courier=(document.getElementById("m_courier")?.value||"").trim();
+      const shipDate=(document.getElementById("m_shipDate")?.value||"").trim();
+      const errEl=document.getElementById("m_err");
+      if(!courier){errEl.textContent="⛔ اكتب اسم المندوب";errEl.style.display="block";return;}
+      if(!shipDate){errEl.textContent="⛔ اختر تاريخ الشحن";errEl.style.display="block";return;}
+      saveCourier(courier);
+      closeModal(); resolve({courier,shipDate});
+      delete window._modalShipOk; delete window._modalCancel;
+    };
+    window._modalCancel=()=>{closeModal();resolve(null);delete window._modalShipOk;delete window._modalCancel;};
+  });
+}
 function showDeliveryModal(){ return new Promise(resolve=>{const today=new Date().toISOString().slice(0,10); openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">📦 تأكيد التسليم</div><div style="font-size:11px;color:var(--mist);">اكتب تاريخ التسليم للمتابعة</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">تاريخ التسليم *</div><input id="m_delivDate" type="date" value="${today}" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalDelivOk()">✅ تأكيد التسليم</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div></div>`); window._modalDelivOk=()=>{const deliveryDate=(document.getElementById("m_delivDate")?.value||"").trim();if(!deliveryDate){toast("اختر تاريخ التسليم","","err");return;}closeModal();resolve({deliveryDate});delete window._modalDelivOk;delete window._modalCancel;}; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalDelivOk;delete window._modalCancel;}; }); }
 function showPartialModal(){ return new Promise(resolve=>{openModal(`<div style="margin-bottom:16px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">↩️ مرتجع جزئي</div><div style="font-size:11px;color:var(--mist);">المبلغ اللي دفعه العميل فعلاً</div></div><div style="display:flex;flex-direction:column;gap:10px;"><div><div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">المبلغ المدفوع *</div><input id="m_partial" type="number" placeholder="مثال: 250" style="width:100%;"/></div><div style="display:flex;gap:8px;margin-top:6px;"><button class="btn-gold" style="flex:1;" onclick="_modalPartOk()">✅ تأكيد</button><button style="flex:1;" onclick="_modalCancel()">إلغاء</button></div></div>`); setTimeout(()=>document.getElementById("m_partial")?.focus(),80); window._modalPartOk=()=>{const amount=(document.getElementById("m_partial")?.value||"").trim();if(!amount){toast("اكتب المبلغ","","err");return;}closeModal();resolve({amount});delete window._modalPartOk;delete window._modalCancel;}; window._modalCancel=()=>{closeModal();resolve(null);delete window._modalPartOk;delete window._modalCancel;}; }); }
 
 /* ══ NOTIFICATIONS ══ */
-let lastKnownIds = new Set();
-
 function showDuplicateNotif(orderId, existingOrder){
   const panel=document.getElementById("notifPanel"); if(!panel) return;
   const notifId="dup_"+orderId+"_"+Date.now(), status=existingOrder?existingOrder.status||"—":"—", name=existingOrder?existingOrder.name||"":"", phone=existingOrder?fmtPhone(existingOrder.phone)||"":"";
   const div=document.createElement("div"); div.id=notifId; div.className="notif-card duplicate";
   div.innerHTML=`<div class="notif-icon">⚠️</div><div class="notif-body"><div class="notif-title">أوردر مكرر — ${esc(String(orderId))}</div><div class="notif-sub">${name?"الاسم: <b>"+esc(name)+"</b><br>":""}${phone?"📞 "+esc(phone)+"<br>":""}الحالة الحالية: <b>${esc(status)}</b></div><div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${notifId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="dismissNotif('${notifId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${notifId}')">✕</button>`;
   panel.appendChild(div); setTimeout(()=>dismissNotif(notifId),30000);
+  addNotifHistory("⚠️","أوردر مكرر — "+String(orderId), name||status);
 }
 function showNewOrderNotif(orderId, info={}){
   const panel=document.getElementById("notifPanel");if(!panel) return;
   const notifId="new_"+orderId+"_"+Date.now(); const div=document.createElement("div"); div.id=notifId; div.className="notif-card";
   div.innerHTML=`<div class="notif-icon">🆕</div><div class="notif-body"><div class="notif-title">أوردر جديد — ${esc(String(orderId))}</div><div class="notif-sub">${info.name?"الاسم: <b>"+esc(info.name)+"</b><br>":""}${info.phone?"📞 "+esc(fmtPhone(info.phone))+"<br>":""}${info.status?"الحالة: <b>"+esc(info.status)+"</b>":""}</div><div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${notifId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="addOrderFromNotif('${esc(String(orderId))}','${notifId}')">➕ أضف لأوردراتي</button><button class="notif-btn" onclick="dismissNotif('${notifId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${notifId}')">✕</button>`;
   panel.appendChild(div); setTimeout(()=>dismissNotif(notifId),60000);
+  addNotifHistory("🆕","أوردر جديد — "+String(orderId), info.name||"");
 }
 function dismissNotif(id){ const el=document.getElementById(id);if(!el) return; el.style.animation="none";el.style.transition="all .25s ease";el.style.opacity="0";el.style.transform="translateY(-8px) scale(.96)"; setTimeout(()=>el.remove(),280); }
 function markFollowed(orderId,notifId){ const followed=getFollowedIds();followed.add(String(orderId));saveFollowedIds(followed);dismissNotif(notifId);toast("تم المتابعة","Order ID: "+orderId,"ok"); }
 async function addOrderFromNotif(orderId,notifId){ const id=String(orderId).trim(); if(!mineIds.has(id)){mineIds.add(id);saveMine();recordScanTime(id);const res=await api("scanAdd",{orderId:id});if(res?.ok){toast("تم الإضافة",id,"ok");await refreshMine();}} dismissNotif(notifId); }
-
-/* ✅ FIX: checkForNewOrders — skip cancelled orders in dup detection */
-async function checkForNewOrders(){
-  try{
-    const res=await api("scanList");if(!res?.ok) return;
-    const all=res.rows||[]; allCache=all;
-    const currentIds=new Set(all.map(r=>String(r.orderId)));
-    const seenIds=getSeenIds(),followedIds=getFollowedIds();
-    if(lastKnownIds.size===0){ all.forEach(r=>lastKnownIds.add(String(r.orderId)));all.forEach(r=>seenIds.add(String(r.orderId)));saveSeenIds(seenIds);return; }
-    const newIds=[...currentIds].filter(id=>!lastKnownIds.has(id));
-    newIds.forEach(id=>{ 
-      const order=all.find(r=>String(r.orderId)===id);if(!order) return; 
-      // ✅ FIX: If status is cancelled/returned, don't show as duplicate ever
-      if(isCancelledStatus(order.status)){ seenIds.add(id); saveSeenIds(seenIds); lastKnownIds.add(id); return; }
-      if(seenIds.has(id)&&!followedIds.has(id)){
-        // ✅ FIX: Only show dup warning if within 24h window
-        if(wasScannedRecently(id)){
-          beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);showDuplicateNotif(id,order);
-        }
-      }else if(!seenIds.has(id)){
-        seenIds.add(id);saveSeenIds(seenIds);beep();showNewOrderNotif(id,{name:order.name,phone:order.phone,status:order.status}); 
-      }
-      lastKnownIds.add(id); 
-    });
-    updateDashboard(all);
-  }catch(e){}
-}
 
 /* ✅ FIX: addOneWithDupCheck — respect cancelled status + 24h window */
 async function addOneWithDupCheck(){
   const id=document.getElementById("orderIdInput").value.trim(); if(!id) return;
   if(mineIds.has(String(id))){ toast("الأوردر موجود في قائمتك","","warn"); return; }
   const inCache=allCache.find(r=>String(r.orderId).trim()===String(id));
-  
-  // Only show dup warning if: exists in cache, NOT cancelled, AND scanned within 24h
   const shouldWarnDup = inCache && !isCancelledStatus(inCache.status) && wasScannedRecently(id);
-  
   if(shouldWarnDup){ 
     beepDuplicate(); document.body.classList.add("dup-shake"); setTimeout(()=>document.body.classList.remove("dup-shake"),700); 
     showDuplicateNotif(id,inCache); 
@@ -1448,21 +1958,18 @@ async function addOneWithDupCheck(){
   mineIds.add(String(id));saveMine();beep();toast("تم إضافة الأوردر",id,"ok");
   recordScanTime(id);
   const res=await api("scanAdd",{orderId:id}); if(!res?.ok){toast("فشل الإضافة",res?.error||"","err");return;}
-  document.getElementById("orderIdInput").value=""; showLoading("جاري التحديث…"); await refreshMine(); hideLoading(); refreshPendingCount();
+  document.getElementById("orderIdInput").value="";
+  showLoading("جاري التحديث…"); await refreshAll(true); hideLoading();
 }
 
-function confirmDupProceed(){ return new Promise(resolve=>{ const panel=document.getElementById("notifPanel"),id="confirm_"+Date.now(),div=document.createElement("div"); div.id=id;div.className="notif-card";div.style.borderColor="rgba(212,150,26,.4)"; div.innerHTML=`<div class="notif-icon">❓</div><div class="notif-body"><div class="notif-title">الأوردر موجود بالفعل — تكمّل؟</div><div class="notif-sub">الأوردر ده موجود في الشيت. عايز تضيفه لقائمتك برده؟</div><div class="notif-actions"><button class="notif-btn gold" onclick="_dupResolve('${id}',true)">نعم، أضف</button><button class="notif-btn" onclick="_dupResolve('${id}',false)">لأ، إلغاء</button></div></div>`; panel.appendChild(div); window["_dupResolve"]=(nId,val)=>{dismissNotif(nId);resolve(val);delete window["_dupResolve"];}; }); }
-
-/* ══ AWAIT SHIPMENT ══ */
-async function refreshAwaitCount(){
-  try{
-    const res=await api("scanList");if(!res?.ok) return;
-    awaitOrders=(res.rows||[]).filter(r=>String(r.status||"").trim()==="تم الطباعة");
-    const count=awaitOrders.length,badge=document.getElementById("awaitCountBadge"),btn=document.getElementById("awaitBtn");
-    if(badge) badge.textContent=count;
-    if(btn){if(count>0){btn.style.borderColor="rgba(201,168,76,.35)";btn.style.background="rgba(201,168,76,.08)";btn.style.color="var(--gold)";}else{btn.style.borderColor="";btn.style.background="";btn.style.color="";}}
-    const card=document.getElementById("awaitCard"); if(card&&card.style.display!=="none") renderAwaitTable();
-  }catch(e){}
+function confirmDupProceed(){ 
+  return new Promise(resolve=>{ 
+    const panel=document.getElementById("notifPanel"),id="confirm_"+Date.now(),div=document.createElement("div"); 
+    div.id=id;div.className="notif-card";div.style.borderColor="rgba(212,150,26,.4)"; 
+    div.innerHTML=`<div class="notif-icon">❓</div><div class="notif-body"><div class="notif-title">الأوردر موجود بالفعل — تكمّل؟</div><div class="notif-sub">الأوردر ده موجود في الشيت. عايز تضيفه لقائمتك برده؟</div><div class="notif-actions"><button class="notif-btn gold" onclick="_dupResolve('${id}',true)">نعم، أضف</button><button class="notif-btn" onclick="_dupResolve('${id}',false)">لأ، إلغاء</button></div></div>`; 
+    panel.appendChild(div); 
+    window["_dupResolve"]=(nId,val)=>{dismissNotif(nId);resolve(val);delete window["_dupResolve"];}; 
+  }); 
 }
 function toggleAwaitCard(){ const card=document.getElementById("awaitCard");if(!card) return; if(card.style.display!=="none"){card.style.display="none";return;} card.style.display="block"; renderAwaitTable(); card.scrollIntoView({behavior:"smooth",block:"start"}); }
 function renderAwaitTable(){
@@ -1476,18 +1983,35 @@ function renderAwaitTable(){
 document.getElementById("orderIdInput").addEventListener("keydown",e=>{if(e.key==="Enter") addOneWithDupCheck();});
 document.getElementById("idx_q").addEventListener("keydown",e=>{if(e.key==="Enter") searchIndex();});
 
+// ✅ Show courier bar when "تم الشحن" is selected
+document.getElementById("statusSelect").addEventListener("change",e=>{
+  const bar=document.getElementById("courierBar");
+  if(!bar) return;
+  if(e.target.value==="تم الشحن") renderCourierBar();
+  else bar.style.display="none";
+});
+
 /* ══ SCROLL TOP ══ */
 window.addEventListener("scroll",()=>{ const btn=document.getElementById("scrollTopBtn");if(!btn) return; if(window.scrollY>300) btn.classList.add("visible"); else btn.classList.remove("visible"); });
 
 /* ══ BOOT ══ */
-loadMine(); pruneDupTimes(); render(); showLoading("جاري تحميل البيانات…");
-Promise.all([refreshMine(),loadAllForIndex(),refreshShipMonitor(),refreshPendingCount(),refreshAwaitCount(),checkForNewOrders()]).finally(hideLoading);
+loadMine(); loadNotifHistory(); pruneDupTimes(); updateBellDot(); renderCourierBar(); render();
 
-setInterval(refreshShipMonitor, 60000);
-setInterval(refreshPendingCount, 90000);
-setInterval(refreshAwaitCount, 90000);
-setInterval(checkForNewOrders, 45000);
-setInterval(pruneDupTimes, 300000); // clean old dup times every 5 min
+// عرض الكاش فوراً بدون أي تحميل
+const _boot = loadCachedData();
+if(_boot && _boot.rows.length){
+  processAllRows(_boot.rows);
+  // حدّث في الخلفية بدون شاشة تحميل لو الكاش حديث
+  if(!_boot.stale){ refreshAll(false); }
+  else { showLoading("جاري تحديث البيانات…"); refreshAll(true).finally(hideLoading); }
+} else {
+  showLoading("جاري تحميل البيانات…");
+  refreshAll(true).finally(hideLoading);
+}
+
+// تحديث دوري — طلب واحد بس كل دقيقة
+setInterval(()=>refreshAll(true), 60000);
+setInterval(pruneDupTimes, 300000);
 </script>
 </body>
 </html>
