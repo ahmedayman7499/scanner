@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>Receipt</title>
+<style>
+@page { size: 80mm auto; margin: 2mm; }
+html, body { margin: 0; padding: 0; }
+body { font-family: Arial, Tahoma, sans-serif; font-size: 11px; line-height: 1.45; color: #000; background: #e5e5e5; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+.page { width: 72mm; margin: 10px auto; background: #fff; border: 1px solid #aaa; border-radius: 6px; padding: 4mm; break-inside: avoid; }
+@media print {
+  body { background: #fff !important; }
+  .page { width: 76mm !important; margin: 0 auto !important; border: none !important; border-radius: 0 !important; padding: 2mm !important; }
+  .page-break { height: 0 !important; page-break-after: always; }
+}
+.header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 3mm; margin-bottom: 3mm; }
+.brand { font-size: 19px; font-weight: 900; letter-spacing: 3px; }
+.brand-sub { font-size: 9px; letter-spacing: 2px; margin-top: 1px; }
+.order-row { display: flex; justify-content: space-between; align-items: center; margin-top: 2.5mm; font-size: 10px; font-weight: 700; direction: ltr; }
+.order-num { font-size: 12px; font-weight: 900; border: 1.5px solid #000; padding: 1px 5px; border-radius: 3px; }
+.payment-row { text-align: center; margin-top: 2mm; font-size: 10.5px; font-weight: 700; border: 1.5px solid #000; border-radius: 3px; padding: 2px 0; }
+.qr-center { text-align: center; margin: 2mm 0; }
+.qr-center img { width: 20mm; height: 20mm; }
+.info-table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; font-size: 11px; }
+.info-table td { padding: 1mm 1.5mm; vertical-align: top; }
+.info-table .lbl { font-weight: 700; white-space: nowrap; width: 15mm; }
+.note-box { border: 1px solid #000; border-right: 3px solid #000; border-radius: 3px; padding: 2mm; margin-bottom: 3mm; font-size: 10.5px; }
+.note-lbl { font-weight: 700; font-size: 10px; margin-bottom: 1px; }
+.divider { border: none; border-top: 1px dashed #000; margin: 2.5mm 0; }
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; font-size: 10.5px; }
+.items-table th { background: #000; color: #fff; font-weight: 700; padding: 1.5mm 2mm; text-align: right; border: 1px solid #000; }
+.items-table th.c { text-align: center; }
+.items-table td { border: 1px solid #000; padding: 1.5mm 2mm; vertical-align: top; }
+.items-table td.c { text-align: center; font-weight: 700; }
+.items-table td.l { text-align: left; direction: ltr; font-weight: 700; white-space: nowrap; }
+.item-name { font-weight: 800; font-size: 11px; }
+.item-idx  { color: #555; font-size: 10px; }
+.item-meta { font-size: 9.5px; color: #333; margin-top: 1px; }
+.unit-hint { font-size: 9px; color: #555; direction: ltr; margin-top: 1px; }
+.totals-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.totals-table td { padding: 1.2mm 2mm; border-bottom: 1px dotted #aaa; }
+.tl { font-weight: 600; }
+.tv { text-align: left; direction: ltr; font-weight: 700; white-space: nowrap; }
+.totals-table tr:last-child td { border-bottom: none; }
+.grand-row td { border-top: 2px solid #000 !important; border-bottom: 2px solid #000 !important; font-size: 14px; font-weight: 900; padding: 2mm !important; }
+.footer { border-top: 1px dashed #000; text-align: center; padding-top: 2.5mm; margin-top: 3mm; }
+.footer-site { font-size: 10.5px; font-weight: 700; }
+.footer-note { font-size: 9.5px; margin-top: 1mm; }
+.page-break { height: 14px; }
+</style>
+</head>
+<body>
+
+<?
+function clean(s){
+  s=(s===null||s===undefined)?"":String(s);
+  return s.replace(/[❤♥♡💗💖💘💝💞💟]/g,"").replace(/\s+/g," ").trim();
+}
+function qrUrl(id){
+  id=clean(id); if(!id) return "";
+  return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(id);
+}
+function buildMeta(it){
+  var parts=[];
+  if(clean(it.size||""))  parts.push("مقاس: "+clean(it.size));
+  if(clean(it.color||"")) parts.push("لون: "+clean(it.color));
+  return parts.join(" • ");
+}
+function fmtNum(v){
+  var n=parseFloat(String(v||"").replace(/[^\d.-]/g,""));
+  if(isNaN(n)) return String(v||"");
+  return n%1===0?String(Math.round(n)):n.toFixed(2);
+}
+var list=(typeof pages!=='undefined'&&pages&&pages.length)?pages:[data];
+?>
+
+<? list.forEach(function(d,pi){
+  d=d||{};
+  var orderId=clean(d.orderId||d.id||"");
+  var qrSrc=qrUrl(orderId);
+  var pm=clean(d.paymentMethod||"").toLowerCase();
+  var pmLabel=pm==="cod"?"الدفع عند الاستلام":pm==="transfer_receipt"?"تم الدفع مسبقاً":"";
+  var discount=parseFloat(String(d.discount||0).replace(/[^\d.-]/g,""))||0;
+  var coupon=clean(d.coupon||"");
+  var items=d.items||d.products||[];
+  var p1=clean(d.phone1||d.phone||"");
+  var p2=clean(d.phone2||"");
+  var phones=[p1,p2].filter(Boolean).join("  /  ");
+  var note=clean(d.note||"");
+?>
+
+<div class="page">
+
+  <div class="header">
+    <div class="brand"><?= clean(d.brand||"WHITE CLOTHES") ?></div>
+    <div class="brand-sub">FASHION &amp; STYLE</div>
+    <div class="order-row">
+      <span><?= clean(d.date||"") ?> <?= clean(d.time||"") ?></span>
+      <span class="order-num"># <?= orderId ?></span>
+    </div>
+    <? if(pmLabel){ ?><div class="payment-row"><?= pmLabel ?></div><? } ?>
+  </div>
+
+  <? if(qrSrc){ ?><div class="qr-center"><img src="<?= qrSrc ?>" /></div><? } ?>
+
+  <table class="info-table">
+    <tr><td class="lbl">الاسم:</td>    <td><?= clean(d.customer||"") ?></td></tr>
+    <tr><td class="lbl">موبايل:</td>   <td style="direction:ltr;unicode-bidi:embed"><?= phones ?></td></tr>
+    <tr><td class="lbl">المحافظة:</td> <td><?= clean(d.city||"") ?></td></tr>
+    <tr><td class="lbl">العنوان:</td>  <td><?= clean(d.address||"") ?></td></tr>
+  </table>
+
+  <? if(note){ ?>
+  <div class="note-box">
+    <div class="note-lbl">ملاحظة</div>
+    <div><?= note ?></div>
+  </div>
+  <? } ?>
+
+  <hr class="divider"/>
+
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>الصنف</th>
+        <th class="c" style="width:10mm">الكمية</th>
+        <th class="c" style="width:16mm">السعر</th>
+      </tr>
+    </thead>
+    <tbody>
+    <? for(var i=0;i<items.length;i++){
+      var it=items[i]||{};
+      var name=clean(it.name||it.product||it.title||"");
+      if(!name) continue;
+      var qty=Number(it.qty||it.quantity||1)||1;
+      var price=parseFloat(String(it.price||it.lineTotal||it.total||"0").replace(/[^\d.-]/g,""))||0;
+      var meta=buildMeta(it);
+      var unit=qty>1?Math.round((price/qty)*100)/100:0;
+    ?>
+      <tr>
+        <td>
+          <div class="item-name"><span class="item-idx"><?= (i+1) ?>.</span> <?= name ?></div>
+          <? if(meta){ ?><div class="item-meta"><?= meta ?></div><? } ?>
+          <? if(unit>0&&qty>1){ ?><div class="unit-hint"><?= fmtNum(unit) ?> × <?= qty ?></div><? } ?>
+        </td>
+        <td class="c"><?= qty ?></td>
+        <td class="l"><?= fmtNum(price) ?></td>
+      </tr>
+    <? } ?>
+    </tbody>
+  </table>
+
+  <table class="totals-table">
+    <tr><td class="tl">الإجمالي</td>     <td class="tv"><?= fmtNum(d.subtotal||"") ?></td></tr>
+    <tr><td class="tl">مصاريف الشحن</td> <td class="tv"><?= fmtNum(d.shipping||"") ?></td></tr>
+    <? if(discount>0){ ?>
+    <tr><td class="tl">خصم</td>          <td class="tv">- <?= fmtNum(discount) ?></td></tr>
+    <? } ?>
+    <? if(coupon){ ?>
+    <tr><td class="tl" style="font-size:10px">كوبون: <b><?= coupon ?></b></td><td class="tv"></td></tr>
+    <? } ?>
+    <tr class="grand-row">
+      <td class="tl">المطلوب</td>
+      <td class="tv"><?= fmtNum(d.total||"") ?> EGP</td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div class="footer-site">www.white-clothes.com</div>
+    <div class="footer-note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط</div>
+  </div>
+
+</div>
+
+<? if(pi<list.length-1){ ?><div class="page-break"></div><? } ?>
+<? }); ?>
+
+<script>window.onload = () => setTimeout(() => window.print(), 250);</script>
+</body>
+</html>
