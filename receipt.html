@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Receipt</title>
 
-<!-- QRCodeJS (لـ Offline الحقيقي: حمّل الملف محلياً واستبدل الرابط ده بمسار محلي) -->
+<!-- لو عايز Offline 100%: حمّل qrcode.min.js وحطه جنب receipt.html وخلي السطر ده:
+<script src="./qrcode.min.js"></script>
+-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -17,40 +19,38 @@ body{
   line-height:1.35;
   color:#000;
   background:#e9e9e9;
-
-  /* تخانة قريبة من القديم */
   font-weight:700;
-
-  /* اختياري: لو باهت في الطباعة */
   -webkit-text-stroke: 0.10px #000;
 }
-
 *{ box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
 .page{
   width:70mm;
   margin:10px auto;
   break-inside:avoid;
-
   background:#fff;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0,0,0,.18);
   padding: 2.5mm 2.5mm;
+  overflow:hidden;
+  position:relative;
 }
 
 .page-break{
   height:18px;
-  break-after:page;
-  page-break-after:always;
 }
 
 @media print{
   body{ background: transparent !important; padding: 0 !important; -webkit-text-stroke: 0px transparent; }
   .page{ box-shadow:none !important; border-radius:0 !important; margin:0 auto !important; padding:2mm 2mm; }
-  .page-break{ height:0 !important; }
+  .page-break{
+    height:0 !important;
+    break-after: page;
+    page-break-after: always;
+  }
 }
 
-/* ===== Top Header (مروق) ===== */
+/* ===== Top Header ===== */
 .topHead{
   display:grid;
   grid-template-columns: 24mm 1fr;
@@ -72,9 +72,7 @@ body{
   display:block;
 }
 
-.headInfo{
-  text-align:center;
-}
+.headInfo{ text-align:center; }
 
 .brand{
   font-weight:900;
@@ -82,9 +80,7 @@ body{
   font-size:18px;
   line-height:1.1;
 }
-.subhead{
-  margin-top:1mm;
-}
+.subhead{ margin-top:1mm; }
 .subhead .muted{ color:#555; font-weight:700; }
 
 .num{ direction:ltr; unicode-bidi:embed; }
@@ -111,7 +107,6 @@ body{
   gap:1mm 2mm;
 }
 .lbl{ font-weight:900; }
-
 .val{
   white-space:nowrap;
   overflow:hidden;
@@ -125,13 +120,14 @@ body{
 }
 .phones{ direction:rtl; unicode-bidi:embed; }
 
-/* ===== Items (تصحيح الأعمدة) ===== */
-/* ثبّت الأعمدة مرة واحدة */
+/* ===== Items (ثابت محاذاة) ===== */
+/* نخلي الـgrid LTR علشان الأعمدة تثبت: صنف | كمية | سعر */
 .itemsGridHead,
 .itemsGridRow{
   display:grid;
-  grid-template-columns: 1fr 12mm 16mm; /* صنف | كمية | سعر */
-  column-gap: 0;
+  grid-template-columns: 1fr 12mm 16mm;
+  direction:ltr;
+  column-gap:0;
 }
 
 .itemsGridHead{
@@ -141,15 +137,17 @@ body{
   padding:1mm 0.8mm;
   margin-top:1.5mm;
 }
-.itemsGridHead > div:nth-child(2){ text-align:center; }
-.itemsGridHead > div:nth-child(3){ text-align:left; direction:ltr; }
+.itemsGridHead .hItem{ direction:rtl; text-align:right; }
+.itemsGridHead .hQty{ text-align:center; }
+.itemsGridHead .hPrice{ text-align:left; direction:ltr; }
 
 .itemsGridRow{
   padding:1.3mm 0.8mm;
-  border-bottom:1px dotted #bbb; /* فاصل نظيف بدل البوردر اللي كان بيبوّظ */
+  border-bottom:1px dotted #bbb;
 }
 .itemsGridRow:last-child{ border-bottom:none; }
 
+.itemCol{ direction:rtl; text-align:right; }
 .pnameLine{
   display:flex;
   gap:1mm;
@@ -203,12 +201,21 @@ body{
 }
 .footer-site{ font-size:12px; margin-top:6px; font-weight:900; }
 .footer-note{ font-size:12px; margin-top:6px; font-weight:800; }
+
+/* شاشة خطأ */
+.err{
+  padding:12px;
+  font-family: Arial, Tahoma, sans-serif;
+  color:#000;
+}
 </style>
 </head>
 
 <body>
+<div id="root"></div>
 
-<?
+<script>
+/* ===== Helpers ===== */
 function clean(s){
   s=(s===null||s===undefined)?"":String(s);
   return s.replace(/[❤♥♡💗💖💘💝💞💟]/g,"").replace(/\s+/g," ").trim();
@@ -230,232 +237,281 @@ function buildMeta(it){
   var size=clean(it.size||"");
   var color=clean(it.color||"");
   var details=clean(it.details||it.variant||it.options||it.meta||it.description||"");
-
   var parts=[];
   if(size) parts.push("مقاس: "+size);
   if(color) parts.push("لون: "+color);
-
-  if(parts.length) return parts.join(" • ");
-  return details;
+  return parts.length ? parts.join(" • ") : details;
 }
 
-var list=(typeof pages!=='undefined'&&pages&&pages.length)?pages:[data];
-?>
+/* ===== Load Data =====
+   - ?data= (JSON or base64 JSON)
+   - ?src=  (URL returns JSON: {pages:[...]} or [...] or {...})
+*/
+function getParam(name){
+  const u = new URL(location.href);
+  return u.searchParams.get(name) || "";
+}
+function decodeDataParam(s){
+  s = s.trim();
+  if(!s) return null;
 
-<? list.forEach(function(d,pageIndex){
-  var data=d||{};
-  var orderId=clean(data.orderId||data.id||"");
-
-  var pm = clean(data.paymentMethod||"").toLowerCase();
-  var isPaid = (pm==="transfer_receipt");
-  var isCOD  = (pm==="cod");
-  var pmLabel = isPaid ? "✓ تم الدفع مسبقاً" : (isCOD ? "الدفع عند الاستلام" : "");
-
-  var p1=isEmpty(data.phone1||data.phone)?"":clean(data.phone1||data.phone||"");
-  var p2=isEmpty(data.phone2)?"":clean(data.phone2||"");
-  var phones=[p1,p2].filter(Boolean).join(" - ");
-
-  var note = isEmpty(data.note) ? "" : clean(data.note||"");
-
-  /* الخصم: خليه موجب حتى لو الداتا جايه بسالب */
-  var discountV = Math.abs(numVal(data.discount));
-
-  var coupon = isEmpty(data.coupon) ? "" : clean(data.coupon);
-
-  /* Fix الحسابات */
-  var subV  = numVal(data.subtotal);
-  var shipV = numVal(data.shipping);
-  var calcTotal = subV + shipV - discountV;
-?>
-
-<div class="page">
-
-  <div class="topHead">
-    <div class="qrBox" id="qr-<?= pageIndex ?>"></div>
-
-    <div class="headInfo">
-      <div class="brand"><?= clean(data.brand||"WHITE CLOTHES") ?></div>
-      <div class="subhead">
-        <div><b>Order:</b> <span class="num"><?= orderId ?></span></div>
-        <div class="muted">
-          <span class="num"><?= clean(data.time||"") ?></span>
-          &nbsp;
-          <span class="num"><?= clean(data.date||"") ?></span>
-        </div>
-        <? if(pmLabel){ ?><div class="pm-badge"><?= pmLabel ?></div><? } ?>
-      </div>
-    </div>
-  </div>
-
-  <div class="hr"></div>
-
-  <div class="info">
-    <div class="lbl">الاسم:</div>
-    <div class="val"><?= clean(data.customer||"") ?></div>
-
-    <? if(phones){ ?>
-      <div class="lbl">موبايل:</div>
-      <div class="val phones"><?= phones ?></div>
-    <? } ?>
-
-    <div class="lbl">المحافظة:</div>
-    <div class="val"><?= clean(data.city||"") ?></div>
-
-    <div class="lbl">العنوان:</div>
-    <div class="val full"><?= clean(data.address||"") ?></div>
-  </div>
-
-  <? if(note){ ?>
-    <div class="info" style="margin-top:2mm;">
-      <div class="lbl">ملاحظة:</div>
-      <div class="val full"><?= note ?></div>
-    </div>
-  <? } ?>
-
-  <div class="itemsGridHead">
-    <div>الصنف</div>
-    <div>الكميه</div>
-    <div>السعر</div>
-  </div>
-
-  <?
-  var items=data.items||data.products||[];
-  for(var i=0;i<items.length;i++){
-    var it=items[i]||{};
-    var name=clean(it.name||it.product||it.title||"");
-    if(!name) continue;
-
-    var qty=Number(it.qty||it.quantity||1)||1;
-
-    /* السعر line total */
-    var price=numVal(it.price||it.lineTotal||it.total||"0");
-
-    var meta=buildMeta(it);
-    var unit=(qty>1 && price>0)?Math.round((price/qty)*100)/100:0;
-  ?>
-
-  <div class="itemsGridRow">
-    <div>
-      <div class="pnameLine">
-        <span class="idx"><?= (i+1) ?>.</span>
-        <span><?= name ?></span>
-      </div>
-      <? if(meta){ ?><div class="meta"><?= meta ?></div><? } ?>
-      <? if(unit>0 && qty>1){ ?><div class="meta num"><?= fmtNum(unit) ?> × <?= qty ?></div><? } ?>
-    </div>
-
-    <div class="qcol num"><?= qty ?></div>
-    <div class="prcol num"><?= fmtNum(price) ?></div>
-  </div>
-
-  <? } ?>
-
-  <div class="totals">
-    <div class="tline">
-      <div>الإجمالي</div>
-      <div class="num"><?= fmtNum(subV) ?></div>
-    </div>
-
-    <div class="tline">
-      <div>مصاريف الشحن</div>
-      <div class="num"><?= fmtNum(shipV) ?></div>
-    </div>
-
-    <? if(discountV>0){ ?>
-      <div class="tline">
-        <div>خصم</div>
-        <!-- عرض الخصم موجب (مش -5) -->
-        <div class="num"><?= fmtNum(discountV) ?></div>
-      </div>
-    <? } ?>
-
-    <? if(coupon){ ?>
-      <div class="tline">
-        <div>كوبون</div>
-        <div class="num"><?= coupon ?></div>
-      </div>
-    <? } ?>
-
-    <div class="tline grand">
-      <div>المطلوب</div>
-      <div class="num"><?= (isPaid ? "0 (تم الدفع)" : fmtNum(calcTotal)) ?></div>
-    </div>
-  </div>
-
-  <div class="invoice-footer">
-    <div class="footer-site">www.white-clothes.com</div>
-    <div class="footer-note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط.</div>
-  </div>
-
-</div>
-
-<? if(pageIndex<list.length-1){ ?>
-  <div class="page-break"></div>
-<? } ?>
-
-<? }); ?>
-
-<script>
-/* QR Offline + Batch safe + Print once */
-(function(){
-  var printed=false;
-
-  function makeQR(id, text){
-    var el=document.getElementById(id);
-    if(!el || !text) return true; // لو مفيش نص، مش مشكلة
-    el.innerHTML="";
-
-    if(typeof QRCode === "undefined") return false;
-
-    try{
-      new QRCode(el, {
-        text: text,
-        width: 88,    // يطلع ~ 22mm
-        height: 88,
-        correctLevel: QRCode.CorrectLevel.M
-      });
-      return true;
-    }catch(e){
-      return false;
+  // Try base64 first (safer للروابط الطويلة)
+  try{
+    if (/^[A-Za-z0-9+/=]+$/.test(s) && s.length > 20) {
+      const json = decodeURIComponent(escape(atob(s)));
+      return JSON.parse(json);
     }
+  }catch(e){}
+
+  // Then try URI-decoded JSON
+  try{
+    return JSON.parse(decodeURIComponent(s));
+  }catch(e){}
+
+  // Then try raw JSON
+  try{
+    return JSON.parse(s);
+  }catch(e){}
+
+  return null;
+}
+
+async function loadPages(){
+  const dataParam = getParam("data");
+  const srcParam  = getParam("src");
+
+  if (srcParam){
+    const r = await fetch(srcParam, { cache: "no-store" });
+    const j = await r.json();
+    if (Array.isArray(j)) return j;
+    if (j && Array.isArray(j.pages)) return j.pages;
+    return [j];
+  }
+
+  const decoded = decodeDataParam(dataParam);
+  if (!decoded) return null;
+
+  if (Array.isArray(decoded)) return decoded;
+  if (decoded && Array.isArray(decoded.pages)) return decoded.pages;
+  return [decoded];
+}
+
+/* ===== Render ===== */
+function pmBadge(paymentMethod){
+  const pm = clean(paymentMethod||"").toLowerCase();
+  const isPaid = (pm === "transfer_receipt");
+  const isCOD  = (pm === "cod");
+  return isPaid ? "✓ تم الدفع مسبقاً" : (isCOD ? "الدفع عند الاستلام" : "");
+}
+
+function pageHTML(data, idx){
+  data = data || {};
+  const orderId = clean(data.orderId || data.id || "");
+  const phones = [clean(data.phone1||data.phone||""), clean(data.phone2||"")].filter(Boolean).join(" - ");
+  const note = isEmpty(data.note) ? "" : clean(data.note||"");
+
+  const discountV = Math.abs(numVal(data.discount));
+  const coupon = isEmpty(data.coupon) ? "" : clean(data.coupon);
+
+  const subV  = numVal(data.subtotal);
+  const shipV = numVal(data.shipping);
+  const calcTotal = subV + shipV - discountV;
+
+  const badge = pmBadge(data.paymentMethod);
+
+  // items
+  const items = (data.items || data.products || []);
+  let rows = "";
+  let counter = 0;
+
+  for (let i=0;i<items.length;i++){
+    const it = items[i] || {};
+    const name = clean(it.name||it.product||it.title||"");
+    if(!name) continue;
+    counter++;
+
+    const qty = Number(it.qty||it.quantity||1)||1;
+    const price = numVal(it.price||it.lineTotal||it.total||"0");
+
+    const meta = buildMeta(it);
+    const unit = (qty>1 && price>0) ? Math.round((price/qty)*100)/100 : 0;
+
+    rows += `
+      <div class="itemsGridRow">
+        <div class="itemCol">
+          <div class="pnameLine">
+            <span class="idx">${counter}.</span>
+            <span>${name}</span>
+          </div>
+          ${meta ? `<div class="meta">${meta}</div>` : ``}
+          ${(unit>0 && qty>1) ? `<div class="meta num">${fmtNum(unit)} × ${qty}</div>` : ``}
+        </div>
+        <div class="qcol num">${qty}</div>
+        <div class="prcol num">${fmtNum(price)}</div>
+      </div>
+    `;
+  }
+
+  return `
+  <div class="page">
+    <div class="topHead">
+      <div class="qrBox" data-qr="${orderId}" id="qr-${idx}"></div>
+      <div class="headInfo">
+        <div class="brand">${clean(data.brand||"WHITE CLOTHES")}</div>
+        <div class="subhead">
+          <div><b>Order:</b> <span class="num">${orderId}</span></div>
+          <div class="muted">
+            <span class="num">${clean(data.time||"")}</span>
+            &nbsp;
+            <span class="num">${clean(data.date||"")}</span>
+          </div>
+          ${badge ? `<div class="pm-badge">${badge}</div>` : ``}
+        </div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="info">
+      <div class="lbl">الاسم:</div>
+      <div class="val">${clean(data.customer||"")}</div>
+
+      ${phones ? `
+        <div class="lbl">موبايل:</div>
+        <div class="val phones">${phones}</div>
+      ` : ``}
+
+      <div class="lbl">المحافظة:</div>
+      <div class="val">${clean(data.city||"")}</div>
+
+      <div class="lbl">العنوان:</div>
+      <div class="val full">${clean(data.address||"")}</div>
+    </div>
+
+    ${note ? `
+      <div class="info" style="margin-top:2mm;">
+        <div class="lbl">ملاحظة:</div>
+        <div class="val full">${note}</div>
+      </div>
+    ` : ``}
+
+    <div class="itemsGridHead">
+      <div class="hItem">الصنف</div>
+      <div class="hQty">الكميه</div>
+      <div class="hPrice">السعر</div>
+    </div>
+
+    ${rows || `<div style="padding:6px 0; font-weight:900;">لا يوجد أصناف</div>`}
+
+    <div class="totals">
+      <div class="tline">
+        <div>الإجمالي</div>
+        <div class="num">${fmtNum(subV)}</div>
+      </div>
+
+      <div class="tline">
+        <div>مصاريف الشحن</div>
+        <div class="num">${fmtNum(shipV)}</div>
+      </div>
+
+      ${discountV>0 ? `
+        <div class="tline">
+          <div>خصم</div>
+          <div class="num">${fmtNum(discountV)}</div>
+        </div>
+      ` : ``}
+
+      ${coupon ? `
+        <div class="tline">
+          <div>كوبون</div>
+          <div class="num">${coupon}</div>
+        </div>
+      ` : ``}
+
+      <div class="tline grand">
+        <div>المطلوب</div>
+        <div class="num">${(clean(data.paymentMethod||"").toLowerCase()==="transfer_receipt") ? "0 (تم الدفع)" : fmtNum(calcTotal)}</div>
+      </div>
+    </div>
+
+    <div class="invoice-footer">
+      <div class="footer-site">www.white-clothes.com</div>
+      <div class="footer-note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط.</div>
+    </div>
+  </div>
+  `;
+}
+
+/* ===== QR + Print once (Batch safe) ===== */
+function makeQR(el){
+  const text = (el.getAttribute("data-qr") || "").trim();
+  if(!text) return true;
+  el.innerHTML = "";
+  if(typeof QRCode === "undefined") return false;
+  try{
+    new QRCode(el, { text, width: 88, height: 88, correctLevel: QRCode.CorrectLevel.M });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function qrsReady(){
+  const nodes = document.querySelectorAll("[data-qr]");
+  for (const n of nodes){
+    const t = (n.getAttribute("data-qr")||"").trim();
+    if(!t) continue;
+    if(!n.querySelector("canvas, img")) return false;
+  }
+  return true;
+}
+
+(async function init(){
+  const root = document.getElementById("root");
+
+  let pages = null;
+  try{
+    pages = await loadPages();
+  }catch(e){
+    pages = null;
+  }
+
+  if(!pages || !pages.length){
+    root.innerHTML = `<div class="err">No data. Use ?data=... أو ?src=...</div>`;
+    return;
+  }
+
+  // Render pages
+  root.innerHTML = pages.map((p,i)=> pageHTML(p,i) + (i<pages.length-1 ? `<div class="page-break"></div>` : ``)).join("");
+
+  // Generate QR (retry) then print
+  let printed = false;
+  function printOnce(){
+    if(printed) return;
+    printed = true;
+    setTimeout(()=>window.print(), 250);
   }
 
   function generateAll(){
-    var ok=true;
-    <? list.forEach(function(d,pi){
-      var oid = clean((d||{}).orderId || (d||{}).id || "");
-    ?>
-      ok = makeQR("qr-<?= pi ?>", "<?= oid ?>") && ok;
-    <? }); ?>
+    const nodes = document.querySelectorAll("[data-qr]");
+    let ok = true;
+    nodes.forEach(n => { ok = makeQR(n) && ok; });
     return ok;
   }
 
-  function printOnce(){
-    if(printed) return;
-    printed=true;
-    setTimeout(function(){ window.print(); }, 350);
-  }
-
-  function run(){
-    // جرّب توليد QR، لو المكتبة لسه ما اتعملتش load جرّب تاني
-    var ok = generateAll();
-    if(!ok){
-      setTimeout(function(){
-        generateAll();
-        printOnce();
-      }, 350);
-    }else{
+  // run + wait
+  generateAll();
+  const start = Date.now();
+  (function tick(){
+    if(qrsReady() || (Date.now()-start) > 2500){
       printOnce();
+    }else{
+      // لو QRCode.js اتأخر
+      generateAll();
+      setTimeout(tick, 80);
     }
-  }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded", run);
-  }else{
-    run();
-  }
+  })();
 })();
 </script>
-
 </body>
 </html>
