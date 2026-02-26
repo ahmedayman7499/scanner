@@ -935,9 +935,10 @@ function processAllRows(all){
   // Dashboard
   updateDashboard(all);
 
-  // Print counts
-  const newOrders=all.filter(r=>{const s=String(r.status||"").trim();return s===""||s.toLowerCase()==="new"||s==="جديد";});
-  const underPrint=all.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
+ // Print counts
+  const archiveOnly=all.filter(r=>r.source==="archive");
+  const newOrders=archiveOnly.filter(r=>{const s=String(r.status||"").trim();return s===""||s.toLowerCase()==="new"||s==="جديد";});
+  const underPrint=archiveOnly.filter(r=>String(r.status||"").trim()==="تحت الطباعة");
   const total=newOrders.length+underPrint.length;
   const pmN=document.getElementById("pmNewCount"),pmP=document.getElementById("pmPendingCount"),pmB=document.getElementById("pmBothCount"),pt=document.getElementById("pendingTotal");
   if(pmN)pmN.textContent=newOrders.length;if(pmP)pmP.textContent=underPrint.length;if(pmB)pmB.textContent=total;if(pt)pt.textContent=total;
@@ -1761,7 +1762,7 @@ function renderProductsTable(){
     return;
   }
 
-  data.forEach(p=>{
+  data.forEach((p,idx)=>{
     const stock=Number(p.stock||0);
     const sold=Number(p.sold||0);
     const ret=Number(p.returned||0);
@@ -1787,16 +1788,15 @@ function renderProductsTable(){
       <td class="mono">${fmt(ret)}</td>
       <td class="mono">${fmt(stock)}</td>
       <td>${status}</td>
-      <td><button class="btn-sm" onclick="openEditProductModal(${encodeURIComponent(JSON.stringify(p))})">✏️</button></td>
+      <td><button class="btn-sm" onclick="openEditProductModal(${idx})">✏️</button></td>
     `;
     tbody.appendChild(tr);
   });
 }
 
 /* Optional: quick edit modal for product (client-side only, calls API if available) */
-function openEditProductModal(encodedJson){
-  let p={};
-  try{ p=JSON.parse(decodeURIComponent(encodedJson)); }catch(e){ p={}; }
+function openEditProductModal(idx){
+  const p=productsCache[idx]||{};
   openModal(`
     <div style="margin-bottom:14px">
       <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">✏️ تعديل منتج</div>
