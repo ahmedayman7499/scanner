@@ -846,6 +846,15 @@ function getSeenIds(){try{return new Set(JSON.parse(localStorage.getItem(LS_SEEN
 function saveSeenIds(s){localStorage.setItem(LS_SEEN,JSON.stringify([...s]));}
 function getFollowedIds(){try{return new Set(JSON.parse(localStorage.getItem(LS_FOLLOWED)||"[]"));}catch{return new Set();}}
 function saveFollowedIds(s){localStorage.setItem(LS_FOLLOWED,JSON.stringify([...s]));}
+// ── CACHE KEYS ──
+const LS_PRODUCTS  = "wc_products_cache_v1";
+const LS_PURCHASES = "wc_purchases_cache_v1";
+const LS_EXPENSES  = "wc_expenses_cache_v1";
+const LS_TREASURY  = "wc_treasury_cache_v1";
+
+// ── SAVE/LOAD HELPERS ──
+function saveCache(key, data){ try{ localStorage.setItem(key, JSON.stringify({data, ts:Date.now()})); }catch(e){} }
+function loadCache(key, maxAge=60000){ try{ const raw=localStorage.getItem(key); if(!raw) return null; const {data,ts}=JSON.parse(raw); if(Date.now()-ts > maxAge) return null; return data; }catch(e){ return null; } }
 
 /* ── COURIER MEMORY ── */
 function getSavedCouriers(){try{return JSON.parse(localStorage.getItem(LS_COURIERS)||"[]");}catch{return[];}}
@@ -1688,19 +1697,34 @@ async function submitEditOrder(){
 
 /* ══ PRODUCTS ══ */
 async function loadProducts(){
-  showLoading("جاري تحميل المنتجات…");
-  try{const res=await api("getProducts");hideLoading();
+  // حمّل من الـ cache الأول
+  const cached=loadCache(LS_PRODUCTS, 300000); // 5 دقايق
+  if(cached){ productsCache=cached; renderProductsTable(); updateProductKPIs(); }
+  
+  // حدّث من الـ API في الخلفية
+  try{
+    const res=await api("getProducts");
     if(res?.ok&&res.products){
       productsCache=res.products;
-      const total=productsCache.length,inStock=productsCache.filter(p=>Number(p.stock||0)>10).length,lowStock=productsCache.filter(p=>Number(p.stock||0)>0&&Number(p.stock||0)<=10).length,outStock=productsCache.filter(p=>Number(p.stock||0)<=0).length;
-      const totalSold=productsCache.reduce((s,p)=>s+Number(p.sold||0),0),invValue=productsCache.reduce((s,p)=>s+Number(p.stock||0)*Number(p.price||0),0);
-      const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-      set("kpi_total_skus",total);set("kpi_in_stock",inStock);set("kpi_low_stock",lowStock);set("kpi_out_stock",outStock);set("kpi_total_sold",fmt(totalSold));set("kpi_inv_value",fmt(invValue)+" ج");set("tabProductsBadge",total);
+      saveCache(LS_PRODUCTS, productsCache);
       renderProductsTable();
-      document.querySelectorAll(".sku-select").forEach(sel=>{sel.innerHTML=buildSKUOptions();});
-      document.getElementById("pur_sku").innerHTML=buildSKUOptions();
-    }else{hideLoading();toast("تعذر تحميل المنتجات","","warn");}
-  }catch(e){hideLoading();toast("خطأ","","err");}
+      updateProductKPIs();
+    }
+  }catch(e){}
+}
+
+function updateProductKPIs(){
+  const total=productsCache.length,inStock=productsCache.filter(p=>Number(p.stock||0)>10).length;
+  const lowStock=productsCache.filter(p=>Number(p.stock||0)>0&&Number(p.stock||0)<=10).length;
+  const outStock=productsCache.filter(p=>Number(p.stock||0)<=0).length;
+  const totalSold=productsCache.reduce((s,p)=>s+Number(p.sold||0),0);
+  const invValue=productsCache.reduce((s,p)=>s+Number(p.stock||0)*Number(p.price||0),0);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set("kpi_total_skus",total);set("kpi_in_stock",inStock);set("kpi_low_stock",lowStock);
+  set("kpi_out_stock",outStock);set("kpi_total_sold",fmt(totalSold));set("kpi_inv_value",fmt(invValue)+" ج");
+  set("tabProductsBadge",total);
+  document.querySelectorAll(".sku-select").forEach(sel=>sel.innerHTML=buildSKUOptions());
+  document.getElementById("pur_sku").innerHTML=buildSKUOptions();
 }
 /* ─────────────────────────────────────────────
    PATCH — REPLACE FROM renderProductsTable() TO END
@@ -1991,20 +2015,18 @@ async function submitExpense(){
 }
 
 async function loadExpenses(){
-  showLoading("جاري تحميل المصاريف…");
+  const cached=loadCache(LS_EXPENSES, 300000);
+  if(cached){ expensesCache=cached; renderExpensesTable(); }
   try{
     const res=await api("getExpenses");
-    hideLoading();
-    if(res?.ok && Array.isArray(res.expenses)){
+    if(res?.ok&&Array.isArray(res.expenses)){
       expensesCache=res.expenses;
+      saveCache(LS_EXPENSES, expensesCache);
       renderExpensesTable();
       const b=document.getElementById("expTableBadge");
-      if(b) b.textContent = `${expensesCache.length.toLocaleString("ar-EG")} بند`;
-    }else toast("تعذر تحميل المصاريف","","warn");
-  }catch(e){
-    hideLoading();
-    toast("خطأ","","err");
-  }
+      if(b)b.textContent=`${expensesCache.length.toLocaleString("ar-EG")} بند`;
+    }
+  }catch(e){}
 }
 
 function renderExpensesTable(){
@@ -2034,55 +2056,54 @@ function renderExpensesTable(){
 
 /* ───────────────── Treasury ───────────────── */
 async function loadTreasury(){
-  showLoading("جاري تحميل الخزينة…");
+  const cached=loadCache(LS_TREASURY, 300000);
+  if(cached){ renderTreasuryData(cached); }
   try{
     const res=await api("getTreasury");
-    hideLoading();
-    if(!res?.ok||!res.data){toast("تعذر تحميل الخزينة","","warn");return;}
-
-    const d=res.data;
-    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-
-    set("tr_sales",        fmt(d.totalSales     ||0));
-    set("tr_purchases",    fmt(d.totalPurchases  ||0));
-    set("tr_expenses",     fmt(d.totalExpenses   ||0));
-    set("tr_shipping_cost",fmt(d.totalShipping   ||0));
-    set("tr_returns",      fmt(d.totalReturns    ||0));
-
-    const netProfit = n(d.totalSales) - n(d.totalPurchases) - n(d.totalExpenses);
-    set("tr_net_profit", fmt(netProfit));
-    const margin = n(d.totalSales)>0 ? Math.round((netProfit/n(d.totalSales))*100) : 0;
-    const mEl=document.getElementById("tr_margin");
-    if(mEl) mEl.textContent="هامش: "+margin+"%";
-
-    set("tr_inv_cost",  fmt(d.invCost   ||0));
-    set("tr_inv_sale",  fmt(d.invSale   ||0));
-    set("tr_out_stock", fmt(d.outOfStock||0));
-    set("tr_low_stock", fmt(d.lowStock  ||0));
-
-    // monthly table
-    const tb=document.getElementById("treasuryTbody");
-    if(tb){
-      const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-      const rowsM=Array.isArray(d.monthly)?d.monthly:[];
-      tb.innerHTML=rowsM.map(r=>{
-        const gross=n(r.sales)-n(r.purchases);
-        const net=gross-n(r.expenses);
-        const mg=n(r.sales)>0?Math.round((gross/n(r.sales))*100):0;
-        return`<tr>
-          <td class="td-name">${esc(months[(r.month||1)-1]||r.month)}</td>
-          <td class="mono">${fmt(r.orders||0)}</td>
-          <td class="mono td-amount">${fmt(r.sales||0)}</td>
-          <td class="mono">${fmt(r.purchases||0)}</td>
-          <td class="mono">${fmt(r.expenses||0)}</td>
-          <td class="mono">${fmt(gross)}</td>
-          <td class="mono">${mg}%</td>
-          <td class="mono">${fmt(r.returns||0)}</td>
-          <td class="mono td-amount">${fmt(net)}</td>
-        </tr>`;
-      }).join("")||`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">لا يوجد بيانات</div></div></td></tr>`;
+    if(res?.ok&&res.data){
+      saveCache(LS_TREASURY, res.data);
+      renderTreasuryData(res.data);
     }
-  }catch(e){hideLoading();toast("خطأ","","err");}
+  }catch(e){}
+}
+
+function renderTreasuryData(d){
+  // نفس كود loadTreasury القديم بس بياخد d كـ parameter
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set("tr_sales",        fmt(d.totalSales     ||0));
+  set("tr_purchases",    fmt(d.totalPurchases  ||0));
+  set("tr_expenses",     fmt(d.totalExpenses   ||0));
+  set("tr_shipping_cost",fmt(d.totalShipping   ||0));
+  set("tr_returns",      fmt(d.totalReturns    ||0));
+  const netProfit=n(d.totalSales)-n(d.totalPurchases)-n(d.totalExpenses);
+  set("tr_net_profit",fmt(netProfit));
+  const margin=n(d.totalSales)>0?Math.round((netProfit/n(d.totalSales))*100):0;
+  const mEl=document.getElementById("tr_margin");if(mEl)mEl.textContent="هامش: "+margin+"%";
+  set("tr_inv_cost",  fmt(d.invCost   ||0));
+  set("tr_inv_sale",  fmt(d.invSale   ||0));
+  set("tr_out_stock", fmt(d.outOfStock||0));
+  set("tr_low_stock", fmt(d.lowStock  ||0));
+  const tb=document.getElementById("treasuryTbody");
+  if(tb){
+    const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+    const rowsM=Array.isArray(d.monthly)?d.monthly:[];
+    tb.innerHTML=rowsM.map(r=>{
+      const gross=n(r.sales)-n(r.purchases);
+      const net=gross-n(r.expenses);
+      const mg=n(r.sales)>0?Math.round((gross/n(r.sales))*100):0;
+      return`<tr>
+        <td class="td-name">${esc(months[(r.month||1)-1]||r.month)}</td>
+        <td class="mono">${fmt(r.orders||0)}</td>
+        <td class="mono td-amount">${fmt(r.sales||0)}</td>
+        <td class="mono">${fmt(r.purchases||0)}</td>
+        <td class="mono">${fmt(r.expenses||0)}</td>
+        <td class="mono">${fmt(gross)}</td>
+        <td class="mono">${mg}%</td>
+        <td class="mono">${fmt(r.returns||0)}</td>
+        <td class="mono td-amount">${fmt(net)}</td>
+      </tr>`;
+    }).join("")||`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">لا يوجد بيانات</div></div></td></tr>`;
+  }
 }
 /* ───────────────── UI fixes ───────────────── */
 
