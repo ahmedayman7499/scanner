@@ -669,7 +669,11 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
     <button class="btn-gold" onclick="loadProducts()">🔄 تحديث</button>
   </div></div>
   <div class="card">
-    <div class="card-header"><div class="card-title">📦 جدول المنتجات</div><span class="card-badge" id="prodTableBadge">—</span></div>
+    <div class="card-header">
+      <div class="card-title">📦 جدول المنتجات</div>
+      <span class="card-badge" id="prodTableBadge">—</span>
+      <button class="btn-gold btn-sm" style="margin-inline-start:auto;" onclick="openAddProductModal()">➕ إضافة منتج</button>
+    </div>
     <div class="tbl-wrap"><table><thead><tr><th>SKU</th><th>اسم المنتج</th><th>اللون</th><th>المقاس</th><th>التكلفة</th><th>سعر البيع</th><th>هامش %</th><th>المباع</th><th>المرتجع</th><th>المخزون</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="prodTbody"><tr><td colspan="12"><div class="empty"><div class="empty-icon">📦</div><div class="empty-text">جاري التحميل…</div></div></td></tr></tbody></table></div>
   </div>
 </div>
@@ -1774,6 +1778,64 @@ async function loadProducts(){
   }catch(e){}
 }
 
+function openAddProductModal(){
+  // ولّد SKU مؤقت من الـ cache
+  const existingSkus = productsCache.map(p => String(p.sku || "")).filter(s => s.startsWith("WC-"));
+  const maxNum = existingSkus.length
+    ? Math.max(...existingSkus.map(v => parseInt(v.replace("WC-", "")) || 0))
+    : 0;
+  const suggestedSku = "WC-" + String(maxNum + 1).padStart(4, "0");
+
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">➕ إضافة منتج جديد</div>
+    </div>
+    <div class="form-grid form-grid-3">
+      <div><label class="field-label">SKU (تلقائي)</label><input id="ap_sku" value="${esc(suggestedSku)}" placeholder="WC-0001"/></div>
+      <div><label class="field-label">اسم المنتج *</label><input id="ap_name" placeholder="اسم المنتج"/></div>
+      <div><label class="field-label">النوع</label><input id="ap_type" placeholder="ملابس / إكسسوار"/></div>
+      <div><label class="field-label">اللون</label><input id="ap_color" placeholder="اللون"/></div>
+      <div><label class="field-label">المقاس</label><input id="ap_size" placeholder="المقاس"/></div>
+      <div><label class="field-label">التكلفة (ج)</label><input id="ap_cost" type="number" value="0"/></div>
+      <div><label class="field-label">سعر البيع (ج)</label><input id="ap_price" type="number" value="0"/></div>
+      <div><label class="field-label">المخزون</label><input id="ap_stock" type="number" value="0"/></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn-gold" style="flex:1" onclick="_apSave()">💾 حفظ</button>
+      <button style="flex:1" onclick="closeModal()">إلغاء</button>
+    </div>
+    <div id="ap_err" style="margin-top:10px;color:var(--red);font-size:11px;display:none"></div>
+  `);
+
+  window._apSave = async ()=>{
+    const err=document.getElementById("ap_err");
+    const payload={
+      sku:  (document.getElementById("ap_sku")?.value||"").trim(),
+      name: (document.getElementById("ap_name")?.value||"").trim(),
+      type: (document.getElementById("ap_type")?.value||"").trim(),
+      color:(document.getElementById("ap_color")?.value||"").trim(),
+      size: (document.getElementById("ap_size")?.value||"").trim(),
+      cost: n(document.getElementById("ap_cost")?.value),
+      price:n(document.getElementById("ap_price")?.value),
+      stock:n(document.getElementById("ap_stock")?.value),
+    };
+    if(!payload.name){ err.textContent="⛔ اسم المنتج مطلوب"; err.style.display="block"; return; }
+    showLoading("جاري الحفظ…");
+    try{
+      const res=await api("addProduct", payload);
+      hideLoading();
+      if(res?.ok){
+        toast(`✅ تم إضافة المنتج — SKU: ${res.sku}`,"","ok");
+        closeModal();
+        await loadProducts();
+      }else{
+        err.textContent="❌ "+(res?.error||"فشل الحفظ");
+        err.style.display="block";
+      }
+    }catch(e){ hideLoading(); err.textContent="❌ خطأ اتصال"; err.style.display="block"; }
+  };
+}
+
 function updateProductKPIs(){
   const total=productsCache.length,inStock=productsCache.filter(p=>Number(p.stock||0)>10).length;
   const lowStock=productsCache.filter(p=>Number(p.stock||0)>0&&Number(p.stock||0)<=10).length;
@@ -1895,7 +1957,7 @@ function openEditProductModal(idx){
     showLoading("جاري الحفظ…");
     try{
       // requires server action (if you implemented it)
-      const res=await api("editProduct", payload);
+      const res=await api("updateProduct", payload);
       hideLoading();
       if(res?.ok){
         toast("تم حفظ المنتج","","ok");
