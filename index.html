@@ -988,15 +988,63 @@ async function refreshAll(force=false){
 /* ── NEW ORDER DETECTION ── */
 function _checkNewOrders(all){
   const currentIds=new Set(all.map(r=>String(r.orderId||r.id||"")));
-  const seenIds=getSeenIds(),followedIds=getFollowedIds();
-  if(lastKnownIds.size===0){all.forEach(r=>lastKnownIds.add(String(r.orderId||r.id||"")));all.forEach(r=>seenIds.add(String(r.orderId||r.id||"")));saveSeenIds(seenIds);return;}
+  const seenIds=getSeenIds();
+  
+  if(lastKnownIds.size===0){
+    all.forEach(r=>lastKnownIds.add(String(r.orderId||r.id||"")));
+    all.forEach(r=>seenIds.add(String(r.orderId||r.id||"")));
+    saveSeenIds(seenIds);
+    return;
+  }
+  
   const newIds=[...currentIds].filter(id=>!lastKnownIds.has(id));
+  
   newIds.forEach(id=>{
-    const order=all.find(r=>String(r.orderId||r.id||"")===id);if(!order)return;
-    if(isCancelledStatus(order.status)){seenIds.add(id);saveSeenIds(seenIds);lastKnownIds.add(id);return;}
-    if(!seenIds.has(id)){seenIds.add(id);saveSeenIds(seenIds);beep();showNewOrderNotif(id,{name:order.name||order.customer,phone:order.phone||order.phone1,status:order.status});}
+    const order=all.find(r=>String(r.orderId||r.id||"")===id);
+    if(!order)return;
+    
+    if(isCancelledStatus(order.status)){
+      seenIds.add(id);saveSeenIds(seenIds);lastKnownIds.add(id);return;
+    }
+    
+    // ── تحقق من التكرار بالموبايل ──
+    if(!seenIds.has(id)){
+      const phone=String(order.phone||order.phone1||"").replace(/\D/g,"");
+      if(phone){
+        const dupOrder=all.find(r=>{
+          const rId=String(r.orderId||r.id||"");
+          if(rId===id)return false;
+          const rPhone=String(r.phone||r.phone1||"").replace(/\D/g,"");
+          if(rPhone!==phone)return false;
+          // لو الأوردر التاني في آخر 24 ساعة
+          const orderDate=new Date(r.orderDate||r.date||0);
+          const newOrderDate=new Date(order.orderDate||order.date||0);
+          return Math.abs(newOrderDate-orderDate)<DUP_WINDOW_MS;
+        });
+        
+        if(dupOrder){
+          // أوردر مكرر من نفس العميل
+          beepDuplicate();
+          showDuplicateNotif(id,{
+            ...order,
+            name:order.name||order.customer,
+            status:order.status,
+            dupWith:dupOrder.orderId||dupOrder.id
+          });
+          addNotifHistory("⚠️","أوردر مكرر — "+id,(order.name||"")+" | نفس الموبايل");
+        } else {
+          beep();
+          showNewOrderNotif(id,{name:order.name||order.customer,phone:order.phone||order.phone1,status:order.status});
+          addNotifHistory("🆕","أوردر جديد — "+id,order.name||"");
+        }
+        
+        seenIds.add(id);saveSeenIds(seenIds);
+      }
+    }
+    
     lastKnownIds.add(id);
   });
+  
   updateDashboard(all);
 }
 
