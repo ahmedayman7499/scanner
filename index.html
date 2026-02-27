@@ -1698,15 +1698,27 @@ async function submitEditOrder(){
 
 /* ══ PRODUCTS ══ */
 async function loadProducts(){
-  // حمّل من الـ cache الأول
-  const cached=loadCache(LS_PRODUCTS, 300000); // 5 دقايق
+  const cached=loadCache(LS_PRODUCTS, 300000);
   if(cached){ productsCache=cached; renderProductsTable(); updateProductKPIs(); }
   
-  // حدّث من الـ API في الخلفية
   try{
     const res=await api("getProducts");
     if(res?.ok&&res.products){
-      productsCache=res.products;
+      let salesMap={};
+      try{
+        const salesRes=await api("getAllProductSales");
+        salesMap=salesRes?.sales||{};
+      }catch(e){}
+      productsCache=res.products.map(p=>{
+        const sku=String(p.sku||"").trim().replace(/\.0+$/,"");
+  const nameKey=`${(p.name||"").trim()}||${(p.color||"").trim()}||${(p.size||"").trim()}`;
+  const skuKey=sku;
+  // جرب الـ SKU الأول، لو مفيش جرب الاسم+لون+مقاس
+  return{
+    ...p,
+    sold: salesMap[skuKey] || salesMap[nameKey] || 0
+        };
+      });
       saveCache(LS_PRODUCTS, productsCache);
       renderProductsTable();
       updateProductKPIs();
