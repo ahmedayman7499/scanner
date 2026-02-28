@@ -1080,7 +1080,7 @@ function updateDashboard(all){
 
 /* ── RENDER MY ORDERS ── */
 function quickActionBtn(r){
-  const s=String(r.status||"").trim(),id=String(r.orderId||r.id||"");
+  const s=String(r.status||"").trim(), id=String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
   
   const printBtn=`<button class="qa-btn" style="border-color:rgba(52,152,219,.3);color:var(--blue)" onclick="printInvoice('${id}')">🧾 فاتورة</button>`;
   
@@ -1104,7 +1104,7 @@ function quickActionBtn(r){
 function render(){
   updateToggleBtn();
   const tbody=document.getElementById("tbody");tbody.innerHTML="";
-  const subSum=rows.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
+  const subSum=rows.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0)-n(r.partialReturn||0),0);
   const shipSum=rows.reduce((a,r)=>a+n(r.shipping||0),0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set("metricOrders",rows.length);set("metricSubtotal",fmt(subSum));set("metricShipping",fmt(shipSum));
@@ -1112,7 +1112,7 @@ function render(){
   const si=document.getElementById("selectionInfo");if(si)si.textContent=selected.size+" محدد";
   if(!rows.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`;return;}
   rows.forEach(r=>{
-    const id=String(r.orderId||r.id||""),checked=selected.has(id);
+    const id = String(r.orderId||r.id||"").trim().replace(/\.0+$/,""),checked=selected.has(id);
     const tr=document.createElement("tr");
     if(checked)tr.style.background="rgba(201,168,76,.04)";
     const sd=parseShipDate(r),days=daysSince(sd);
@@ -1123,7 +1123,10 @@ function render(){
     <td class="td-id"><b>${esc(id)}</b></td>
     <td class="td-name">${esc(r.name||r.customer||"")}</td>
     <td>${addrCell(r)}</td>
-    <td class="td-amount">${fmt(r.subtotal||r.productTotal||0)}</td>
+    <td class="td-amount">
+    ${fmt((r.subtotal||r.productTotal||0)-(r.partialReturn||0))}
+    ${(r.partialReturn||0)>0?`<div style="font-size:9px;color:var(--red);margin-top:2px">-${fmt(r.partialReturn)} مرتجع</div>`:""}
+    </td>
     <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping||0)}</td>
     <td>${statusBadge(r.status)}${daysHtml}${courierHtml}</td>
     <td class="td-date no-print">${fmtOrderDate(r)}</td>
@@ -1139,12 +1142,93 @@ function updateToggleBtn(){const btn=document.getElementById("toggleAllBtn");if(
 /* ── QUICK UPDATE ── */
 async function quickUpdate(orderId,status){
   const id=String(orderId);
-  const prevCache=allCache.map(r=>({...r})),prevRows=rows.map(r=>({...r}));
-  allCache=allCache.map(r=>String(r.orderId||r.id||"")===id?{...r,status}:r);
-  rows=rows.map(r=>String(r.orderId||r.id||"")===id?{...r,status}:r);
+  console.log("quickUpdate id:", id, "| rows ids:", rows.map(r=>String(r.orderId||r.id||"")));
+  
+  // حدّث الـ cache مع التحصيل
+  const updateRow = r => {
+  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
+  const cid = id.trim().replace(/\.0+$/,"");
+  if (rid !== cid) return r;
+  
+  const updated = {...r, status};
+  
+  if (status === "مرتجع") {
+    updated.subtotal = 0;
+    updated.partialReturn = 0;
+  } else if (status === "الغاء") {
+    updated.subtotal = 0;
+    updated.partialReturn = 0;
+  } else if (status === "جديد" || status === "") {
+    const original = allCache.find(x => 
+      String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
+    );
+    if (original) {
+      updated.subtotal = original.subtotal;
+      updated.partialReturn = 0;
+    }
+  }
+  
+  return updated;
+};
+  let firstSeen = false;
+allCache = allCache.map(r => {
+  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
+  const cid = id.trim().replace(/\.0+$/,"");
+  if (rid !== cid) return r;
+  const updated = {...r, status};
+  if (!firstSeen) {
+    // الصف الأول بس يتحسب
+    firstSeen = true;
+    if (status === "مرتجع" || status === "الغاء") {
+      updated.subtotal = 0;
+      updated.partialReturn = 0;
+    } else if (status === "جديد" || status === "") {
+      const original = allCache.find(x =>
+        String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
+      );
+      if (original) { updated.subtotal = original.subtotal; updated.partialReturn = 0; }
+    }
+  } else {
+    // الصفوف التانية — صفّر التحصيل عشان متتحسبش مرتين
+    updated.subtotal = 0;
+    updated.partialReturn = 0;
+  }
+  return updated;
+});
+
+firstSeen = false;
+rows = rows.map(r => {
+  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
+  const cid = id.trim().replace(/\.0+$/,"");
+  if (rid !== cid) return r;
+  const updated = {...r, status};
+  if (!firstSeen) {
+    firstSeen = true;
+    if (status === "مرتجع" || status === "الغاء") {
+      updated.subtotal = 0;
+      updated.partialReturn = 0;
+    } else if (status === "جديد" || status === "") {
+      const original = allCache.find(x =>
+        String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
+      );
+      if (original) { updated.subtotal = original.subtotal; updated.partialReturn = 0; }
+    }
+  } else {
+    updated.subtotal = 0;
+    updated.partialReturn = 0;
+  }
+  return updated;
+});
+  
   saveCachedData(allCache);render();toast(status,"Order "+id,"ok",2200);
   if(isCancelledStatus(status)){const m=getDupTimes();delete m[id];saveDupTimes(m);}
-  try{const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}refreshAll(true);}
+  
+  
+  try{
+    const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
+    if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}
+    refreshAll(true);
+  }
   catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
 }
 
