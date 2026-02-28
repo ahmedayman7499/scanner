@@ -1,6 +1,6 @@
 {
   "name": "WC Control",
-  "short_name": "WC",
+  "short_name": "WC Control",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "icons": [
     {
       "src": "icon-192.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
       "type": "image/png"
     },
     {
