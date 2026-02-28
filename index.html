@@ -925,12 +925,18 @@ async function fetchAllRows(force=false){
 function processAllRows(all){
   if(!all?.length)return;
   allCache=all;
-
+    const prevSelected=new Set(selected);
+    
   // My orders
   const order=[...mineIds];
   const mine=all.filter(r=>mineIds.has(String(r.orderId||r.id||"")));
   mine.sort((a,b)=>order.indexOf(String(b.orderId||b.id||""))-order.indexOf(String(a.orderId||a.id||"")));
-  rows=mine;selected=new Set(rows.map(r=>String(r.orderId||r.id||"")));
+  rows=mine;
+if(prevSelected.size>0){
+  selected=new Set(rows.map(r=>String(r.orderId||r.id||"")).filter(id=>prevSelected.has(id)));
+}else{
+  selected=new Set(rows.map(r=>String(r.orderId||r.id||"")));
+}
 
   // Ship + await
   shipAll=all.filter(r=>String(r.status||"").trim()==="تم الشحن");
@@ -1075,13 +1081,24 @@ function updateDashboard(all){
 /* ── RENDER MY ORDERS ── */
 function quickActionBtn(r){
   const s=String(r.status||"").trim(),id=String(r.orderId||r.id||"");
-  if(s===""||s==="جديد"||s.toLowerCase()==="new")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button></div>`;
-  if(s==="تحت الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button></div>`;
-  if(s==="تم الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button></div>`;
-  if(s==="تم الشحن")return`<div class="qa-wrap"><button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button><button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️</button></div>`;
-  if(s==="تم التسليم")return`<div class="qa-wrap" style="color:var(--mist);font-size:10px;">✓ مكتمل</div>`;
-  if(isCancelledStatus(s))return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button></div>`;
-  return"";
+  
+  const printBtn=`<button class="qa-btn" style="border-color:rgba(52,152,219,.3);color:var(--blue)" onclick="printInvoice('${id}')">🧾 فاتورة</button>`;
+  
+  if(s===""||s==="جديد"||s.toLowerCase()==="new")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button>${printBtn}</div>`;
+  if(s==="تحت الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button>${printBtn}</div>`;
+  if(s==="تم الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button>${printBtn}</div>`;
+  if(s==="تم الشحن")return`<div class="qa-wrap">
+    <button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button>
+    <button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️ كامل</button>
+    <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ جزئي</button>
+    ${printBtn}
+  </div>`;
+  if(s==="تم التسليم")return`<div class="qa-wrap">
+    <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع جزئي</button>
+    ${printBtn}
+  </div>`;
+  if(isCancelledStatus(s))return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button>${printBtn}</div>`;
+  return`<div class="qa-wrap">${printBtn}</div>`;
 }
 
 function render(){
@@ -1110,7 +1127,7 @@ function render(){
     <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping||0)}</td>
     <td>${statusBadge(r.status)}${daysHtml}${courierHtml}</td>
     <td class="td-date no-print">${fmtOrderDate(r)}</td>
-    <td class="no-print">${quickActionBtn(r)}</td>`;
+    <td class="no-print">${quickActionBtn(r)}<br><button class="qa-btn" style="font-size:9px;color:var(--red);border-color:rgba(192,57,43,.3);margin-top:3px" onclick="removeFromMine('${id}')">🗑️ إزالة</button></td>`;
     tr.querySelector("input").addEventListener("change",e=>{e.target.checked?selected.add(id):selected.delete(id);if(si)si.textContent=selected.size+" محدد";tr.style.background=e.target.checked?"rgba(201,168,76,.04)":"";updateToggleBtn();});
     tbody.appendChild(tr);
   });
@@ -1173,7 +1190,16 @@ async function bulkUpdate(){
   let courier="",shipDate="",deliveryDate="",partialAmount="";
   if(status==="تم الشحن"){const r=await showShipModal();if(!r){toast("تم الإلغاء","","warn");return;}courier=r.courier;shipDate=r.shipDate;if(!courier.trim()||!shipDate.trim()){toast("⛔ البيانات ناقصة","","err");return;}}
   if(status==="تم التسليم"){const r=await showDeliveryModal();if(!r){toast("تم الإلغاء","","warn");return;}deliveryDate=r.deliveryDate;if(!deliveryDate.trim()){toast("⛔ لازم تكتب تاريخ التسليم","","err");return;}}
-  if(status==="مرتجع جزئي"){const r=await showPartialModal();if(!r){toast("تم الإلغاء","","warn");return;}partialAmount=r.amount;if(!partialAmount.trim()){toast("⛔ لازم تكتب المبلغ","","err");return;}}
+  if(status==="مرتجع جزئي"){
+  closeModal();
+  const ids=[...selected];
+  if(ids.length===1){
+    await quickPartialReturn(ids[0]);
+  } else {
+    toast("المرتجع الجزئي يشتغل على أوردر واحد بس","","warn");
+  }
+  return;
+}
   const idSet=new Set(ids.map(String));
   const prevCache=allCache.map(r=>({...r})),prevRows=rows.map(r=>({...r}));
   allCache=allCache.map(r=>idSet.has(String(r.orderId||r.id||""))?{...r,status,courier:courier||r.courier,shipDate:shipDate||r.shipDate}:r);
@@ -1200,11 +1226,22 @@ async function addOneWithDupCheck(){
     beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);
     showDuplicateNotif(id,inCache);const proceed=await confirmDupProceed();if(!proceed)return;
   }
-  mineIds.add(String(id));saveMine();beep();toast("تم إضافة الأوردر",id,"ok");
+  
+  // أضف فوراً
+  mineIds.add(String(id));saveMine();beep();
   recordScanTime(id);
-  const res=await api("scanAdd",{orderId:id});if(!res?.ok){toast("فشل الإضافة",res?.error||"","err");return;}
   document.getElementById("orderIdInput").value="";
-  showLoading("جاري التحديث…");await refreshAll(true);hideLoading();
+  
+  if(inCache){
+    rows.unshift(inCache);
+    selected.add(id);
+    render();
+  }
+  toast("تم إضافة الأوردر",id,"ok");
+  
+  // sync في الخلفية
+  api("scanAdd",{orderId:id}).catch(()=>{});
+  setTimeout(()=>refreshAll(true),3000);
 }
 
 function confirmDupProceed(){
@@ -1235,13 +1272,41 @@ async function onQrSuccess(txt){
   const raw=String(txt||"").trim();const clean=raw.match(/\d+/)?raw.match(/\d+/)[0]:raw;
   if(!clean)return;if(lastScan.id===clean&&(now-lastScan.t)<3000)return;
   lastScan={id:clean,t:now};scanLockUntil=now+2000;
-  if(mineIds.has(String(clean))){beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);const ex=allCache.find(r=>String(r.orderId||r.id||"").trim()===String(clean));showDuplicateNotif(clean,ex||{name:"موجود في قائمتك بالفعل",status:"—"});addNotifHistory("⚠️","أوردر مكرر في قائمتك","ID: "+clean);return;}
+
+  if(mineIds.has(String(clean))){
+    beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);
+    const ex=allCache.find(r=>String(r.orderId||r.id||"").trim()===String(clean));
+    showDuplicateNotif(clean,ex||{name:"موجود في قائمتك بالفعل",status:"—"});
+    addNotifHistory("⚠️","أوردر مكرر في قائمتك","ID: "+clean);
+    return;
+  }
+
   const inCache=allCache.find(r=>String(r.orderId||r.id||"").trim()===String(clean));
-  if(inCache&&!isCancelledStatus(inCache.status)&&wasScannedRecently(clean)){beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);showDuplicateNotif(clean,inCache);addNotifHistory("⚠️","أوردر مكرر","ID: "+clean+" | "+inCache.name);setTimeout(async()=>{mineIds.add(String(clean));saveMine();recordScanTime(clean);await api("scanAdd",{orderId:clean});await refreshAll(true);},600);return;}
-  beep();toast("تم الالتقاط",clean,"ok");
+
+  if(inCache&&!isCancelledStatus(inCache.status)&&wasScannedRecently(clean)){
+    beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);
+    showDuplicateNotif(clean,inCache);
+    addNotifHistory("⚠️","أوردر مكرر","ID: "+clean+" | "+inCache.name);
+    setTimeout(()=>{
+      mineIds.add(String(clean));saveMine();recordScanTime(clean);
+      rows.unshift(inCache);selected.add(clean);render();
+      api("scanAdd",{orderId:clean}).catch(()=>{});
+      setTimeout(()=>refreshAll(true),3000);
+    },600);
+    return;
+  }
+
+  beep();
   mineIds.add(String(clean));saveMine();recordScanTime(clean);
   addNotifHistory("✅","تم إضافة الأوردر","ID: "+clean+(inCache?" | "+(inCache.name||inCache.customer):""));
-  const res=await api("scanAdd",{orderId:clean});if(!res?.ok){toast("فشل الإضافة",res?.error||"","err");return;}await refreshAll(true);
+
+  // أضف فوراً
+  if(inCache){rows.unshift(inCache);selected.add(clean);render();}
+  toast("تم الالتقاط",clean,"ok");
+
+  // sync في الخلفية
+  api("scanAdd",{orderId:clean}).catch(()=>{});
+  setTimeout(()=>refreshAll(true),3000);
 }
 
 /* ── SEARCH ── */
@@ -1262,8 +1327,41 @@ function renderSearchResults(){
 }
 function srToggleAll(){ if(!lastResults?.length) return; const allIds=lastResults.map(r=>String(r.orderId)); const allSel=allIds.every(id=>srSelected.has(id)); if(allSel) srSelected.clear(); else allIds.forEach(id=>srSelected.add(id)); renderSearchResults(); }
 function closeSearch(){ lastResults=[];srSelected.clear();document.getElementById("searchCard").style.display="none";document.getElementById("srTbody").innerHTML="";document.getElementById("idx_q").value="";document.getElementById("indexStats").textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`; }
-async function srAddToMine(){ const ids=[...srSelected]; if(!ids.length){toast("حدد نتائج أولاً","","warn");return;} let added=0; ids.forEach(id=>{if(!mineIds.has(String(id))){mineIds.add(String(id));added++;}}); saveMine(); toast(`تم إضافة ${added} أوردر`,"","ok"); closeSearch(); showLoading("جاري التحديث…"); await refreshMine(); hideLoading(); }
-document.getElementById("idx_q").addEventListener("input",()=>{ const q=document.getElementById("idx_q").value.trim().toLowerCase(); const el=document.getElementById("indexStats"); if(!q){el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`;return;} const cnt=allCache.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))).length; el.textContent=`🔎 ${cnt.toLocaleString("ar-EG")} متوقع`; });
+async function srAddToMine(){
+  const ids=[...srSelected];
+  if(!ids.length){toast("حدد نتائج أولاً","","warn");return;}
+  
+  let added=0;
+  ids.forEach(id=>{
+    if(!mineIds.has(String(id))){mineIds.add(String(id));added++;}
+  });
+  saveMine();
+  
+  // أضف فوراً من الـ cache المحلي
+  ids.forEach(id=>{
+    const r=allCache.find(x=>String(x.orderId||x.id||"")===id);
+    if(r&&!rows.find(x=>String(x.orderId||x.id||"")===id)){
+      rows.unshift(r);
+      selected.add(id);
+    }
+  });
+  
+  render();
+  toast(`تم إضافة ${added} أوردر`,"","ok");
+  closeSearch();
+  
+  // sync في الخلفية بدون loading
+  ids.forEach(id=>api("scanAdd",{orderId:id}).catch(()=>{}));
+  setTimeout(()=>refreshAll(true),3000);
+}
+
+document.getElementById("idx_q").addEventListener("input",()=>{
+  const q=document.getElementById("idx_q").value.trim().toLowerCase();
+  const el=document.getElementById("indexStats");
+  if(!q){el.textContent=`✅ ${allCache.length.toLocaleString("ar-EG")} أوردر`;return;}
+  const cnt=allCache.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))).length;
+  el.textContent=`🔎 ${cnt.toLocaleString("ar-EG")} متوقع`;
+});
 
 
 /* ── SHIP MONITOR ── */
@@ -1509,10 +1607,12 @@ function switchTab(name,btn){
   if(btn)btn.classList.add("active");
   const bar=document.getElementById("deliveryActionBar");
   if(bar)bar.style.display=name==="delivery"?"flex":"none";
-  if(name==="products"&&!productsCache.length)loadProducts();
-  if(name==="purchases"&&!purchasesCache.length)loadPurchases();
-  if(name==="expenses"&&!expensesCache.length)loadExpenses();
-  if(name==="treasury"&&!document.getElementById("tr_sales")?.textContent?.replace(/[,\s]/g,""))loadTreasury();
+  
+  // ── حمّل بس لو مفيش داتا — بدون showLoading ──
+  if(name==="products" && !productsCache.length) loadProducts();
+  if(name==="purchases" && !purchasesCache.length) loadPurchases();
+  if(name==="expenses" && !expensesCache.length) loadExpenses();
+  if(name==="treasury") loadTreasury(); // الخزينة دايماً تتحدث
 }
 
 /* ══ ORDER FORM ══ */
@@ -1712,7 +1812,8 @@ async function submitEditOrder(){
     const idMatch=item.id.match(/_row_(\d+)$/);if(!idMatch)return;
     const id=idMatch[1];
     products.push({
-      name:(document.getElementById("eo_prod_name_"+id)?.value||"").trim(),
+      prod:(document.getElementById("eo_prod_prod_"+id)?.value||"").trim(),
+      sku:(document.getElementById("eo_prod_sku_"+id)?.value||"").trim(),
       color:(document.getElementById("eo_prod_color_"+id)?.value||"").trim(),
       size:(document.getElementById("eo_prod_size_"+id)?.value||"").trim(),
       qty:parseInt(document.getElementById("eo_prod_qty_"+id)?.value||1)||1,
@@ -2045,10 +2146,10 @@ async function submitPurchase(){
 }
 
 async function loadPurchases(){
-  showLoading("جاري تحميل المشتريات…");
+  
   try{
     const res=await api("getPurchases");
-    hideLoading();
+    
     if(res?.ok && Array.isArray(res.purchases)){
       purchasesCache=res.purchases;
       renderPurchasesTable();
@@ -2268,12 +2369,7 @@ togglePrintMenu = function(e){
 };
 async function loadAll(){
   await refreshAll(true);
-  setTimeout(()=>{
-    loadProducts();
-    setTimeout(()=>loadPurchases(), 500);
-    setTimeout(()=>loadExpenses(), 1000);
-    setTimeout(()=>loadTreasury(), 1500);
-  }, 2000);
+  
 }
 
 /* ───────────────── INIT ───────────────── */
@@ -2283,19 +2379,24 @@ function init(){
   loadNotifHistory();
   updateBellDot();
   renderCourierBar();
-
-  // ensure date defaults
   resetExpenseForm();
 
-  // order form defaults
-  if(document.getElementById("of_products_container") && document.getElementById("of_products_container").children.length===0){
+  if(document.getElementById("of_products_container")?.children.length===0){
     addProductRow("of_products_container","of_prod");
     calcOrderTotal();
   }
 
-    loadAll();  // ← بدل refreshAll(true)
+  // ── حمّل الـ cache فوراً ──
+  const cached=loadCachedData();
+  if(cached?.rows?.length){
+    processAllRows(cached.rows);
+  }
 
-  setInterval(()=>refreshAll(false), 15000);  // ← هنا في الآخر
+  // ── sync في الخلفية بعد ثانية ──
+  setTimeout(()=>refreshAll(true), 1000);
+  
+  // ── تحديث دوري ──
+  setInterval(()=>refreshAll(false), 15000);
 }
 
 // ضيفه في آخر init() قبل القفلة
@@ -2314,6 +2415,72 @@ document.addEventListener("keydown", e => {
   if (active.id === "eo_search_id") { searchOrderForEdit(); return; }
 });
 init();
+
+function removeFromMine(id){
+  mineIds.delete(String(id));
+  saveMine();
+  rows=rows.filter(r=>String(r.orderId||r.id||"")!==String(id));
+  selected.delete(String(id));
+  render();
+  toast("تمت الإزالة من القائمة",id,"warn");
+}
+function printInvoice(orderId){
+  const url=WEB_APP_PRINT_URL+"?action=print80&orderId="+encodeURIComponent(orderId)+"&v="+Date.now();
+  const w=window.open(url,"_blank");
+  if(!w)toast("المتصفح يمنع النوافذ","اسمح بـ Pop-up","err");
+}
+
+async function quickPartialReturn(orderId){
+  showLoading("جاري تحميل المنتجات…");
+  let res;
+  try{res=await api("getOrderForEdit",{q:orderId});}catch(e){hideLoading();toast("❌ خطأ","","err");return;}
+  hideLoading();
+  if(!res?.ok||!res.order){toast("مش لاقي الأوردر","","err");return;}
+
+  const items=res.order.items||[];
+  if(!items.length){toast("مفيش منتجات في الأوردر","","warn");return;}
+
+  const itemsHtml=items.map((item,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule);margin-bottom:8px;">
+      <input type="checkbox" id="ret_${i}" style="width:18px;height:18px;">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--ivory)">${esc(item.name||"")}</div>
+        <div style="font-size:10px;color:var(--mist)">${esc(item.color||"")} ${esc(item.size||"")} × ${item.qty||1}</div>
+      </div>
+      <div style="font-size:12px;color:var(--gold)">${fmt(item.lineTotal||0)} ج</div>
+    </div>
+  `).join("");
+
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع جزئي — ${esc(orderId)}</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:4px">✅ علّم المنتجات اللي رجعت</div>
+    </div>
+    <div id="ret_items">${itemsHtml}</div>
+    <div id="ret_err" style="color:var(--red);font-size:11px;margin-top:8px;display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn-gold" style="flex:1" onclick="_retSave()">✅ تأكيد المرتجع</button>
+      <button style="flex:1" onclick="closeModal()">إلغاء</button>
+    </div>
+  `);
+
+  window._retSave=async()=>{
+    const err=document.getElementById("ret_err");
+    const returned=items.filter((_,i)=>document.getElementById("ret_"+i)?.checked);
+    if(!returned.length){err.textContent="⛔ اختر منتج واحد على الأقل";err.style.display="block";return;}
+    closeModal();
+    showLoading("جاري الحفظ…");
+    try{
+      const res=await api("partialReturn",{
+        orderId,
+        returnedItems:JSON.stringify(returned)
+      });
+      hideLoading();
+      if(res?.ok){toast("✅ تم تسجيل المرتجع الجزئي","","ok");refreshAll(true);}
+      else toast("❌ فشل",res?.error||"","err");
+    }catch(e){hideLoading();toast("❌ خطأ","","err");}
+  };
+}
 </script>
 
 </body>
