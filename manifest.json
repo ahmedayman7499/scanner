@@ -1,5 +1,5 @@
 {
-  "name": "WC Scanner",
+  "name": "WC Control",
   "short_name": "WC",
   "start_url": "./index.html",
   "scope": "./",
