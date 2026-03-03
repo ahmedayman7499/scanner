@@ -430,13 +430,52 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
 /* ADDR LINE */
 .addr-line{display:flex;flex-wrap:wrap;gap:4px;align-items:baseline;}
 .addr-sep{color:var(--rule2);font-size:10px;}
-.addr-print{display:none;}  /* hidden on screen, shown in @media print below */
+.addr-screen{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.addr-print{display:none;}
 
 /* SCROLL TOP */
 #scrollTopBtn{position:fixed;bottom:24px;left:24px;width:42px;height:42px;border-radius:50%;background:var(--ink2);border:1px solid var(--rule2);color:var(--silver);font-size:16px;cursor:pointer;box-shadow:var(--sh2);display:none;align-items:center;justify-content:center;z-index:300;transition:all .2s;min-height:unset;padding:0;}
 #scrollTopBtn:hover{background:var(--ink3);border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
 #scrollTopBtn.visible{display:flex;}
 .stock-ok{color:var(--green);font-weight:700;}.stock-low{color:var(--amber);font-weight:700;}.stock-critical{color:var(--red);font-weight:700;}.stock-empty{color:#666;font-weight:700;}
+
+/* INVOICE MODAL */
+#invoiceModal{
+  position:fixed;inset:0;z-index:9600;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  padding:12px;
+}
+#invoiceModal.open{display:flex;}
+#invoiceModalBox{
+  background:var(--ink2);border:1px solid var(--rule2);
+  border-radius:var(--r3);box-shadow:var(--sh3);
+  width:min(460px,96vw);height:min(680px,90vh);
+  display:flex;flex-direction:column;
+  animation:fadeUp .22s ease;overflow:hidden;position:relative;
+}
+#invoiceModalHeader{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid var(--rule);flex-shrink:0;
+}
+#invoiceModalTitle{
+  font-family:'Cormorant Garamond',serif;font-size:15px;
+  font-weight:700;color:var(--pearl);
+}
+#invoiceModalHeader button{
+  font-size:11px;padding:5px 12px;min-height:30px;
+  background:rgba(255,255,255,.06);border:1px solid var(--rule);
+  border-radius:var(--r2);color:var(--silver);cursor:pointer;
+}
+#invoicePrintBtn{color:var(--gold)!important;border-color:rgba(201,168,76,.3)!important;background:var(--gold-faint)!important;}
+#invoiceFrameWrap{flex:1;overflow:hidden;background:#fff;position:relative;}
+#invoiceFrame{width:100%;height:100%;border:none;}
+#invoiceLoader{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;background:var(--ink3);
+}
+#invoiceLoader .spinner{width:30px;height:30px;}
+#invoiceLoader p{font-size:11px;color:var(--mist);}
 
 /* PRINT */
 .print-header,.print-summary{display:none;}
@@ -529,6 +568,9 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     display:block!important;margin-top:1px!important;
   }
   .cb-contact,.no-print{display:none!important;}
+  /* show print version, hide screen version of address */
+  .addr-screen{display:none!important;}
+  .addr-print{display:block!important;}
 
   /* badge */
   .badge{
@@ -924,6 +966,33 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
 
 <!-- ══ INLINE MODAL ══ -->
 <div id="inlineModal"><div id="inlineModalBox"><div id="inlineModalContent"></div></div></div>
+
+<!-- ══ INVOICE MODAL ══ -->
+<div id="invoiceModal" onclick="if(event.target===this)closeInvoiceModal()">
+  <div id="invoiceModalBox">
+    <div id="invoiceModalHeader">
+      <span id="invoiceModalTitle">🧾 فاتورة</span>
+      <div style="display:flex;gap:6px;">
+        <button id="invoicePrintBtn" onclick="clickFramePrintBtn()">🖨️ طباعة</button>
+        <button onclick="closeInvoiceModal()">✕</button>
+      </div>
+    </div>
+    <div id="invoiceFrameWrap">
+      <div id="invoiceLoader"><div class="spinner"></div><p>جاري تحميل الفاتورة…</p></div>
+      <iframe id="invoiceFrame" src="" frameborder="0"></iframe>
+    </div>
+    <!-- تأكيد تغيير الحالة — overlay واضح -->
+    <div id="invoiceConfirmBar" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center;">
+      <div style="font-size:44px;">🖨️</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);">اتطبعت الفواتير؟</div>
+      <div style="font-size:12px;color:var(--silver);line-height:1.8;">حوّل الحالة لـ <b style="color:var(--gold)">"تم الطباعة"</b><br>عشان تتابع الشحن صح</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;">
+        <button id="invoiceConfirmBtn" style="font-size:13px;padding:12px 28px;min-height:44px;background:linear-gradient(145deg,#27ae60,#1e8449);border:none;border-radius:var(--r2);color:#fff;cursor:pointer;font-weight:900;font-family:'Cairo',sans-serif;box-shadow:0 4px 24px rgba(39,174,96,.4);">✅ أيوه — حوّل لـ "تم الطباعة"</button>
+        <button onclick="document.getElementById('invoiceConfirmBar').style.display='none'" style="font-size:12px;padding:12px 20px;min-height:44px;background:rgba(255,255,255,.08);border:1px solid var(--rule2);border-radius:var(--r2);color:var(--silver);cursor:pointer;font-family:'Cairo',sans-serif;">لا — تجاهل</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ NAV SHELL ══ -->
 <div class="nav-shell no-print">
@@ -1404,7 +1473,7 @@ document.getElementById('trackingModalOverlay').addEventListener('click', functi
 
 /* ── CONFIG ── */
 const WEB_APP_URL       = "https://script.google.com/macros/s/AKfycbwsMr7euLyvoHz0Sr_k26N_HJYG_O_W5mb061-ljwm-G6I2n0W_Wjb2aiXCk0hg0HkN/exec";
-const WEB_APP_PRINT_URL = "https://script.google.com/macros/s/AKfycbwZ68iM4-HzCpfX3tRrVWzzZQIONDuDO2VKXyKxhRY/exec";
+const WEB_APP_PRINT_URL = "https://ahmedayman7499.github.io/scanner/receipt.html";
 const API_KEY           = "123";
 const FOLLOW_MIN=6, FOLLOW_MAX=9, OVERDUE_MIN=10;
 const DUP_WINDOW_MS     = 24*60*60*1000;
@@ -1567,7 +1636,7 @@ function addrCell(r){
   // طباعة: أرقام في سطر، عنوان في سطر تاني
   const phones=[p1,p2].filter(Boolean).map(esc).join(" — ");
   return`<div class="addr-line">
-    <div class="addr-screen" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+    <div class="addr-screen">
       <span class="td-phone">${esc(p1)}</span>${contactBtns(p1)}
       ${p2?`<span style="color:var(--rule2);font-size:10px;">·</span><span class="td-phone">${esc(p2)}</span>${contactBtns(p2)}`:""}
       ${locPart?`<span style="font-size:11px;color:var(--mist);">· ${locPart}</span>`:""}
@@ -2245,43 +2314,133 @@ async function downloadSelectedPDF(){
 }
 
 function downloadAllXLSX(){
-  const ids=[...selected];if(!ids.length){toast("حدد أوردرات أولاً","","warn");return;}
+  const ids=[...selected];if(!ids.length){toast("\u062d\u062f\u062f \u0623\u0648\u0631\u062f\u0631\u0627\u062a \u0623\u0648\u0644\u0627\u064b","","warn");return;}
   const exp=rows.filter(r=>ids.includes(String(r.orderId||r.id||"")));
-  if(!exp.length){toast("لا يوجد بيانات","","warn");return;}
-  const sub=exp.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
-  const shp=exp.reduce((a,r)=>a+n(r.shipping||0),0);
-  const now=new Date().toLocaleString("ar-EG");
+  if(!exp.length){toast("\u0644\u0627 \u064a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a","","warn");return;}
+
+  const sub  = exp.reduce((a,r)=>a+n(r.subtotal||0)-n(r.partialReturn||0),0);
+  const shp  = exp.reduce((a,r)=>a+n(r.shipping||0),0);
+  const total= sub+shp;
+  const now  = new Date().toLocaleString("ar-EG");
+  const today= new Date().toISOString().slice(0,10);
   const courier=[...new Set(exp.map(r=>String(r.courier||"")).filter(Boolean))][0]||"";
-  const header=["Order ID","الاسم","الهاتف","هاتف إضافي","المحافظة","العنوان","التحصيل","الشحن","الإجمالي","الحالة","التاريخ"];;
+
+  const C={
+    black:"111111",white:"FFFFFF",
+    gold:"C9A84C",goldFaint:"FFFDF0",goldFaint2:"FEFAE8",gold2:"7D6608",
+    gray1:"F5F5F5",gray2:"E8E8E8",
+    textDark:"1A1A1A",textMid:"666666",
+    border:"CCCCCC",borderDark:"999999",
+    green:"1E8449",greenLight:"EAF7EE",
+    red:"C0392B",
+  };
+  const bdr=(s,c)=>{c=c||C.border;const b={style:s||"thin",color:{rgb:c}};return{top:b,bottom:b,left:b,right:b};};
+
+  // 10 columns: ORDER ID | الاسم | الهاتف | هاتف إضافي | المحافظة | العنوان | التحصيل | الشحن | الإجمالي | الحالة
+  const NCOLS=10;
   const aoa=[];
-  aoa.push([`ورقة تسليم — White Clothes${courier?" | المندوب: "+courier:""}`]);
-  aoa.push([`التاريخ: ${now}`]);
-  aoa.push([""]);
-  aoa.push(["عدد الطلبات:",exp.length,"","الإجمالي (بالشحن):",sub+shp,"","مطبوع من نظام المسح"]);
-  aoa.push(["إجمالي التحصيل:",sub,"","المسؤول:","___________","","التاريخ:",now]);
-  aoa.push(["إجمالي الشحن:",shp,"","التوقيع:","___________"]);
-  aoa.push([""]);
-  const hRow=aoa.length;aoa.push(header);
-  exp.forEach(r=>aoa.push([
-    String(r.orderId||r.id||""),String(r.name||r.customer||""),
-    fmtPhone(r.phone||r.phone1),fmtPhone(r.altPhone||r.phone2),
-    String(r.city||""),String(r.address||""),
-    n(r.subtotal||r.productTotal||0),n(r.shipping||0),
-    n(r.subtotal||r.productTotal||0)+n(r.shipping||0),
-    String(r.status||""),String(r.orderDate||r.date||"").slice(0,10)
-  ]));
-  const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+  aoa.push(Array(NCOLS).fill(""));aoa[0][0]="WHITE CLOTHES";
+  aoa.push(Array(NCOLS).fill(""));aoa[1][0]="\u0648\u0631\u0642\u0629 \u062a\u0633\u0644\u064a\u0645 \u064a\u0648\u0645\u064a\u0629"+(courier?" \u2014 \u0627\u0644\u0645\u0646\u062f\u0648\u0628: "+courier:"");
+  aoa.push(Array(NCOLS).fill(""));aoa[2][0]="\u0627\u0644\u062a\u0627\u0631\u064a\u062e: "+now;
+  aoa.push(Array(NCOLS).fill(""));
+  // R4 summary labels
+  aoa.push(["\u0639\u062f\u062f \u0627\u0644\u0637\u0644\u0628\u0627\u062a","\u0627\u0644\u062a\u062d\u0635\u064a\u0644 (\u0628\u062f\u0648\u0646 \u0634\u062d\u0646)","\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0634\u062d\u0646","\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0643\u0644\u064a","\u0627\u0644\u0645\u0646\u062f\u0648\u0628","\u0627\u0644\u0645\u0633\u0624\u0648\u0644","\u0627\u0644\u062a\u0648\u0642\u064a\u0639","","",""]);
+  // R5 summary values
+  aoa.push([exp.length,sub,shp,total,courier||"\u2014","___________","___________","","",""]);
+  aoa.push(Array(NCOLS).fill(""));
+  // R7 header
+  const hRow=aoa.length;
+  aoa.push(["ORDER ID","\u0627\u0644\u0627\u0633\u0645","\u0627\u0644\u0647\u0627\u062a\u0641","\u0647\u0627\u062a\u0641 \u0625\u0636\u0627\u0641\u064a","\u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629","\u0627\u0644\u0639\u0646\u0648\u0627\u0646","\u0627\u0644\u062a\u062d\u0635\u064a\u0644","\u0627\u0644\u0634\u062d\u0646","\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a","\u0627\u0644\u062d\u0627\u0644\u0629"]);
+  // data
+  exp.forEach(r=>{
+    const rowSub=n(r.subtotal||0)-n(r.partialReturn||0);
+    const rowShp=n(r.shipping||0);
+    aoa.push([
+      String(r.orderId||r.id||""),
+      String(r.name||""),
+      String(r.phone||""),
+      String(r.altPhone||""),
+      String(r.city||""),
+      String(r.address||""),
+      rowSub, rowShp, rowSub+rowShp,
+      String(r.status||""),
+    ]);
+  });
+
+  const wb=XLSX.utils.book_new();
+  wb.Workbook={Views:[{RTL:true}]};
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws["!rows"]=[{hpt:36},{hpt:22}];
-  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}];
-  ws["!cols"]=[{wch:12},{wch:22},{wch:15},{wch:15},{wch:14},{wch:35},{wch:14},{wch:10},{wch:14},{wch:18},{wch:12}];
+  ws["!cols"]=[{wch:13},{wch:22},{wch:16},{wch:16},{wch:14},{wch:36},{wch:13},{wch:10},{wch:13},{wch:18}];
+  ws["!rows"]=aoa.map((_,i)=>i===0?{hpt:40}:i===1||i===2?{hpt:18}:i===4||i===5?{hpt:26}:i===hRow?{hpt:26}:i>hRow?{hpt:22}:{hpt:8});
+  ws["!merges"]=[
+    {s:{r:0,c:0},e:{r:0,c:NCOLS-1}},{s:{r:1,c:0},e:{r:1,c:NCOLS-1}},
+    {s:{r:2,c:0},e:{r:2,c:NCOLS-1}},{s:{r:3,c:0},e:{r:3,c:NCOLS-1}},
+  ];
   ws["!freeze"]={xSplit:0,ySplit:hRow+1};
-  const bdr=(s="thin")=>{const b={style:s,color:{rgb:"000000"}};return{top:b,bottom:b,left:b,right:b};};
+
   const range=XLSX.utils.decode_range(ws["!ref"]);
-  for(let R=range.s.r;R<=range.e.r;R++)for(let C=range.s.c;C<=range.e.c;C++){const a=XLSX.utils.encode_cell({r:R,c:C});if(!ws[a])continue;ws[a].s={alignment:{wrapText:true,vertical:"top",horizontal:"right"}};if(R===0){ws[a].s.font={bold:true,sz:16,color:{rgb:"1a1a1a"}};ws[a].s.alignment.horizontal="center";ws[a].s.alignment.vertical="center";}if(R===1){ws[a].s.font={bold:true,sz:11};}if(R>=3&&R<=5){ws[a].s.border=bdr();}if(R===hRow){ws[a].s.font={bold:true};ws[a].s.fill={patternType:"solid",fgColor:{rgb:"1a1a1a"}};ws[a].s.font.color={rgb:"FFFFFF"};ws[a].s.border=bdr("medium");}if(R>hRow){ws[a].s.border=bdr();if(R%2===0)ws[a].s.fill={patternType:"solid",fgColor:{rgb:"F9F9F9"}};}}
-  XLSX.utils.book_append_sheet(wb,ws,"Delivery Sheet");
-  XLSX.writeFile(wb,`wc-${courier?courier+"-":""}${exp.length}orders-${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast("تم تحميل Excel","","ok");
+  for(let R=range.s.r;R<=range.e.r;R++){
+    for(let CC=range.s.c;CC<=range.e.c;CC++){
+      const addr=XLSX.utils.encode_cell({r:R,c:CC});
+      if(!ws[addr])ws[addr]={v:"",t:"s"};
+      let s={alignment:{wrapText:false,vertical:"center",horizontal:"right"},
+             font:{name:"Cairo",sz:11,color:{rgb:C.textDark}}};
+      if(R===0){
+        s.font={name:"Cormorant Garamond",sz:24,bold:true,color:{rgb:C.black}};
+        s.alignment={horizontal:"center",vertical:"center"};
+        s.border={bottom:{style:"medium",color:{rgb:C.gold}}};
+      } else if(R===1){
+        s.font={name:"Cairo",sz:10,color:{rgb:C.textMid}};
+        s.alignment={horizontal:"center",vertical:"center"};
+      } else if(R===2){
+        s.font={name:"Cairo",sz:9,color:{rgb:C.textMid}};
+        s.alignment={horizontal:"center",vertical:"center"};
+      } else if(R===4){
+        s.font={name:"Cairo",sz:9,bold:true,color:{rgb:C.textMid}};
+        s.alignment={horizontal:"center",vertical:"center"};
+        s.fill={patternType:"solid",fgColor:{rgb:C.gray2}};
+        s.border=bdr("medium",C.borderDark);
+      } else if(R===5){
+        const isTotal=CC===3,isCount=CC===0;
+        s.font={name:"Cairo",sz:isCount||isTotal?16:13,bold:true,
+                color:{rgb:isCount?C.gold:isTotal?C.green:C.textDark}};
+        s.fill={patternType:"solid",fgColor:{rgb:isTotal?C.greenLight:C.gray1}};
+        s.alignment={horizontal:"center",vertical:"center"};
+        s.border=bdr("medium",C.borderDark);
+      } else if(R===hRow){
+        s.font={name:"Cairo",sz:10,bold:true,color:{rgb:C.white}};
+        s.fill={patternType:"solid",fgColor:{rgb:C.black}};
+        s.alignment={horizontal:"center",vertical:"center"};
+        s.border=bdr("medium",C.black);
+        if(CC===8){s.fill={patternType:"solid",fgColor:{rgb:"2C1A00"}};s.font.color={rgb:C.gold};}
+      } else if(R>hRow){
+        const even=(R-hRow)%2===0;
+        s.fill={patternType:"solid",fgColor:{rgb:even?C.gray1:C.white}};
+        s.border=bdr("thin",C.border);
+        if(CC===0){s.font.bold=true;s.font.sz=12;s.alignment.horizontal="center";}
+        if(CC===2||CC===3){s.font.bold=true;s.alignment.horizontal="center";}
+        if(CC===4){s.font.bold=true;s.alignment.horizontal="center";}
+        if(CC===5){s.alignment.wrapText=true;}
+        if(CC===6||CC===7){s.font.bold=true;s.alignment.horizontal="center";}
+        if(CC===8){
+          s.font={name:"Cairo",sz:12,bold:true,color:{rgb:C.gold2}};
+          s.fill={patternType:"solid",fgColor:{rgb:even?C.goldFaint2:C.goldFaint}};
+          s.alignment.horizontal="center";
+          s.border=bdr("thin",C.gold);
+        }
+        if(CC===9){
+          const st=String(aoa[R][9]||"");
+          if(st.includes("\u062a\u0633\u0644\u064a\u0645")||st.includes("\u0634\u062d\u0646"))s.font.color={rgb:C.green};
+          else if(st.includes("\u0645\u0631\u062a\u062c\u0639")||st.includes("\u0627\u0644\u063a\u0627\u0621"))s.font.color={rgb:C.red};
+          s.alignment.horizontal="center";
+        }
+      }
+      ws[addr].s=s;
+    }
+  }
+  XLSX.utils.book_append_sheet(wb,ws,"\u0648\u0631\u0642\u0629 \u0627\u0644\u062a\u0633\u0644\u064a\u0645");
+  XLSX.writeFile(wb,`wc-${courier?courier+"-":""}${exp.length}orders-${today}.xlsx`);
+  toast("\u062a\u0645 \u062a\u062d\u0645\u064a\u0644 Excel \u2705","","ok");
 }
 
 /* ── PRINT MENU ── */
@@ -2297,17 +2456,16 @@ document.addEventListener("click",e=>{if(!e.target.closest("#printMenu")&&!e.tar
 async function doPrintBatch(which){
   _printMenuOpen=false;document.getElementById("printMenu")?.classList.remove("open");
   let ids=[];
-  if(which==="new")ids=_pendingCache.newOrders.map(r=>r.orderId||r.id).filter(Boolean);
-  else if(which==="pending")ids=_pendingCache.pending.map(r=>r.orderId||r.id).filter(Boolean);
+  if(which==="new")     ids=_pendingCache.newOrders.map(r=>r.orderId||r.id).filter(Boolean);
+  else if(which==="pending") ids=_pendingCache.pending.map(r=>r.orderId||r.id).filter(Boolean);
   else ids=[..._pendingCache.newOrders,..._pendingCache.pending].map(r=>r.orderId||r.id).filter(Boolean);
   if(!ids.length){toast("لا يوجد فواتير في هذه الفئة","","warn");return;}
   const btn=document.getElementById("printPendingBtn");if(btn)btn.disabled=true;
   showLoading(`جاري تجهيز ${ids.length} فاتورة…`);
   try{
-    const url=WEB_APP_PRINT_URL+"?action=printBatch&ids="+encodeURIComponent(ids.join(","))+"&v="+Date.now();
-    const w=window.open(url,"_blank");hideLoading();
-    if(!w){toast("المتصفح يمنع النوافذ","اسمح بـ Pop-up","err");return;}
-    showPrintConfirmNotif(ids);
+    const url=WEB_APP_PRINT_URL+"?ids="+encodeURIComponent(ids.join(","))+"&v="+Date.now();
+    hideLoading();
+    openInvoiceModal(url, `🖨️ ${ids.length} فاتورة`, ids);
   }catch(e){hideLoading();toast("خطأ في الطباعة","","err");}
   finally{if(btn)btn.disabled=false;}
 }
@@ -3197,11 +3355,11 @@ function removeFromMine(id){
   render();
   toast("تمت الإزالة من القائمة",id,"warn");
 }
-function printInvoice(orderId){
-  const url=WEB_APP_PRINT_URL+"?action=print80&orderId="+encodeURIComponent(orderId)+"&v="+Date.now();
-  const w=window.open(url,"_blank");
-  if(!w)toast("المتصفح يمنع النوافذ","اسمح بـ Pop-up","err");
-}
+
+
+
+
+
 
 async function quickPartialReturn(orderId){
   showLoading("جاري تحميل المنتجات…");
@@ -3319,6 +3477,81 @@ document.addEventListener('keydown', function(e){
       closeSideDrawer();
   }
 }, true);
+
+
+/* ══ INVOICE MODAL — PRINT & CONFIRM ══ */
+let _invoicePrintIds = null;
+
+function clickFramePrintBtn(){
+  const frame = document.getElementById('invoiceFrame');
+  if(!frame) return;
+  try {
+    // دور على زرار الطباعة جوه الـ iframe واضغط عليه
+    const doc = frame.contentDocument || frame.contentWindow.document;
+    const btn = doc.querySelector('.btn-print');
+    if(btn){ btn.click(); }
+    else { frame.contentWindow.print(); }
+  } catch(e) {
+    // CORS: fallback على window.print() عبر تاب جديد
+    window.open(frame.src, '_blank');
+  }
+  // لو batch printing اعرض التأكيد بعد لحظة
+  if(_invoicePrintIds && _invoicePrintIds.length){
+    setTimeout(()=>{
+      const bar = document.getElementById('invoiceConfirmBar');
+      if(bar) bar.style.display = 'flex';
+    }, 700);
+  }
+}
+
+function openInvoiceModal(url, title, idsToMark){
+  const modal  = document.getElementById('invoiceModal');
+  const frame  = document.getElementById('invoiceFrame');
+  const loader = document.getElementById('invoiceLoader');
+  const bar    = document.getElementById('invoiceConfirmBar');
+
+  document.getElementById('invoiceModalTitle').textContent = title || '🧾 فاتورة';
+
+  // اخبي الـ overlay دايمًا عند الفتح
+  if(bar) bar.style.display = 'none';
+
+  // خزّن الـ IDs — بس لو batch، مش فاتورة عميل فردية
+  _invoicePrintIds = (idsToMark && idsToMark.length) ? idsToMark : null;
+
+  // wire زرار التأكيد
+  const btn = document.getElementById('invoiceConfirmBtn');
+  if(btn){
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', async ()=>{
+      if(!_invoicePrintIds) return;
+      bar.style.display = 'none';
+      await confirmMarkPrinted(_invoicePrintIds, null);
+    });
+  }
+
+  // loader + iframe
+  frame.src = '';
+  if(loader) loader.style.display = 'flex';
+  frame.onload = ()=>{ if(loader) loader.style.display = 'none'; };
+  frame.src = url;
+
+  modal.classList.add('open');
+}
+
+function closeInvoiceModal(){
+  document.getElementById('invoiceModal').classList.remove('open');
+  document.getElementById('invoiceFrame').src = '';
+  const bar = document.getElementById('invoiceConfirmBar');
+  if(bar) bar.style.display = 'none';
+  _invoicePrintIds = null;
+}
+
+function printInvoice(orderId){
+  // فاتورة عميل — بدون تأكيد
+  const url = WEB_APP_PRINT_URL+"?orderId="+encodeURIComponent(orderId)+"&v="+Date.now();
+  openInvoiceModal(url, '🧾 فاتورة #'+orderId, null);
+}
 
 </script>
 
