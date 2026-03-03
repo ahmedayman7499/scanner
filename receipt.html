@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>فاتورة — WHITE CLOTHES</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+:root{
+  --ink:#111;
+  --muted:#555;
+  --rule:#ccc;
+  --gold:#c9a84c;
+  --bg:#f0ede8;
+}
+
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+@page{size:80mm auto;margin:0;}
+
+html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans-serif;color:var(--ink);}
+
+/* ── Loading / Error screens ── */
+#loadingScreen,#errorScreen{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  background:var(--bg);z-index:999;
+  font-family:'Cairo',sans-serif;
+}
+#loadingScreen .spinner{
+  width:40px;height:40px;border:3px solid rgba(0,0,0,.12);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingScreen p{font-size:13px;color:var(--muted);margin:0;}
+#errorScreen{display:none;}
+#errorScreen .icon{font-size:40px;}
+#errorScreen p{font-size:13px;color:#c0392b;text-align:center;max-width:280px;margin:0;}
+#errorScreen button{
+  margin-top:8px;padding:8px 20px;border:none;border-radius:6px;
+  background:var(--ink);color:#fff;font-family:'Cairo',sans-serif;
+  font-size:12px;cursor:pointer;
+}
+
+/* ── Print toolbar (hidden on print) ── */
+#toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:#fff;border-bottom:1px solid var(--rule);
+  position:sticky;top:0;z-index:100;
+}
+#toolbar .brand-t{font-weight:900;font-size:14px;letter-spacing:1px;}
+#toolbar .btns{display:flex;gap:8px;}
+#toolbar button{
+  padding:6px 16px;border-radius:6px;border:1px solid var(--rule);
+  font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+  background:#fff;color:var(--ink);transition:all .15s;
+}
+#toolbar .btn-print{background:var(--ink);color:#fff;border-color:var(--ink);}
+#toolbar .btn-print:hover{background:#333;}
+
+/* ── Receipt container ── */
+#receiptsWrap{
+  padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+
+/* ── Single page ── */
+.page{
+  width:76mm;background:#fff;border-radius:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.13);
+  padding:3mm 3mm 4mm;overflow:hidden;
+  font-size:11.5px;line-height:1.4;color:var(--ink);
+  font-weight:600;
+}
+
+/* ── Top header ── */
+.topHead{display:flex;align-items:flex-start;justify-content:space-between;gap:2mm;}
+.headInfo{flex:1;}
+.brand{font-size:17px;font-weight:900;letter-spacing:1.5px;line-height:1.1;}
+.order-num{font-size:11px;margin-top:1mm;color:var(--ink);}
+.order-num span{direction:ltr;display:inline-block;}
+.dt{font-size:10px;color:var(--muted);margin-top:0.5mm;}
+.pm-badge{
+  display:inline-block;margin-top:1.5mm;font-size:10px;font-weight:900;
+  border:1.5px solid var(--ink);border-radius:3px;padding:1px 5px;
+}
+
+.qrBox{width:22mm;height:22mm;flex-shrink:0;}
+.qrBox canvas,.qrBox img{width:22mm!important;height:22mm!important;image-rendering:pixelated;}
+
+/* ── Divider ── */
+.hr{border:none;border-top:1px dashed #aaa;margin:2mm 0;}
+
+/* ── Info grid ── */
+.info{display:grid;grid-template-columns:15mm 1fr;gap:1mm 2mm;font-size:11px;}
+.lbl{font-weight:900;}
+.val{word-break:break-word;}
+.phones{direction:ltr;text-align:right;}
+
+/* ── Items table ── */
+.items-head,.item-row{
+  display:grid;
+  grid-template-columns:1fr 10mm 16mm;
+  gap:0;
+}
+.items-head{
+  font-weight:900;font-size:10.5px;
+  border-top:1.5px solid var(--ink);
+  border-bottom:1.5px solid var(--ink);
+  padding:1.5mm 1mm;margin-top:2mm;
+}
+.items-head .c2,.item-row .c2{text-align:center;}
+.items-head .c3,.item-row .c3{text-align:left;direction:ltr;}
+
+.item-row{
+  padding:1.5mm 1mm;
+  border-bottom:1px dotted #ccc;font-size:11px;
+}
+.item-row:last-child{border-bottom:none;}
+.item-name{font-weight:900;}
+.item-meta{font-size:10px;color:var(--muted);}
+
+/* ── Totals ── */
+.totals{border-top:1.5px solid var(--ink);margin-top:2mm;padding-top:1mm;}
+.tline{
+  display:flex;justify-content:space-between;
+  padding:1mm 0;border-bottom:1px dotted #ccc;font-size:11px;
+}
+.tline:last-child{border-bottom:none;}
+.tline .n{direction:ltr;}
+.tline.grand{
+  font-size:13px;font-weight:900;
+  border-top:1.5px solid var(--ink);border-bottom:none;
+  margin-top:1mm;padding-top:1.5mm;
+}
+
+/* ── Footer ── */
+.foot{
+  border-top:1px dashed #aaa;margin-top:3mm;
+  padding-top:2mm;text-align:center;font-size:10.5px;
+}
+.foot .site{font-weight:900;font-size:12px;}
+.foot .note{color:var(--muted);margin-top:1mm;font-size:10px;}
+
+/* ── Print styles ── */
+@media print{
+  html,body{background:transparent!important;padding:0!important;}
+  #toolbar,#loadingScreen,#errorScreen{display:none!important;}
+  #receiptsWrap{padding:0!important;gap:0!important;}
+  .page{
+    box-shadow:none!important;border-radius:0!important;
+    margin:0!important;width:76mm;
+    page-break-after:always;break-after:page;
+  }
+  .page:last-child{page-break-after:avoid;break-after:avoid;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <p>جاري تحميل الفاتورة…</p>
+</div>
+
+<!-- Error -->
+<div id="errorScreen">
+  <div class="icon">⚠️</div>
+  <p id="errorMsg">حدث خطأ في تحميل الفاتورة</p>
+  <button onclick="location.reload()">إعادة المحاولة</button>
+</div>
+
+<!-- Toolbar -->
+<div id="toolbar" style="display:none">
+  <div class="brand-t">WHITE CLOTHES</div>
+  <div class="btns">
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
+    <button onclick="window.close()">✕ إغلاق</button>
+  </div>
+</div>
+
+<!-- Receipts -->
+<div id="receiptsWrap"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG — غيّر الـ URL ده بس
+// ══════════════════════════════════════════════
+const API_URL = "https://script.google.com/macros/s/AKfycbwZ68iM4-HzCpfX3tRrVWzzZQIONDuDO2VKXyKxhRY/exec";
+const API_KEY = "123";
+
+// ══════════════════════════════════════════════
+//  Helpers
+// ══════════════════════════════════════════════
+function clean(s){ return (s==null?"":String(s)).replace(/[❤♥♡💗💖💘💝💞💟]/g,"").replace(/\s+/g," ").trim(); }
+function isEmpty(v){ const s=clean(v||"").toLowerCase(); return !s||s==="لا يوجد"||s==="بدون"||s==="0"||s==="none"||s==="-"; }
+function numVal(v){ const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); return isNaN(n)?0:n; }
+function fmtNum(v){ const n=numVal(v); if(isNaN(n))return String(v||""); return n%1===0?String(Math.round(n)):n.toFixed(2); }
+function esc(s){ return clean(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function buildMeta(it){
+  const parts=[];
+  if(clean(it.size||""))  parts.push("مقاس: "+clean(it.size));
+  if(clean(it.color||"")) parts.push("لون: "+clean(it.color));
+  return parts.join(" • ");
+}
+
+// ══════════════════════════════════════════════
+//  JSONP fetch
+// ══════════════════════════════════════════════
+function jsonpFetch(url){
+  return new Promise((resolve,reject)=>{
+    const cb="cb_"+Math.random().toString(36).slice(2);
+    const sc=document.createElement("script");
+    let done=false;
+    const timer=setTimeout(()=>{
+      if(done)return; done=true;
+      document.head.removeChild(sc);
+      delete window[cb];
+      reject(new Error("timeout"));
+    },15000);
+    window[cb]=(data)=>{
+      if(done)return; done=true;
+      clearTimeout(timer);
+      document.head.removeChild(sc);
+      delete window[cb];
+      resolve(data);
+    };
+    sc.onerror=()=>{ if(done)return; done=true; clearTimeout(timer); reject(new Error("script error")); };
+    sc.src=url+"&callback="+cb;
+    document.head.appendChild(sc);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Render one receipt
+// ══════════════════════════════════════════════
+function renderReceipt(order, idx){
+  const pm    = clean(order.paymentMethod||"").toLowerCase();
+  const isPaid= pm==="transfer_receipt";
+  const isCOD = pm==="cod";
+  const pmLabel= isPaid?"✓ تم الدفع مسبقاً": isCOD?"الدفع عند الاستلام":"";
+
+  const p1= isEmpty(order.phone1||order.phone)?"":clean(order.phone1||order.phone||"");
+  const p2= isEmpty(order.phone2||order.altPhone)?"":clean(order.phone2||order.altPhone||"");
+  const phones=[p1,p2].filter(Boolean).join(" — ");
+  const note= isEmpty(order.note)?"":clean(order.note||"");
+
+  const discV= Math.abs(numVal(order.discount||0));
+  const coupon= isEmpty(order.coupon)?"":clean(order.coupon||"");
+  const subV  = numVal(order.subtotal||0);
+  const shipV = numVal(order.shipping||0);
+  const calcTotal= subV+shipV-discV;
+
+  const items= order.items||[];
+
+  // ── items HTML ──
+  let itemsHtml="";
+  items.forEach((it,i)=>{
+    const name=clean(it.name||it.product||""); if(!name)return;
+    const qty=Number(it.qty||1)||1;
+    const price=numVal(it.lineTotal||it.price||0);
+    const meta=buildMeta(it);
+    const unit=(qty>1&&price>0)?Math.round((price/qty)*100)/100:0;
+    itemsHtml+=`
+      <div class="item-row">
+        <div>
+          <div class="item-name">${i+1}. ${esc(name)}</div>
+          ${meta?`<div class="item-meta">${esc(meta)}</div>`:""}
+          ${unit>0&&qty>1?`<div class="item-meta" style="direction:ltr;text-align:right">${fmtNum(unit)} × ${qty}</div>`:""}
+        </div>
+        <div class="c2">${qty}</div>
+        <div class="c3">${fmtNum(price)}</div>
+      </div>`;
+  });
+
+  // ── totals HTML ──
+  let totHtml=`
+    <div class="tline"><div>الإجمالي</div><div class="n">${fmtNum(subV)}</div></div>
+    <div class="tline"><div>مصاريف الشحن</div><div class="n">${fmtNum(shipV)}</div></div>`;
+  if(discV>0) totHtml+=`<div class="tline"><div>خصم</div><div class="n">${fmtNum(discV)}</div></div>`;
+  if(coupon)  totHtml+=`<div class="tline"><div>كوبون</div><div class="n">${esc(coupon)}</div></div>`;
+  totHtml+=`<div class="tline grand"><div>المطلوب</div><div class="n">${isPaid?"0 (تم الدفع)":fmtNum(calcTotal)}</div></div>`;
+
+  const div=document.createElement("div");
+  div.className="page";
+  div.id="page-"+idx;
+  div.innerHTML=`
+    <div class="topHead">
+      <div class="headInfo">
+        <div class="brand">WHITE CLOTHES</div>
+        <div class="order-num">Order: <span>${esc(clean(order.orderId||order.id||""))}</span></div>
+        <div class="dt">${esc(clean(order.date||""))} ${esc(clean(order.time||""))}</div>
+        ${pmLabel?`<div class="pm-badge">${esc(pmLabel)}</div>`:""}
+      </div>
+      <div class="qrBox" id="qr-${idx}"></div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="info">
+      <div class="lbl">الاسم:</div><div class="val">${esc(clean(order.customer||order.name||""))}</div>
+      ${phones?`<div class="lbl">موبايل:</div><div class="val phones">${esc(phones)}</div>`:""}
+      <div class="lbl">المحافظة:</div><div class="val">${esc(clean(order.city||""))}</div>
+      <div class="lbl">العنوان:</div><div class="val">${esc(clean(order.address||""))}</div>
+      ${note?`<div class="lbl">ملاحظة:</div><div class="val">${esc(note)}</div>`:""}
+    </div>
+
+    <div class="items-head">
+      <div>الصنف</div><div class="c2">الكمية</div><div class="c3">السعر</div>
+    </div>
+    ${itemsHtml}
+
+    <div class="totals">${totHtml}</div>
+
+    <div class="foot">
+      <div class="site">www.white-clothes.com</div>
+      <div class="note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط.</div>
+    </div>`;
+
+  document.getElementById("receiptsWrap").appendChild(div);
+
+  // QR
+  try{
+    const qid=clean(order.orderId||order.id||"");
+    if(qid && typeof QRCode!=="undefined"){
+      new QRCode(document.getElementById("qr-"+idx),{text:qid,width:84,height:84,correctLevel:QRCode.CorrectLevel.M});
+    }
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════
+//  Main
+// ══════════════════════════════════════════════
+async function main(){
+  const params=new URLSearchParams(location.search);
+  const orderId=(params.get("orderId")||"").trim();
+  const idsRaw =(params.get("ids")||"").trim();
+
+  function showError(msg){
+    document.getElementById("loadingScreen").style.display="none";
+    const es=document.getElementById("errorScreen");
+    es.style.display="flex";
+    document.getElementById("errorMsg").textContent=msg;
+  }
+
+  if(!orderId && !idsRaw){
+    showError("مفيش orderId في الـ URL"); return;
+  }
+
+  try{
+    let orders=[];
+
+    if(orderId){
+      // single
+      const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(orderId)}&key=${API_KEY}&_t=${Date.now()}`;
+      const res=await jsonpFetch(url);
+      if(!res?.ok) throw new Error(res?.error||"Order not found");
+      orders=[res.order];
+    } else {
+      // batch
+      const ids=idsRaw.split(",").map(s=>s.trim()).filter(Boolean);
+      const promises=ids.map(id=>{
+        const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(id)}&key=${API_KEY}&_t=${Date.now()}`;
+        return jsonpFetch(url).then(r=>r?.ok?r.order:null).catch(()=>null);
+      });
+      const results=await Promise.all(promises);
+      orders=results.filter(Boolean);
+    }
+
+    if(!orders.length) throw new Error("مش لاقي أي أوردر");
+
+    // Render
+    orders.forEach((o,i)=>renderReceipt(o,i));
+
+    // Show toolbar & hide loading
+    document.getElementById("loadingScreen").style.display="none";
+    document.getElementById("toolbar").style.display="flex";
+
+    // Auto print after short delay
+    setTimeout(()=>window.print(), 600);
+
+  }catch(err){
+    showError("خطأ: "+err.message);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
