@@ -18,9 +18,45 @@
 
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 
-@page{size:80mm auto;margin:0;}
+@page{
+  size:80mm auto;
+  margin:0;
+}
+@page:first{ margin:0; }
 
 html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans-serif;color:var(--ink);}
+
+/* ── Print styles ── */
+@media print{
+  html,body{
+    background:transparent!important;
+    padding:0!important;
+    margin:0!important;
+    width:80mm!important;
+  }
+  #toolbar,#loadingScreen,#errorScreen{display:none!important;}
+  #receiptsWrap{
+    padding:0!important;
+    gap:0!important;
+    display:block!important;
+  }
+  .page{
+    box-shadow:none!important;
+    border-radius:0!important;
+    margin:0!important;
+    padding:2mm 3mm 4mm!important;
+    width:80mm!important;
+    page-break-after:always;
+    break-after:page;
+    /* مهم: خلي الـ height تلقائي حسب المحتوى */
+    height:auto!important;
+    overflow:visible!important;
+  }
+  .page:last-child{
+    page-break-after:avoid;
+    break-after:avoid;
+  }
+}
 
 /* ── Loading / Error screens ── */
 #loadingScreen,#errorScreen{
@@ -145,17 +181,7 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
 .foot .note{color:var(--muted);margin-top:1mm;font-size:10px;}
 
 /* ── Print styles ── */
-@media print{
-  html,body{background:transparent!important;padding:0!important;}
-  #toolbar,#loadingScreen,#errorScreen{display:none!important;}
-  #receiptsWrap{padding:0!important;gap:0!important;}
-  .page{
-    box-shadow:none!important;border-radius:0!important;
-    margin:0!important;width:76mm;
-    page-break-after:always;break-after:page;
-  }
-  .page:last-child{page-break-after:avoid;break-after:avoid;}
-}
+
 </style>
 </head>
 <body>
@@ -200,10 +226,38 @@ function isEmpty(v){ const s=clean(v||"").toLowerCase(); return !s||s==="لا ي
 function numVal(v){ const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); return isNaN(n)?0:n; }
 function fmtNum(v){ const n=numVal(v); if(isNaN(n))return String(v||""); return n%1===0?String(Math.round(n)):n.toFixed(2); }
 function esc(s){ return clean(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// ── فورمات التاريخ زي القديم: 07:46 PM  2026/02/12 ──
+function fmtDateTime(raw){
+  if(!raw) return "";
+  const s=clean(raw);
+  // لو الشيت بيبعت ISO أو timestamp
+  const d=new Date(s);
+  if(!isNaN(d.getTime())){
+    const y=d.getFullYear();
+    const mo=String(d.getMonth()+1).padStart(2,"0");
+    const dd=String(d.getDate()).padStart(2,"0");
+    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,"0");
+    const ampm=h>=12?"PM":"AM"; h=h%12||12;
+    return `${String(h).padStart(2,"0")}:${m} ${ampm}  ${y}/${mo}/${dd}`;
+  }
+  // لو بيجي كـ string جاهز — رجّعه كما هو
+  return s;
+}
+
 function buildMeta(it){
   const parts=[];
-  if(clean(it.size||""))  parts.push("مقاس: "+clean(it.size));
-  if(clean(it.color||"")) parts.push("لون: "+clean(it.color));
+  // جرب كل أسماء الحقول الممكنة اللي بيبعتها الـ Apps Script
+  const sz=clean(
+    it.size||it.Size||it.variant_size||it.productSize||
+    it["المقاس"]||it.sizeLabel||it.sizes||""
+  );
+  const cl=clean(
+    it.color||it.Color||it.variant_color||it.productColor||
+    it["اللون"]||it.colorLabel||it.colors||""
+  );
+  if(sz) parts.push("مقاس: "+sz);
+  if(cl) parts.push("لون: "+cl);
   return parts.join(" • ");
 }
 
@@ -254,7 +308,12 @@ function renderReceipt(order, idx){
   const shipV = numVal(order.shipping||0);
   const calcTotal= subV+shipV-discV;
 
-  const items= order.items||[];
+  // ── parse items — ممكن يجوا string أو array ──
+  let items= order.items||[];
+  if(typeof items==="string"){
+    try{ items=JSON.parse(items); }catch(e){ items=[]; }
+  }
+  if(!Array.isArray(items)) items=[];
 
   // ── items HTML ──
   let itemsHtml="";
@@ -292,7 +351,7 @@ function renderReceipt(order, idx){
       <div class="headInfo">
         <div class="brand">WHITE CLOTHES</div>
         <div class="order-num">Order: <span>${esc(clean(order.orderId||order.id||""))}</span></div>
-        <div class="dt">${esc(clean(order.date||""))} ${esc(clean(order.time||""))}</div>
+        <div class="dt">${esc(fmtDateTime(order.orderDate||order.date||order.createdDate||""))}</div>
         ${pmLabel?`<div class="pm-badge">${esc(pmLabel)}</div>`:""}
       </div>
       <div class="qrBox" id="qr-${idx}"></div>
@@ -379,8 +438,13 @@ async function main(){
     document.getElementById("loadingScreen").style.display="none";
     document.getElementById("toolbar").style.display="flex";
 
-    // Auto print after short delay
-    setTimeout(()=>window.print(), 600);
+    // Auto print — بعد ما الـ QR يتعمل كامل
+    // بنستخدم requestAnimationFrame + timeout عشان مش يتبلوك
+    setTimeout(()=>{
+      requestAnimationFrame(()=>{
+        setTimeout(()=>window.print(), 300);
+      });
+    }, 800);
 
   }catch(err){
     showError("خطأ: "+err.message);
