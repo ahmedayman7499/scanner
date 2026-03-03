@@ -179,6 +179,18 @@ function numVal(v){ const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); re
 function fmtNum(v){ const n=numVal(v); if(isNaN(n))return String(v||""); return n%1===0?String(Math.round(n)):n.toFixed(2); }
 function esc(s){ return clean(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
+function fmtDate(raw){
+  if(!raw) return "";
+  var s=clean(raw);
+  var d=new Date(s);
+  if(isNaN(d.getTime())) return s; // لو مش تاريخ صح رجّعه كما هو
+  var y=d.getFullYear();
+  var mo=String(d.getMonth()+1).padStart(2,"0");
+  var dd=String(d.getDate()).padStart(2,"0");
+  var h=d.getHours(), mi=String(d.getMinutes()).padStart(2,"0");
+  var ap=h>=12?"PM":"AM"; h=h%12||12;
+  return String(h).padStart(2,"0")+":"+mi+" "+ap+"  "+y+"/"+mo+"/"+dd;
+}
 function buildMeta(it){
   const sz=clean(it.size||it.Size||it.productSize||it["المقاس"]||"");
   const cl=clean(it.color||it.Color||it.productColor||it["اللون"]||"");
@@ -250,8 +262,7 @@ function renderReceipt(order, idx, isLast){
   totHtml+=`<div class="tline grand"><div>المطلوب</div><div class="num">${isPaid?"0 (تم الدفع)":fmtNum(calcTotal)}</div></div>`;
 
   const orderId=clean(order.orderId||order.id||"");
-  const timeStr=clean(order.time||"");
-  const dateStr=clean(order.date||"");
+  const dtStr=fmtDate(order.orderDate||order.date||order.createdDate||"");
 
   const div=document.createElement("div");
   div.innerHTML=`
@@ -262,9 +273,7 @@ function renderReceipt(order, idx, isLast){
           <div class="subhead">
             <div><b>Order:</b> <span class="num">${esc(orderId)}</span></div>
             <div class="muted">
-              <span class="num">${esc(timeStr)}</span>
-              &nbsp;&nbsp;
-              <span class="num">${esc(dateStr)}</span>
+              <span class="num">${esc(dtStr)}</span>
             </div>
             ${pmLabel?`<div class="pm-badge">${esc(pmLabel)}</div>`:""}
           </div>
