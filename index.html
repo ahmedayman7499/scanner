@@ -1223,8 +1223,11 @@ function updateDashboard(all){
   const shipped=all.filter(r=>s(r.status)==="تم الشحن");
   const printed=all.filter(r=>s(r.status)==="تم الطباعة");
   const returned=all.filter(r=>["مرتجع","مرتجع جزئي"].includes(s(r.status)));
+  const excluded=new Set(["الغاء","مرتجع","مرتجع جزئي"]);
+  const active=all.filter(r=>!excluded.has(s(r.status)));
   const sum=arr=>arr.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
-  const totalSub=sum(all),totalShip=all.reduce((a,r)=>a+n(r.shipping||0),0);
+  const totalSub=sum(active);
+  const totalShip=active.reduce((a,r)=>a+n(r.shipping||0),0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set("dTotal",all.length.toLocaleString("ar-EG"));
   set("dDelivered",delivered.length);set("dDeliveredAmt",fmt(sum(delivered))+" ج");
