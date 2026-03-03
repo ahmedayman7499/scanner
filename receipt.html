@@ -6,405 +6,314 @@
 <title>فاتورة — WHITE CLOTHES</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-
-:root{
-  --ink:#111;
-  --muted:#555;
-  --rule:#ccc;
-  --gold:#c9a84c;
-  --bg:#f0ede8;
+@page { size: 72mm auto; margin: 0mm; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family: Arial, Tahoma, sans-serif;
+  font-size:12px;
+  line-height:1.35;
+  color:#000;
+  background:#e9e9e9;
+  font-weight:700;
+  -webkit-text-stroke: 0.10px #000;
 }
+*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-
-@page{
-  size:72mm auto;
-  margin:0;
-}
-
-html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans-serif;color:var(--ink);}
-
-/* ── Print styles ── */
-@media print{
-  html,body{
-    background:transparent!important;
-    padding:0!important;
-    margin:0!important;
-    width:72mm!important;
-  }
-  #toolbar,#loadingScreen,#errorScreen{display:none!important;}
-  #receiptsWrap{
-    padding:0!important;
-    gap:0!important;
-    display:block!important;
-  }
-  .page{
-    box-shadow:none!important;
-    border-radius:0!important;
-    margin:0!important;
-    padding:2mm 3mm 4mm!important;
-    width:72mm!important;
-    page-break-after:always;
-    break-after:page;
-    height:auto!important;
-    overflow:visible!important;
-  }
-  .page:last-child{
-    page-break-after:avoid;
-    break-after:avoid;
-  }
-}
-
-/* ── Loading / Error screens ── */
+/* ── Loading / Error ── */
 #loadingScreen,#errorScreen{
   position:fixed;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:16px;
-  background:var(--bg);z-index:999;
-  font-family:'Cairo',sans-serif;
+  align-items:center;justify-content:center;gap:14px;
+  background:#e9e9e9;z-index:999;
+  font-family:Arial,sans-serif;
 }
 #loadingScreen .spinner{
-  width:40px;height:40px;border:3px solid rgba(0,0,0,.12);
-  border-top-color:var(--gold);border-radius:50%;
+  width:38px;height:38px;border:3px solid rgba(0,0,0,.12);
+  border-top-color:#c9a84c;border-radius:50%;
   animation:spin .8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
-#loadingScreen p{font-size:13px;color:var(--muted);margin:0;}
+#loadingScreen p{font-size:13px;color:#555;margin:0;}
 #errorScreen{display:none;}
-#errorScreen .icon{font-size:40px;}
+#errorScreen .icon{font-size:38px;}
 #errorScreen p{font-size:13px;color:#c0392b;text-align:center;max-width:280px;margin:0;}
 #errorScreen button{
   margin-top:8px;padding:8px 20px;border:none;border-radius:6px;
-  background:var(--ink);color:#fff;font-family:'Cairo',sans-serif;
-  font-size:12px;cursor:pointer;
+  background:#111;color:#fff;font-family:Arial,sans-serif;font-size:12px;cursor:pointer;
 }
 
-/* ── Print toolbar ── */
+/* ── Toolbar ── */
 #toolbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;background:#fff;border-bottom:1px solid var(--rule);
+  display:none;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:#fff;border-bottom:1px solid #ccc;
   position:sticky;top:0;z-index:100;
 }
 #toolbar .brand-t{font-weight:900;font-size:14px;letter-spacing:1px;}
 #toolbar .btns{display:flex;gap:8px;}
 #toolbar button{
-  padding:6px 16px;border-radius:6px;border:1px solid var(--rule);
-  font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;
-  background:#fff;color:var(--ink);transition:all .15s;
+  padding:6px 16px;border-radius:6px;border:1px solid #ccc;
+  font-family:Arial,sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+  background:#fff;color:#111;
 }
-#toolbar .btn-print{background:var(--ink);color:#fff;border-color:var(--ink);}
-#toolbar .btn-print:hover{background:#333;}
+#toolbar .btn-print{background:#111;color:#fff;border-color:#111;}
 
-/* ── Receipt container ── */
-#receiptsWrap{
-  padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px;
-}
+/* ── Pages wrap ── */
+#receiptsWrap{ padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px; }
 
 /* ── Single page ── */
 .page{
-  width:66mm;background:#fff;border-radius:8px;
-  box-shadow:0 8px 32px rgba(0,0,0,.13);
-  padding:3mm 3mm 4mm;overflow:hidden;
-  font-size:11px;line-height:1.4;color:var(--ink);
-  font-weight:600;
+  width:68mm;
+  margin:0 auto;
+  break-inside:avoid;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+  padding:2.5mm 2.5mm;
+}
+.page-break{ height:18px; break-after:page; page-break-after:always; }
+
+@media print{
+  body{ background:transparent!important; padding:0!important; -webkit-text-stroke:0px transparent; }
+  #toolbar,#loadingScreen,#errorScreen{ display:none!important; }
+  #receiptsWrap{ padding:0!important; gap:0!important; display:block!important; }
+  .page{
+    box-shadow:none!important; border-radius:0!important;
+    margin:0 auto!important; padding:2mm 2mm;
+    width:72mm!important;
+    page-break-after:always; break-after:page;
+    height:auto!important; overflow:visible!important;
+  }
+  .page:last-child{ page-break-after:avoid; break-after:avoid; }
+  .page-break{ height:0!important; }
 }
 
-/* ── Top header — QR يسار، نص يمين (زي الصورة) ── */
+/* ── Header ── */
 .topHead{
-  display:flex;
-  align-items:flex-start;
-  flex-direction:row-reverse; /* QR يسار، headInfo يمين */
-  justify-content:space-between;
-  gap:2mm;
-}
-.headInfo{flex:1;text-align:right;}
-.brand{
-  font-size:18px;font-weight:900;letter-spacing:1px;
-  line-height:1.15;text-align:right;
-}
-.order-num{font-size:10.5px;margin-top:1mm;color:var(--ink);text-align:right;}
-.order-num span{direction:ltr;display:inline-block;}
-.dt{font-size:9.5px;color:var(--muted);margin-top:0.5mm;text-align:right;direction:ltr;}
-.pm-badge{
-  display:inline-block;margin-top:1.5mm;font-size:9.5px;font-weight:900;
-  border:1.5px solid var(--ink);border-radius:3px;padding:1px 5px;
-}
-
-/* QR يسار */
-.qrBox{width:20mm;height:20mm;flex-shrink:0;}
-.qrBox canvas,.qrBox img{width:20mm!important;height:20mm!important;image-rendering:pixelated;}
-
-/* ── Divider ── */
-.hr{border:none;border-top:1px dashed #aaa;margin:2mm 0;}
-
-/* ── Info grid ── */
-.info{display:grid;grid-template-columns:14mm 1fr;gap:1mm 2mm;font-size:10.5px;}
-.lbl{font-weight:900;}
-.val{word-break:break-word;}
-.phones{direction:ltr;text-align:right;}
-
-/* ── Items table ── */
-.items-head,.item-row{
   display:grid;
-  grid-template-columns:1fr 9mm 15mm;
-  gap:0;
+  grid-template-columns:1fr 0fr;
+  gap:3mm;
+  align-items:start;
 }
-.items-head{
-  font-weight:900;font-size:10px;
-  border-top:1.5px solid var(--ink);
-  border-bottom:1.5px solid var(--ink);
-  padding:1.5mm 1mm;margin-top:2mm;
+.qrBox{ width:24mm;height:24mm;display:flex;align-items:flex-start;justify-content:flex-start; }
+.qrBox canvas,.qrBox img{ width:22mm!important;height:22mm!important;image-rendering:pixelated;display:block; }
+.headInfo{ text-align:center; }
+.brand{ font-weight:900;letter-spacing:1px;font-size:18px;line-height:1.1; }
+.subhead{ margin-top:1mm; }
+.subhead .muted{ color:#000;font-weight:700; }
+.num{ direction:ltr;unicode-bidi:embed; }
+.pm-badge{
+  display:inline-block;margin-top:1mm;font-size:11px;font-weight:900;
+  border:1px solid #000;border-radius:3px;padding:1px 6px;
 }
-.items-head .c2,.item-row .c2{text-align:center;}
-.items-head .c3,.item-row .c3{text-align:left;direction:ltr;}
 
-.item-row{
-  padding:1.5mm 1mm;
-  border-bottom:1px dotted #ccc;font-size:10.5px;
+.hr{ border-top:1px dashed #777;margin:1.5mm 0; }
+
+/* ── Info ── */
+.info{ display:grid;grid-template-columns:15mm 1fr;gap:1mm 2mm; }
+.lbl{ font-weight:900; }
+.val{ white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.val.full{ white-space:normal;overflow:visible;text-overflow:unset;word-break:break-word; }
+.phones{ direction:rtl;unicode-bidi:embed; }
+
+/* ── Items ── */
+.itemsGridHead,.itemsGridRow{
+  display:grid;
+  grid-template-columns:1fr 12mm 16mm;
+  column-gap:0;
 }
-.item-row:last-child{border-bottom:none;}
-.item-name{font-weight:900;}
-.item-meta{font-size:9.5px;color:var(--muted);}
+.itemsGridHead{
+  font-weight:900;
+  border-top:1px solid #000;border-bottom:1px solid #000;
+  padding:1mm 0.8mm;margin-top:1.5mm;
+}
+.itemsGridHead > div:nth-child(2){ text-align:center; }
+.itemsGridHead > div:nth-child(3){ text-align:left;direction:ltr; }
+.itemsGridRow{ padding:1.3mm 0.8mm;border-bottom:1px dotted #bbb; }
+.itemsGridRow:last-child{ border-bottom:none; }
+.pnameLine{ display:flex;gap:1mm;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.meta{ font-size:11px;color:#000; }
+.qcol{ text-align:center;font-weight:900; }
+.prcol{ text-align:left;direction:ltr;font-weight:900;white-space:nowrap; }
 
 /* ── Totals ── */
-.totals{border-top:1.5px solid var(--ink);margin-top:2mm;padding-top:1mm;}
-.tline{
-  display:flex;justify-content:space-between;
-  padding:1mm 0;border-bottom:1px dotted #ccc;font-size:10.5px;
-}
-.tline:last-child{border-bottom:none;}
-.tline .n{direction:ltr;}
-.tline.grand{
-  font-size:13px;font-weight:900;
-  border-top:1.5px solid var(--ink);border-bottom:none;
-  margin-top:1mm;padding-top:1.5mm;
-}
+.totals{ margin-top:2mm;border-top:1px solid #000;padding-top:1mm; }
+.tline{ display:flex;justify-content:space-between;padding:1mm 0;border-bottom:1px dotted #bbb;font-weight:900; }
+.tline:last-child{ border-bottom:none; }
+.tline.grand{ border:none;font-size:14px;font-weight:900;margin-top:1mm;padding-top:1mm;border-top:1px solid #000; }
 
 /* ── Footer ── */
-.foot{
-  border-top:1px dashed #aaa;margin-top:3mm;
-  padding-top:2mm;text-align:center;font-size:10px;
-}
-.foot .site{font-weight:900;font-size:11.5px;}
-.foot .note{color:var(--muted);margin-top:1mm;font-size:9.5px;}
-
-/* ── Print styles ── */
-
+.invoice-footer{ padding-top:10px;border-top:1px dashed #777;text-align:center;line-height:1.2;margin-top:2mm; }
+.footer-site{ font-size:12px;margin-top:6px;font-weight:900; }
+.footer-note{ font-size:12px;margin-top:6px;font-weight:700; }
 </style>
 </head>
 <body>
 
-<!-- Loading -->
 <div id="loadingScreen">
   <div class="spinner"></div>
   <p>جاري تحميل الفاتورة…</p>
 </div>
 
-<!-- Error -->
 <div id="errorScreen">
   <div class="icon">⚠️</div>
-  <p id="errorMsg">حدث خطأ في تحميل الفاتورة</p>
+  <p id="errorMsg">حدث خطأ</p>
   <button onclick="location.reload()">إعادة المحاولة</button>
 </div>
 
-<!-- Toolbar -->
-<div id="toolbar" style="display:none">
-  <div class="brand-t">WHITE CLOTHES</div>
+<div id="toolbar">
+  <span class="brand-t">WHITE CLOTHES</span>
   <div class="btns">
-    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
     <button onclick="window.close()">✕ إغلاق</button>
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
   </div>
 </div>
 
-<!-- Receipts -->
 <div id="receiptsWrap"></div>
 
 <script>
-// ══════════════════════════════════════════════
-//  CONFIG — غيّر الـ URL ده بس
-// ══════════════════════════════════════════════
 const API_URL = "https://script.google.com/macros/s/AKfycbwZ68iM4-HzCpfX3tRrVWzzZQIONDuDO2VKXyKxhRY/exec";
 const API_KEY = "123";
 
-// ══════════════════════════════════════════════
-//  Helpers
-// ══════════════════════════════════════════════
 function clean(s){ return (s==null?"":String(s)).replace(/[❤♥♡💗💖💘💝💞💟]/g,"").replace(/\s+/g," ").trim(); }
 function isEmpty(v){ const s=clean(v||"").toLowerCase(); return !s||s==="لا يوجد"||s==="بدون"||s==="0"||s==="none"||s==="-"; }
 function numVal(v){ const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); return isNaN(n)?0:n; }
 function fmtNum(v){ const n=numVal(v); if(isNaN(n))return String(v||""); return n%1===0?String(Math.round(n)):n.toFixed(2); }
 function esc(s){ return clean(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
-// ── فورمات التاريخ زي القديم: 07:46 PM  2026/02/12 ──
-function fmtDateTime(raw){
-  if(!raw) return "";
-  const s=clean(raw);
-  // لو الشيت بيبعت ISO أو timestamp
-  const d=new Date(s);
-  if(!isNaN(d.getTime())){
-    const y=d.getFullYear();
-    const mo=String(d.getMonth()+1).padStart(2,"0");
-    const dd=String(d.getDate()).padStart(2,"0");
-    let h=d.getHours(), m=String(d.getMinutes()).padStart(2,"0");
-    const ampm=h>=12?"PM":"AM"; h=h%12||12;
-    return `${String(h).padStart(2,"0")}:${m} ${ampm}  ${y}/${mo}/${dd}`;
-  }
-  // لو بيجي كـ string جاهز — رجّعه كما هو
-  return s;
-}
-
 function buildMeta(it){
+  const sz=clean(it.size||it.Size||it.productSize||it["المقاس"]||"");
+  const cl=clean(it.color||it.Color||it.productColor||it["اللون"]||"");
+  const det=clean(it.details||it.variant||it.options||it.meta||it.description||"");
   const parts=[];
-  // جرب كل أسماء الحقول الممكنة اللي بيبعتها الـ Apps Script
-  const sz=clean(
-    it.size||it.Size||it.variant_size||it.productSize||
-    it["المقاس"]||it.sizeLabel||it.sizes||""
-  );
-  const cl=clean(
-    it.color||it.Color||it.variant_color||it.productColor||
-    it["اللون"]||it.colorLabel||it.colors||""
-  );
   if(sz) parts.push("مقاس: "+sz);
   if(cl) parts.push("لون: "+cl);
-  return parts.join(" • ");
+  return parts.length ? parts.join(" • ") : det;
 }
 
-// ══════════════════════════════════════════════
-//  JSONP fetch
-// ══════════════════════════════════════════════
 function jsonpFetch(url){
   return new Promise((resolve,reject)=>{
     const cb="cb_"+Math.random().toString(36).slice(2);
     const sc=document.createElement("script");
     let done=false;
-    const timer=setTimeout(()=>{
-      if(done)return; done=true;
-      document.head.removeChild(sc);
-      delete window[cb];
-      reject(new Error("timeout"));
-    },15000);
-    window[cb]=(data)=>{
-      if(done)return; done=true;
-      clearTimeout(timer);
-      document.head.removeChild(sc);
-      delete window[cb];
-      resolve(data);
-    };
+    const timer=setTimeout(()=>{ if(done)return; done=true; document.head.removeChild(sc); delete window[cb]; reject(new Error("timeout")); },15000);
+    window[cb]=(data)=>{ if(done)return; done=true; clearTimeout(timer); document.head.removeChild(sc); delete window[cb]; resolve(data); };
     sc.onerror=()=>{ if(done)return; done=true; clearTimeout(timer); reject(new Error("script error")); };
     sc.src=url+"&callback="+cb;
     document.head.appendChild(sc);
   });
 }
 
-// ══════════════════════════════════════════════
-//  Render one receipt
-// ══════════════════════════════════════════════
-function renderReceipt(order, idx){
+function renderReceipt(order, idx, isLast){
   const pm    = clean(order.paymentMethod||"").toLowerCase();
   const isPaid= pm==="transfer_receipt";
   const isCOD = pm==="cod";
   const pmLabel= isPaid?"✓ تم الدفع مسبقاً": isCOD?"الدفع عند الاستلام":"";
 
-  const p1= isEmpty(order.phone1||order.phone)?"":clean(order.phone1||order.phone||"");
-  const p2= isEmpty(order.phone2||order.altPhone)?"":clean(order.phone2||order.altPhone||"");
-  const phones=[p1,p2].filter(Boolean).join(" — ");
-  const note= isEmpty(order.note)?"":clean(order.note||"");
+  const p1=isEmpty(order.phone1||order.phone)?"":clean(order.phone1||order.phone||"");
+  const p2=isEmpty(order.phone2||order.altPhone)?"":clean(order.phone2||order.altPhone||"");
+  const phones=[p1,p2].filter(Boolean).join(" - ");
+  const note=isEmpty(order.note)?"":clean(order.note||"");
 
-  const discV= Math.abs(numVal(order.discount||0));
-  const coupon= isEmpty(order.coupon)?"":clean(order.coupon||"");
-  const subV  = numVal(order.subtotal||0);
-  const shipV = numVal(order.shipping||0);
-  const calcTotal= subV+shipV-discV;
+  const discV  =Math.abs(numVal(order.discount||0));
+  const coupon =isEmpty(order.coupon)?"":clean(order.coupon||"");
+  const subV   =numVal(order.subtotal||0);
+  const shipV  =numVal(order.shipping||0);
+  const calcTotal=subV+shipV-discV;
 
-  // ── parse items — ممكن يجوا string أو array ──
-  let items= order.items||[];
-  if(typeof items==="string"){
-    try{ items=JSON.parse(items); }catch(e){ items=[]; }
-  }
+  let items=order.items||[];
+  if(typeof items==="string"){ try{ items=JSON.parse(items); }catch(e){ items=[]; } }
   if(!Array.isArray(items)) items=[];
 
-  // ── items HTML ──
   let itemsHtml="";
   items.forEach((it,i)=>{
-    const name=clean(it.name||it.product||""); if(!name)return;
-    const qty=Number(it.qty||1)||1;
-    const price=numVal(it.lineTotal||it.price||0);
+    const name=clean(it.name||it.product||it.title||""); if(!name)return;
+    const qty=Number(it.qty||it.quantity||1)||1;
+    const price=numVal(it.lineTotal||it.price||it.total||0);
     const meta=buildMeta(it);
     const unit=(qty>1&&price>0)?Math.round((price/qty)*100)/100:0;
     itemsHtml+=`
-      <div class="item-row">
+      <div class="itemsGridRow">
         <div>
-          <div class="item-name">${i+1}. ${esc(name)}</div>
-          ${meta?`<div class="item-meta">${esc(meta)}</div>`:""}
-          ${unit>0&&qty>1?`<div class="item-meta" style="direction:ltr;text-align:right">${fmtNum(unit)} × ${qty}</div>`:""}
+          <div class="pnameLine"><span>${i+1}.</span><span>${esc(name)}</span></div>
+          ${meta?`<div class="meta">${esc(meta)}</div>`:""}
+          ${unit>0&&qty>1?`<div class="meta num">${fmtNum(unit)} × ${qty}</div>`:""}
         </div>
-        <div class="c2">${qty}</div>
-        <div class="c3">${fmtNum(price)}</div>
+        <div class="qcol num">${qty}</div>
+        <div class="prcol num">${fmtNum(price)}</div>
       </div>`;
   });
 
-  // ── totals HTML ──
   let totHtml=`
-    <div class="tline"><div>الإجمالي</div><div class="n">${fmtNum(subV)}</div></div>
-    <div class="tline"><div>مصاريف الشحن</div><div class="n">${fmtNum(shipV)}</div></div>`;
-  if(discV>0) totHtml+=`<div class="tline"><div>خصم</div><div class="n">${fmtNum(discV)}</div></div>`;
-  if(coupon)  totHtml+=`<div class="tline"><div>كوبون</div><div class="n">${esc(coupon)}</div></div>`;
-  totHtml+=`<div class="tline grand"><div>المطلوب</div><div class="n">${isPaid?"0 (تم الدفع)":fmtNum(calcTotal)}</div></div>`;
+    <div class="tline"><div>الإجمالي</div><div class="num">${fmtNum(subV)}</div></div>
+    <div class="tline"><div>مصاريف الشحن</div><div class="num">${fmtNum(shipV)}</div></div>`;
+  if(discV>0) totHtml+=`<div class="tline"><div>خصم</div><div class="num">${fmtNum(discV)}</div></div>`;
+  if(coupon)  totHtml+=`<div class="tline"><div>كوبون</div><div class="num">${esc(coupon)}</div></div>`;
+  totHtml+=`<div class="tline grand"><div>المطلوب</div><div class="num">${isPaid?"0 (تم الدفع)":fmtNum(calcTotal)}</div></div>`;
+
+  const orderId=clean(order.orderId||order.id||"");
+  const timeStr=clean(order.time||"");
+  const dateStr=clean(order.date||"");
 
   const div=document.createElement("div");
-  div.className="page";
-  div.id="page-"+idx;
   div.innerHTML=`
-    <div class="topHead">
-      <div class="headInfo">
-        <div class="brand">WHITE CLOTHES</div>
-        <div class="order-num">Order: <span>${esc(clean(order.orderId||order.id||""))}</span></div>
-        <div class="dt">${esc(fmtDateTime(order.orderDate||order.date||order.createdDate||""))}</div>
-        ${pmLabel?`<div class="pm-badge">${esc(pmLabel)}</div>`:""}
+    <div class="page" id="page-${idx}">
+      <div class="topHead">
+        <div class="headInfo">
+          <div class="brand">WHITE CLOTHES</div>
+          <div class="subhead">
+            <div><b>Order:</b> <span class="num">${esc(orderId)}</span></div>
+            <div class="muted">
+              <span class="num">${esc(timeStr)}</span>
+              &nbsp;&nbsp;
+              <span class="num">${esc(dateStr)}</span>
+            </div>
+            ${pmLabel?`<div class="pm-badge">${esc(pmLabel)}</div>`:""}
+          </div>
+        </div>
+        <div class="qrBox" id="qr-${idx}"></div>
       </div>
-      <div class="qrBox" id="qr-${idx}"></div>
+
+      <div class="hr"></div>
+
+      <div class="info">
+        <div class="lbl">الاسم:</div>
+        <div class="val">${esc(clean(order.customer||order.name||""))}</div>
+        ${phones?`<div class="lbl">موبايل:</div><div class="val phones">${esc(phones)}</div>`:""}
+        <div class="lbl">المحافظة:</div>
+        <div class="val">${esc(clean(order.city||""))}</div>
+        <div class="lbl">العنوان:</div>
+        <div class="val full">${esc(clean(order.address||""))}</div>
+        ${note?`<div class="lbl">ملاحظة:</div><div class="val full">${esc(note)}</div>`:""}
+      </div>
+
+      <div class="itemsGridHead">
+        <div>الصنف</div><div>الكميه</div><div>السعر</div>
+      </div>
+      ${itemsHtml}
+
+      <div class="totals">${totHtml}</div>
+
+      <div class="invoice-footer">
+        <div class="footer-site">www.white-clothes.com</div>
+        <div class="footer-note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط.</div>
+      </div>
     </div>
-
-    <div class="hr"></div>
-
-    <div class="info">
-      <div class="lbl">الاسم:</div><div class="val">${esc(clean(order.customer||order.name||""))}</div>
-      ${phones?`<div class="lbl">موبايل:</div><div class="val phones">${esc(phones)}</div>`:""}
-      <div class="lbl">المحافظة:</div><div class="val">${esc(clean(order.city||""))}</div>
-      <div class="lbl">العنوان:</div><div class="val">${esc(clean(order.address||""))}</div>
-      ${note?`<div class="lbl">ملاحظة:</div><div class="val">${esc(note)}</div>`:""}
-    </div>
-
-    <div class="items-head">
-      <div>الصنف</div><div class="c2">الكمية</div><div class="c3">السعر</div>
-    </div>
-    ${itemsHtml}
-
-    <div class="totals">${totHtml}</div>
-
-    <div class="foot">
-      <div class="site">www.white-clothes.com</div>
-      <div class="note">في حالة عدم الاستلام يتم دفع مصاريف الشحن فقط.</div>
-    </div>`;
-
+    ${!isLast?'<div class="page-break"></div>':""}
+  `;
   document.getElementById("receiptsWrap").appendChild(div);
 
-  // QR
   try{
-    const qid=clean(order.orderId||order.id||"");
-    if(qid && typeof QRCode!=="undefined"){
-      new QRCode(document.getElementById("qr-"+idx),{text:qid,width:84,height:84,correctLevel:QRCode.CorrectLevel.M});
+    if(typeof QRCode!=="undefined"&&orderId){
+      new QRCode(document.getElementById("qr-"+idx),{
+        text:orderId,width:88,height:88,correctLevel:QRCode.CorrectLevel.M
+      });
     }
   }catch(e){}
 }
 
-// ══════════════════════════════════════════════
-//  Main
-// ══════════════════════════════════════════════
 async function main(){
-  const params=new URLSearchParams(location.search);
-  const orderId=(params.get("orderId")||"").trim();
-  const idsRaw =(params.get("ids")||"").trim();
+  const params  =new URLSearchParams(location.search);
+  const orderId =(params.get("orderId")||"").trim();
+  const idsRaw  =(params.get("ids")||"").trim();
 
   function showError(msg){
     document.getElementById("loadingScreen").style.display="none";
@@ -413,46 +322,32 @@ async function main(){
     document.getElementById("errorMsg").textContent=msg;
   }
 
-  if(!orderId && !idsRaw){
-    showError("مفيش orderId في الـ URL"); return;
-  }
+  if(!orderId&&!idsRaw){ showError("مفيش orderId في الـ URL"); return; }
 
   try{
     let orders=[];
-
     if(orderId){
-      // single
       const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(orderId)}&key=${API_KEY}&_t=${Date.now()}`;
       const res=await jsonpFetch(url);
       if(!res?.ok) throw new Error(res?.error||"Order not found");
       orders=[res.order];
     } else {
-      // batch
       const ids=idsRaw.split(",").map(s=>s.trim()).filter(Boolean);
-      const promises=ids.map(id=>{
+      const results=await Promise.all(ids.map(id=>{
         const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(id)}&key=${API_KEY}&_t=${Date.now()}`;
         return jsonpFetch(url).then(r=>r?.ok?r.order:null).catch(()=>null);
-      });
-      const results=await Promise.all(promises);
+      }));
       orders=results.filter(Boolean);
     }
 
     if(!orders.length) throw new Error("مش لاقي أي أوردر");
 
-    // Render
-    orders.forEach((o,i)=>renderReceipt(o,i));
+    orders.forEach((o,i)=>renderReceipt(o,i,i===orders.length-1));
 
-    // Show toolbar & hide loading
     document.getElementById("loadingScreen").style.display="none";
     document.getElementById("toolbar").style.display="flex";
 
-    // Auto print — بعد ما الـ QR يتعمل كامل
-    // بنستخدم requestAnimationFrame + timeout عشان مش يتبلوك
-    setTimeout(()=>{
-      requestAnimationFrame(()=>{
-        setTimeout(()=>window.print(), 300);
-      });
-    }, 800);
+    // ✅ مفيش auto print
 
   }catch(err){
     showError("خطأ: "+err.message);
