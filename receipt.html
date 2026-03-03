@@ -179,15 +179,22 @@ function numVal(v){ const n=parseFloat(String(v||"").replace(/[^\d.-]/g,"")); re
 function fmtNum(v){ const n=numVal(v); if(isNaN(n))return String(v||""); return n%1===0?String(Math.round(n)):n.toFixed(2); }
 function esc(s){ return clean(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
-function fmtDate(raw){
+function fmtDate(d){
+  // بيجي من الشيت كـ time و date منفصلين — بنعرضهم مباشرة
+  var t=clean(d.time||"");
+  var dt=clean(d.date||"");
+  if(t&&dt) return t+"  "+dt;
+  if(t) return t;
+  if(dt) return dt;
+  // fallback لو جه كـ ISO string في orderDate
+  var raw=clean(d.orderDate||d.createdDate||"");
   if(!raw) return "";
-  var s=clean(raw);
-  var d=new Date(s);
-  if(isNaN(d.getTime())) return s; // لو مش تاريخ صح رجّعه كما هو
-  var y=d.getFullYear();
-  var mo=String(d.getMonth()+1).padStart(2,"0");
-  var dd=String(d.getDate()).padStart(2,"0");
-  var h=d.getHours(), mi=String(d.getMinutes()).padStart(2,"0");
+  var parsed=new Date(raw);
+  if(isNaN(parsed.getTime())) return raw;
+  var y=parsed.getFullYear();
+  var mo=String(parsed.getMonth()+1).padStart(2,"0");
+  var dd=String(parsed.getDate()).padStart(2,"0");
+  var h=parsed.getHours(), mi=String(parsed.getMinutes()).padStart(2,"0");
   var ap=h>=12?"PM":"AM"; h=h%12||12;
   return String(h).padStart(2,"0")+":"+mi+" "+ap+"  "+y+"/"+mo+"/"+dd;
 }
@@ -262,7 +269,7 @@ function renderReceipt(order, idx, isLast){
   totHtml+=`<div class="tline grand"><div>المطلوب</div><div class="num">${isPaid?"0 (تم الدفع)":fmtNum(calcTotal)}</div></div>`;
 
   const orderId=clean(order.orderId||order.id||"");
-  const dtStr=fmtDate(order.orderDate||order.date||order.createdDate||"");
+  const dtStr=fmtDate(order);
 
   const div=document.createElement("div");
   div.innerHTML=`
