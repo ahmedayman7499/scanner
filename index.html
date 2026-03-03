@@ -43,7 +43,7 @@ body{
 .brand-text{line-height:1.1;}
 .brand-name{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:var(--white);letter-spacing:2px;text-transform:uppercase;}
 .brand-tag{font-size:8px;color:var(--mist);letter-spacing:2px;text-transform:uppercase;margin-top:1px;}
-.nav-metrics{display:flex;gap:6px;align-items:center;margin-inline-start:auto;flex-wrap:wrap;}
+.nav-metrics{display:flex;gap:6px;align-items:center;margin-inline-start:auto;flex-wrap:nowrap;overflow:hidden;}
 .nav-metric{display:inline-flex;flex-direction:column;align-items:center;padding:4px 10px;border-radius:var(--r2);border:1px solid var(--rule);background:rgba(255,255,255,.03);cursor:default;}
 .nm-val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--white);}
 .nm-lbl{font-size:8px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;}
@@ -77,8 +77,8 @@ body{
 .nd-sub{font-size:10px;color:var(--mist);margin-top:2px;}
 .nd-empty{padding:28px;text-align:center;color:var(--mist);font-size:12px;}
 
-/* TAB BAR */
-.tab-bar{display:flex;gap:2px;padding:8px 16px 0;overflow-x:auto;scrollbar-width:none;}
+/* TAB BAR — hidden, navigation via sidebar drawer */
+.tab-bar{display:none !important;}
 .tab-bar::-webkit-scrollbar{display:none;}
 .tab-btn{font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;color:var(--mist);background:transparent;border:none;padding:8px 14px;border-radius:var(--r2) var(--r2) 0 0;cursor:pointer;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:5px;border-bottom:2px solid transparent;min-height:unset;}
 .tab-btn:hover{color:var(--silver);background:rgba(255,255,255,.04);}
@@ -305,9 +305,22 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
 .empty-text{font-family:'Cormorant Garamond',serif;font-size:16px;}
 .empty-sub{font-size:11px;opacity:.6;}
 
+/* CONTACT BUTTONS */
+.cb-contact{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:var(--r1);
+  font-size:13px;text-decoration:none;
+  border:1px solid var(--rule2);background:rgba(255,255,255,.05);
+  transition:all .15s;cursor:pointer;flex-shrink:0;
+}
+.cb-contact:hover{transform:scale(1.15);}
+.cb-call:hover{background:rgba(39,174,96,.15);border-color:rgba(39,174,96,.35);}
+.cb-wa:hover{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.35);}
+
 /* ADDR LINE */
 .addr-line{display:flex;flex-wrap:wrap;gap:4px;align-items:baseline;}
 .addr-sep{color:var(--rule2);font-size:10px;}
+.addr-print{display:none;}  /* hidden on screen, shown in @media print below */
 
 /* SCROLL TOP */
 #scrollTopBtn{position:fixed;bottom:24px;left:24px;width:42px;height:42px;border-radius:50%;background:var(--ink2);border:1px solid var(--rule2);color:var(--silver);font-size:16px;cursor:pointer;box-shadow:var(--sh2);display:none;align-items:center;justify-content:center;z-index:300;transition:all .2s;min-height:unset;padding:0;}
@@ -335,21 +348,32 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
   thead th:first-child,tbody td:first-child{display:none!important;}
   tbody td{border:1px solid #ddd!important;padding:8px 10px!important;font-size:11px!important;color:#000!important;background:#fff!important;}
   tbody td *,.td-id,.td-phone,.td-amount,.mono,.td-date{color:#000!important;font-family:'Cairo',Arial,sans-serif!important;}
+  .td-name{color:#000!important;font-weight:900!important;}
   .badge{border:1px solid #bbb!important;background:#f5f5f5!important;color:#000!important;font-size:10px!important;padding:2px 8px!important;border-radius:999px!important;display:inline-block!important;}
   .badge-dot{display:none!important;}
   .addr-line{display:block!important;}
+  .addr-screen{display:none!important;}
+  .addr-print{display:block!important;font-size:11px!important;color:#000!important;font-family:'Cairo',Arial,sans-serif!important;}
   tr,td,th{page-break-inside:avoid!important;break-inside:avoid!important;}
   .card-header,.ship-tabs,.c-badges,.ship-summary-bar,.input-row,.courier-bar{display:none!important;}
   #searchCard,#shipCard,#awaitCard,#dashCard{display:none!important;}
 }
 
+/* Mobile: compact navbar */
 @media(max-width:640px){
-  .nav-top{padding:8px 10px 0;}
-  .tab-bar{padding:6px 10px 0;}
-  .tab-panel{padding:10px;}
-  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .nav-top{padding:7px 10px 0;gap:7px;}
+  .brand-name{font-size:13px;letter-spacing:1px;}
   .brand-tag{display:none;}
   .clock-nav{display:none;}
+  .nav-metrics{gap:4px;}
+  .nav-metric{padding:3px 7px;}
+  .nm-val{font-size:13px;}
+  .nm-lbl{font-size:7px;}
+  .action-bar{padding:6px 8px;gap:4px;}
+  .tb-btn{font-size:10px;padding:5px 8px;}
+  .tab-panel{padding:8px;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .card{padding:12px;}
 }
 /* بعد — ضيف السطرين دول */
 @media print{
@@ -418,6 +442,178 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
   font-size:15px;color:#888;letter-spacing:2px;
 }
 
+/* ══ SIDEBAR DRAWER ══ */
+#sideDrawer{
+  position:fixed;inset:0;z-index:9600;
+  pointer-events:none;
+}
+#sideDrawer.open{pointer-events:all;}
+
+.sd-backdrop{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(5px);
+  opacity:0;transition:opacity .28s ease;
+}
+#sideDrawer.open .sd-backdrop{opacity:1;}
+
+.sd-panel{
+  position:absolute;top:0;right:0;bottom:0;
+  width:270px;
+  background:var(--ink2);
+  border-left:1px solid var(--rule2);
+  box-shadow:-16px 0 70px rgba(0,0,0,.75);
+  display:flex;flex-direction:column;
+  transform:translateX(110%);
+  transition:transform .32s cubic-bezier(.34,1.05,.64,1);
+  overflow:hidden;
+}
+#sideDrawer.open .sd-panel{transform:translateX(0);}
+
+.sd-panel::before{
+  content:"";position:absolute;top:0;left:8%;right:8%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  opacity:.85;z-index:1;
+}
+
+.sd-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 16px 13px;
+  border-bottom:1px solid var(--rule);
+  flex-shrink:0;
+}
+.sd-brand{
+  display:flex;align-items:center;gap:9px;
+}
+.sd-brand-logo{
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid rgba(201,168,76,.3);
+  background:var(--gold-faint);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;
+  font-size:13px;font-weight:700;color:var(--gold);
+  flex-shrink:0;overflow:hidden;
+}
+.sd-brand-logo img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.sd-brand-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;font-weight:700;
+  color:var(--gold);letter-spacing:1.5px;
+}
+.sd-close{
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.05);border:1px solid var(--rule2);
+  color:var(--mist);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;min-height:unset;padding:0;
+}
+.sd-close:hover{
+  background:rgba(192,57,43,.18);
+  border-color:rgba(192,57,43,.4);color:#e74c3c;
+}
+
+.sd-section-label{
+  font-size:8px;color:var(--mist);
+  text-transform:uppercase;letter-spacing:2px;
+  padding:12px 16px 5px;
+  font-family:'Cairo',sans-serif;
+}
+
+.sd-nav{
+  flex:1;padding:6px 8px;
+  display:flex;flex-direction:column;gap:2px;
+  overflow-y:auto;
+}
+
+.sd-btn{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 12px;
+  border-radius:var(--r2);
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--silver);
+  font-family:'Cairo',sans-serif;
+  font-size:13px;font-weight:700;
+  cursor:pointer;
+  transition:all .16s;
+  min-height:unset;
+  text-align:right;
+  width:100%;
+  justify-content:flex-start;
+  letter-spacing:.3px;
+}
+.sd-btn:hover{
+  background:rgba(255,255,255,.06);
+  border-color:var(--rule2);
+  color:var(--white);
+  transform:none;
+}
+.sd-btn.sd-active{
+  background:var(--gold-faint);
+  border-color:rgba(201,168,76,.3);
+  color:var(--gold);
+}
+.sd-btn-icon{
+  font-size:18px;flex-shrink:0;
+  width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r2);
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--rule);
+  transition:all .16s;
+}
+.sd-btn:hover .sd-btn-icon{
+  background:rgba(255,255,255,.09);
+  border-color:var(--rule2);
+}
+.sd-btn.sd-active .sd-btn-icon{
+  background:var(--gold-faint);
+  border-color:rgba(201,168,76,.35);
+}
+.sd-btn-label{flex:1;text-align:right;}
+.sd-btn-badge{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;padding:2px 7px;
+  border-radius:var(--r4);
+  background:rgba(201,168,76,.15);
+  border:1px solid rgba(201,168,76,.3);
+  color:var(--gold);
+}
+
+.sd-divider{
+  height:1px;background:var(--rule);
+  margin:5px 4px;
+}
+
+.sd-foot{
+  padding:12px 16px;
+  border-top:1px solid var(--rule);
+  flex-shrink:0;
+}
+.sd-version{
+  font-size:9px;color:var(--mist);
+  letter-spacing:1.5px;text-transform:uppercase;
+  text-align:center;
+}
+
+/* hamburger trigger */
+.sd-trigger{
+  width:34px;height:34px;border-radius:var(--r2);
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--rule);
+  color:var(--silver);font-size:15px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;min-height:unset;padding:0;
+  flex-shrink:0;
+}
+.sd-trigger:hover{
+  background:var(--gold-faint);
+  border-color:rgba(201,168,76,.35);
+  color:var(--gold);
+}
+
 </style>
 </head>
 <body>
@@ -430,6 +626,79 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
 
 <!-- ══ NOTIF PANEL (floating cards) ══ -->
 <div id="notifPanel"></div>
+
+
+<!-- ══ SIDEBAR DRAWER ══ -->
+<div id="sideDrawer">
+  <div class="sd-backdrop" onclick="closeSideDrawer()"></div>
+  <div class="sd-panel">
+    <div class="sd-head">
+      <div class="sd-brand">
+        <div class="sd-brand-logo">
+          <img src="logo.png" alt="WC" onerror="this.style.display='none';this.parentElement.textContent='WC'">
+        </div>
+        <span class="sd-brand-name">WC</span>
+      </div>
+      <button class="sd-close" onclick="closeSideDrawer()" title="إغلاق (ESC)">✕</button>
+    </div>
+
+    <div class="sd-nav">
+      <div class="sd-section-label">الصفحات الرئيسية</div>
+
+      <button class="sd-btn sd-active" id="sd_delivery" onclick="sdNav('delivery',this)">
+        <span class="sd-btn-icon">🚚</span>
+        <span class="sd-btn-label">التوصيل</span>
+        <span class="sd-btn-badge" id="sd_delivery_badge">0</span>
+      </button>
+
+      <button class="sd-btn" id="sd_order_form" onclick="sdNav('order-form',this)">
+        <span class="sd-btn-icon">➕</span>
+        <span class="sd-btn-label">أوردر جديد</span>
+      </button>
+
+      <button class="sd-btn" id="sd_edit_order" onclick="sdNav('edit-order',this)">
+        <span class="sd-btn-icon">✏️</span>
+        <span class="sd-btn-label">تعديل أوردر</span>
+      </button>
+
+      <div class="sd-divider"></div>
+      <div class="sd-section-label">الإدارة</div>
+
+      <button class="sd-btn" id="sd_products" onclick="sdNav('products',this)">
+        <span class="sd-btn-icon">📦</span>
+        <span class="sd-btn-label">المنتجات</span>
+        <span class="sd-btn-badge" id="sd_products_badge">0</span>
+      </button>
+
+      <button class="sd-btn" id="sd_purchases" onclick="sdNav('purchases',this)">
+        <span class="sd-btn-icon">🛒</span>
+        <span class="sd-btn-label">المشتريات</span>
+      </button>
+
+      <button class="sd-btn" id="sd_expenses" onclick="sdNav('expenses',this)">
+        <span class="sd-btn-icon">💸</span>
+        <span class="sd-btn-label">المصاريف</span>
+      </button>
+
+      <button class="sd-btn" id="sd_treasury" onclick="sdNav('treasury',this)">
+        <span class="sd-btn-icon">💰</span>
+        <span class="sd-btn-label">الخزينة</span>
+      </button>
+
+      <div class="sd-divider"></div>
+
+      <button class="sd-btn" onclick="closeSideDrawer();openTrackingModal()">
+        <span class="sd-btn-icon" style="color:#4a9eff;">🗺️</span>
+        <span class="sd-btn-label" style="color:#4a9eff;">لوحة التتبع</span>
+        <span style="width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399;flex-shrink:0;animation:trkpulse 1.5s ease-in-out infinite;"></span>
+      </button>
+    </div>
+
+    <div class="sd-foot">
+      <div class="sd-version">White Clothes · Management System</div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ NOTIF DRAWER (bell) ══ -->
 <div id="notifDrawer">
@@ -462,6 +731,7 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
 <!-- ══ NAV SHELL ══ -->
 <div class="nav-shell no-print">
   <div class="nav-top">
+    <button class="sd-trigger no-print" onclick="openSideDrawer()" title="القائمة">☰</button>
     <div class="brand">
       <div class="brand-logo">
         <img src="logo.png" alt="WC" onerror="this.parentElement.innerHTML='<span class=\'brand-logo-fallback\'>WC</span>'">
@@ -512,9 +782,6 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
     <button class="tb-btn" id="awaitBtn" onclick="toggleCard('awaitCard')">📦 انتظار <span class="tb-badge" id="awaitCountBadge">0</span></button>
     <button class="tb-btn" id="shipBtn" onclick="toggleCard('shipCard')">🚚 شحن <span class="tb-badge" id="shipCountBadge">0</span><span class="ship-dot" id="shipDot"></span></button>
     <button class="tb-btn" onclick="showLoading('جاري التحديث…');refreshAll(true).finally(hideLoading)">🔄 تحديث</button>
-    <button class="tb-btn" onclick="printA4()">🖨️ طباعة ورقة</button>
-    <button class="tb-btn" onclick="downloadSelectedPDF()">⬇️ PDF</button>
-    <button class="tb-btn" onclick="downloadAllXLSX()">⬇️ Excel</button>
     <div style="margin-inline-start:auto;display:flex;gap:6px;">
       <button class="tb-btn btn-danger" style="border-color:rgba(192,57,43,.3)" onclick="clearMine()">🧹 مسح</button>
     </div>
@@ -627,7 +894,12 @@ tbody td{padding:10px 12px;font-size:12px;color:var(--silver);vertical-align:top
         <span class="card-title">📋 قائمة الأوردرات</span>
         <span class="card-badge" id="selectionInfo">0 محدد</span>
       </div>
-      <button class="btn-ghost no-print" id="toggleAllBtn" onclick="toggleAll()">تحديد الكل</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-ghost no-print" id="toggleAllBtn" onclick="toggleAll()">تحديد الكل</button>
+        <button class="tb-btn no-print" style="font-size:11px;padding:6px 10px;min-height:32px;" onclick="printA4()">🖨️ طباعة</button>
+        <button class="tb-btn no-print" style="font-size:11px;padding:6px 10px;min-height:32px;" onclick="downloadSelectedPDF()">⬇️ PDF</button>
+        <button class="tb-btn no-print" style="font-size:11px;padding:6px 10px;min-height:32px;" onclick="downloadAllXLSX()">⬇️ Excel</button>
+      </div>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -1062,7 +1334,30 @@ function statusBadge(s){const st=(s||"").trim();if(["تم الشحن","تم ال
 function fmtPhone(p){const clean=String(p||"").replace(/\s/g,"");if(!clean)return"";if(clean.startsWith("+20"))return"0"+clean.slice(3);if(clean.startsWith("20")&&clean.length>=11)return"0"+clean.slice(2);if(/^1\d{9}$/.test(clean))return"0"+clean;return clean;}
 
 /* ── ADDRESS CELL ── */
-function addrCell(r){const p1=fmtPhone(r.phone||r.phone1),p2=fmtPhone(r.altPhone||r.phone2);const city=String(r.city||"").trim(),addr=String(r.address||"").trim();const phonePart=p2?`${esc(p1)} — ${esc(p2)}`:esc(p1);const locPart=[city&&esc(city),addr&&esc(addr)].filter(Boolean).join(" / ");return`<div class="addr-line"><span class="td-phone">${phonePart}</span>${locPart?`<span class="addr-sep">|</span><span style="font-size:11px;color:var(--mist)">${locPart}</span>`:""}</div>`;}
+function addrCell(r){
+  const p1=fmtPhone(r.phone||r.phone1),p2=fmtPhone(r.altPhone||r.phone2);
+  const city=String(r.city||"").trim(),addr=String(r.address||"").trim();
+  const locPart=[city&&esc(city),addr&&esc(addr)].filter(Boolean).join(" / ");
+  function contactBtns(phone){
+    if(!phone)return"";
+    const raw=phone.replace(/\D/g,"");
+    const wa=raw.startsWith("0")?"2"+raw:raw;
+    return`<a href="tel:${phone}" class="cb-contact cb-call no-print" title="اتصال" onclick="event.stopPropagation()">📞</a>`+
+           `<a href="https://wa.me/${wa}" target="_blank" class="cb-contact cb-wa no-print" title="واتساب" onclick="event.stopPropagation()">💬</a>`;
+  }
+  // شاشة: رقم + زراير في سطر، عنوان في سطر تاني
+  // طباعة: كل حاجة في سطر واحد فاصلها " / "
+  const phones=[p1,p2].filter(Boolean).map(esc).join(" — ");
+  const fullLine=[phones,locPart].filter(Boolean).join(" / ");
+  return`<div class="addr-line">
+    <div class="addr-screen" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+      <span class="td-phone">${esc(p1)}</span>${contactBtns(p1)}
+      ${p2?`<span style="color:var(--rule2);font-size:10px;">·</span><span class="td-phone">${esc(p2)}</span>${contactBtns(p2)}`:""}
+      ${locPart?`<span style="font-size:11px;color:var(--mist);">· ${locPart}</span>`:""}
+    </div>
+    <div class="addr-print">${fullLine}</div>
+  </div>`;
+}
 
 /* ── DATE FORMATTER ── */
 function fmtOrderDate(r){const raw=String(r.orderDate||r.order_date||r.createdDate||r.date||"").trim();if(!raw)return"—";const dt=new Date(raw);if(isNaN(dt.getTime()))return raw.slice(0,10)||"—";return fmtYMD(dt);}
@@ -1719,7 +2014,7 @@ async function downloadSelectedPDF(){
     enableLinks:false,
     image:{type:"jpeg",quality:1.0},
     html2canvas:{scale:2.5,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0,logging:false,
-      onclone(doc){const s=doc.createElement("style");s.textContent=`*{color:#111!important;background:transparent!important;font-family:'Cairo',Arial,sans-serif!important;box-shadow:none!important;text-shadow:none!important;backdrop-filter:none!important;}html,body{background:#fff!important;margin:0!important;padding:0!important;direction:rtl!important;}.no-print,.nav-shell,#notifPanel,button{display:none!important}.wrap,.tab-panel{display:block!important;max-width:none!important;padding:0!important;gap:0!important;}.card,#printArea{background:#fff!important;border:none!important;border-radius:0!important;padding:8mm!important;margin:0!important;}.card-header{display:none!important;}.print-header{display:block!important;margin-bottom:14px!important;}.print-title{font-size:22px!important;font-weight:900!important;color:#111!important;}.print-summary{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:10px!important;margin:12px 0 16px!important;}.print-box{border:1px solid #ddd!important;border-radius:6px!important;padding:10px 14px!important;background:#fafafa!important;color:#111!important;line-height:2!important;font-size:11px!important;}.tbl-wrap{border:1px solid #ccc!important;overflow:visible!important;background:#fff!important;}.tbl-wrap table{width:100%!important;min-width:0!important;border-collapse:collapse!important;}thead th:first-child,tbody td:first-child,thead th:last-child,tbody td:last-child{display:none!important;}thead th{position:static!important;background:#111!important;color:#fff!important;border:1px solid #111!important;padding:9px 12px!important;font-size:10px!important;font-weight:700!important;text-align:right!important;}tbody tr:nth-child(even) td{background:#f9f9f9!important;}tbody td{border:1px solid #e0e0e0!important;padding:9px 12px!important;font-size:11px!important;color:#111!important;background:#fff!important;vertical-align:top!important;}.addr-line{display:block!important;}.badge{border:1px solid #999!important;background:#f0f0f0!important;color:#111!important;font-size:10px!important;padding:2px 10px!important;border-radius:999px!important;display:inline-block!important;}.badge-dot,.courier-chip,.courier-dot{display:none!important;}.empty,#selectionInfo,#toggleAllBtn{display:none!important;}`;doc.head.appendChild(s);}
+      onclone(doc){const s=doc.createElement("style");s.textContent=`*{color:#111!important;background:transparent!important;font-family:'Cairo',Arial,sans-serif!important;box-shadow:none!important;text-shadow:none!important;backdrop-filter:none!important;}html,body{background:#fff!important;margin:0!important;padding:0!important;direction:rtl!important;}.no-print,.nav-shell,#notifPanel,button{display:none!important}.wrap,.tab-panel{display:block!important;max-width:none!important;padding:0!important;gap:0!important;}.card,#printArea{background:#fff!important;border:none!important;border-radius:0!important;padding:8mm!important;margin:0!important;}.card-header{display:none!important;}.print-header{display:block!important;margin-bottom:14px!important;}.print-title{font-size:22px!important;font-weight:900!important;color:#111!important;}.print-summary{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:10px!important;margin:12px 0 16px!important;}.print-box{border:1px solid #ddd!important;border-radius:6px!important;padding:10px 14px!important;background:#fafafa!important;color:#111!important;line-height:2!important;font-size:11px!important;}.tbl-wrap{border:1px solid #ccc!important;overflow:visible!important;background:#fff!important;}.tbl-wrap table{width:100%!important;min-width:0!important;border-collapse:collapse!important;}thead th:first-child,tbody td:first-child,thead th:last-child,tbody td:last-child{display:none!important;}thead th{position:static!important;background:#111!important;color:#fff!important;border:1px solid #111!important;padding:9px 12px!important;font-size:10px!important;font-weight:700!important;text-align:right!important;}tbody tr:nth-child(even) td{background:#f9f9f9!important;}tbody td{border:1px solid #e0e0e0!important;padding:9px 12px!important;font-size:11px!important;color:#111!important;background:#fff!important;vertical-align:top!important;}.addr-line{display:block!important;}.addr-screen{display:none!important;}.addr-print{display:block!important;font-size:11px!important;color:#111!important;}.td-name{color:#000!important;font-weight:900!important;}.badge{border:1px solid #999!important;background:#f0f0f0!important;color:#111!important;font-size:10px!important;padding:2px 10px!important;border-radius:999px!important;display:inline-block!important;}.badge-dot,.courier-chip,.courier-dot{display:none!important;}.empty,#selectionInfo,#toggleAllBtn{display:none!important;}`;doc.head.appendChild(s);}
     },
     jsPDF:{unit:"mm",format:"a4",orientation:"landscape"},
     pagebreak:{mode:["css","legacy"],avoid:["tr","td"]}
@@ -2739,6 +3034,63 @@ async function quickPartialReturn(orderId){
     }catch(e){hideLoading();toast("❌ خطأ","","err");}
   };
 }
+
+/* ══ SIDEBAR DRAWER ══ */
+function openSideDrawer(){
+  document.getElementById('sideDrawer').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSideDrawer(){
+  document.getElementById('sideDrawer').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// map tab names → sd button ids
+const _sdMap={
+  'delivery':'sd_delivery',
+  'order-form':'sd_order_form',
+  'edit-order':'sd_edit_order',
+  'products':'sd_products',
+  'purchases':'sd_purchases',
+  'expenses':'sd_expenses',
+  'treasury':'sd_treasury',
+};
+
+function sdNav(tabName, btn){
+  // update active state in drawer
+  document.querySelectorAll('.sd-btn').forEach(b=>b.classList.remove('sd-active'));
+  if(btn) btn.classList.add('sd-active');
+  // switch tab
+  const tabBtn = [...document.querySelectorAll('.tab-btn')]
+    .find(b=> b.getAttribute('onclick')?.includes("'"+tabName+"'"));
+  if(tabBtn) switchTab(tabName, tabBtn);
+  closeSideDrawer();
+}
+
+// keep drawer badges in sync
+function _syncSdBadges(){
+  const db=document.getElementById('sd_delivery_badge');
+  const pb=document.getElementById('sd_products_badge');
+  if(db) db.textContent = document.getElementById('tabDeliveryBadge')?.textContent||'0';
+  if(pb) pb.textContent = document.getElementById('tabProductsBadge')?.textContent||'0';
+}
+// hook into existing render / updateProductKPIs
+const _origRender = typeof render==='function'? render : null;
+if(_origRender){
+  window.render = function(){ _origRender(); _syncSdBadges(); };
+}
+const _origUpdateProductKPIs = typeof updateProductKPIs==='function'? updateProductKPIs : null;
+if(_origUpdateProductKPIs){
+  window.updateProductKPIs = function(){ _origUpdateProductKPIs(); _syncSdBadges(); };
+}
+
+// ESC closes drawer too
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){
+    if(document.getElementById('sideDrawer')?.classList.contains('open'))
+      closeSideDrawer();
+  }
+}, true);
 
 </script>
 
