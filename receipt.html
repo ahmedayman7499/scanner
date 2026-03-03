@@ -19,10 +19,9 @@
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 
 @page{
-  size:80mm auto;
+  size:72mm auto;
   margin:0;
 }
-@page:first{ margin:0; }
 
 html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans-serif;color:var(--ink);}
 
@@ -32,7 +31,7 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
     background:transparent!important;
     padding:0!important;
     margin:0!important;
-    width:80mm!important;
+    width:72mm!important;
   }
   #toolbar,#loadingScreen,#errorScreen{display:none!important;}
   #receiptsWrap{
@@ -45,10 +44,9 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
     border-radius:0!important;
     margin:0!important;
     padding:2mm 3mm 4mm!important;
-    width:80mm!important;
+    width:72mm!important;
     page-break-after:always;
     break-after:page;
-    /* مهم: خلي الـ height تلقائي حسب المحتوى */
     height:auto!important;
     overflow:visible!important;
   }
@@ -81,7 +79,7 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
   font-size:12px;cursor:pointer;
 }
 
-/* ── Print toolbar (hidden on print) ── */
+/* ── Print toolbar ── */
 #toolbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:10px 16px;background:#fff;border-bottom:1px solid var(--rule);
@@ -104,33 +102,43 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
 
 /* ── Single page ── */
 .page{
-  width:76mm;background:#fff;border-radius:8px;
+  width:66mm;background:#fff;border-radius:8px;
   box-shadow:0 8px 32px rgba(0,0,0,.13);
   padding:3mm 3mm 4mm;overflow:hidden;
-  font-size:11.5px;line-height:1.4;color:var(--ink);
+  font-size:11px;line-height:1.4;color:var(--ink);
   font-weight:600;
 }
 
-/* ── Top header ── */
-.topHead{display:flex;align-items:flex-start;justify-content:space-between;gap:2mm;}
-.headInfo{flex:1;}
-.brand{font-size:17px;font-weight:900;letter-spacing:1.5px;line-height:1.1;}
-.order-num{font-size:11px;margin-top:1mm;color:var(--ink);}
+/* ── Top header — QR يسار، نص يمين (زي الصورة) ── */
+.topHead{
+  display:flex;
+  align-items:flex-start;
+  flex-direction:row-reverse; /* QR يسار، headInfo يمين */
+  justify-content:space-between;
+  gap:2mm;
+}
+.headInfo{flex:1;text-align:right;}
+.brand{
+  font-size:18px;font-weight:900;letter-spacing:1px;
+  line-height:1.15;text-align:right;
+}
+.order-num{font-size:10.5px;margin-top:1mm;color:var(--ink);text-align:right;}
 .order-num span{direction:ltr;display:inline-block;}
-.dt{font-size:10px;color:var(--muted);margin-top:0.5mm;}
+.dt{font-size:9.5px;color:var(--muted);margin-top:0.5mm;text-align:right;direction:ltr;}
 .pm-badge{
-  display:inline-block;margin-top:1.5mm;font-size:10px;font-weight:900;
+  display:inline-block;margin-top:1.5mm;font-size:9.5px;font-weight:900;
   border:1.5px solid var(--ink);border-radius:3px;padding:1px 5px;
 }
 
-.qrBox{width:22mm;height:22mm;flex-shrink:0;}
-.qrBox canvas,.qrBox img{width:22mm!important;height:22mm!important;image-rendering:pixelated;}
+/* QR يسار */
+.qrBox{width:20mm;height:20mm;flex-shrink:0;}
+.qrBox canvas,.qrBox img{width:20mm!important;height:20mm!important;image-rendering:pixelated;}
 
 /* ── Divider ── */
 .hr{border:none;border-top:1px dashed #aaa;margin:2mm 0;}
 
 /* ── Info grid ── */
-.info{display:grid;grid-template-columns:15mm 1fr;gap:1mm 2mm;font-size:11px;}
+.info{display:grid;grid-template-columns:14mm 1fr;gap:1mm 2mm;font-size:10.5px;}
 .lbl{font-weight:900;}
 .val{word-break:break-word;}
 .phones{direction:ltr;text-align:right;}
@@ -138,11 +146,11 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
 /* ── Items table ── */
 .items-head,.item-row{
   display:grid;
-  grid-template-columns:1fr 10mm 16mm;
+  grid-template-columns:1fr 9mm 15mm;
   gap:0;
 }
 .items-head{
-  font-weight:900;font-size:10.5px;
+  font-weight:900;font-size:10px;
   border-top:1.5px solid var(--ink);
   border-bottom:1.5px solid var(--ink);
   padding:1.5mm 1mm;margin-top:2mm;
@@ -152,17 +160,17 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
 
 .item-row{
   padding:1.5mm 1mm;
-  border-bottom:1px dotted #ccc;font-size:11px;
+  border-bottom:1px dotted #ccc;font-size:10.5px;
 }
 .item-row:last-child{border-bottom:none;}
 .item-name{font-weight:900;}
-.item-meta{font-size:10px;color:var(--muted);}
+.item-meta{font-size:9.5px;color:var(--muted);}
 
 /* ── Totals ── */
 .totals{border-top:1.5px solid var(--ink);margin-top:2mm;padding-top:1mm;}
 .tline{
   display:flex;justify-content:space-between;
-  padding:1mm 0;border-bottom:1px dotted #ccc;font-size:11px;
+  padding:1mm 0;border-bottom:1px dotted #ccc;font-size:10.5px;
 }
 .tline:last-child{border-bottom:none;}
 .tline .n{direction:ltr;}
@@ -175,10 +183,10 @@ html,body{margin:0;padding:0;background:var(--bg);font-family:'Cairo',Arial,sans
 /* ── Footer ── */
 .foot{
   border-top:1px dashed #aaa;margin-top:3mm;
-  padding-top:2mm;text-align:center;font-size:10.5px;
+  padding-top:2mm;text-align:center;font-size:10px;
 }
-.foot .site{font-weight:900;font-size:12px;}
-.foot .note{color:var(--muted);margin-top:1mm;font-size:10px;}
+.foot .site{font-weight:900;font-size:11.5px;}
+.foot .note{color:var(--muted);margin-top:1mm;font-size:9.5px;}
 
 /* ── Print styles ── */
 
