@@ -41,7 +41,20 @@ body{
   background:#111;color:#fff;font-family:Arial,sans-serif;font-size:12px;cursor:pointer;
 }
 
-/* toolbar removed */
+/* ── Toolbar ── */
+#toolbar{
+  display:none;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:#fff;border-bottom:1px solid #ccc;
+  position:sticky;top:0;z-index:100;
+}
+#toolbar .brand-t{font-weight:900;font-size:14px;letter-spacing:1px;}
+#toolbar .btns{display:flex;gap:8px;}
+#toolbar button{
+  padding:6px 16px;border-radius:6px;border:1px solid #ccc;
+  font-family:Arial,sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+  background:#fff;color:#111;
+}
+#toolbar .btn-print{background:#111;color:#fff;border-color:#111;}
 
 /* ── Pages wrap ── */
 #receiptsWrap{ padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px; }
@@ -56,7 +69,7 @@ body{
   box-shadow:0 10px 30px rgba(0,0,0,.18);
   padding:2.5mm 2.5mm;
 }
-.page-break{ height:18px; break-after:page; page-break-after:always; }
+.page-break{ height:0; display:none; break-after:page; page-break-after:always; }
 
 @media print{
   body{ background:transparent!important; padding:0!important; -webkit-text-stroke:0px transparent; }
@@ -70,7 +83,7 @@ body{
     height:auto!important; overflow:visible!important;
   }
   .page:last-child{ page-break-after:avoid; break-after:avoid; }
-  .page-break{ height:0!important; }
+  .page-break{ display:none!important; height:0!important; }
 }
 
 /* ── Header ── */
@@ -146,7 +159,13 @@ body{
   <button onclick="location.reload()">إعادة المحاولة</button>
 </div>
 
-
+<div id="toolbar">
+  <span class="brand-t">WHITE CLOTHES</span>
+  <div class="btns">
+    <button onclick="window.close()">✕ إغلاق</button>
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
+  </div>
+</div>
 
 <div id="receiptsWrap"></div>
 
@@ -320,10 +339,18 @@ async function main(){
       orders=[res.order];
     } else {
       const ids=idsRaw.split(",").map(s=>s.trim()).filter(Boolean);
-      const results=await Promise.all(ids.map(id=>{
-        const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(id)}&key=${API_KEY}&_t=${Date.now()}`;
-        return jsonpFetch(url).then(r=>r?.ok?r.order:null).catch(()=>null);
-      }));
+      // نجيب الفواتير على دفعات عشان مانضغطش على الـ API
+      const CHUNK = 5;
+      const results = [];
+      for(let i=0; i<ids.length; i+=CHUNK){
+        const chunk = ids.slice(i, i+CHUNK);
+        const chunkResults = await Promise.all(chunk.map(id=>{
+          const url=`${API_URL}?action=getOrderData&orderId=${encodeURIComponent(id)}&key=${API_KEY}&_t=${Date.now()}`;
+          return jsonpFetch(url).then(r=>r?.ok?r.order:null).catch(()=>null);
+        }));
+        results.push(...chunkResults);
+        if(i+CHUNK < ids.length) await new Promise(res=>setTimeout(res,300)); // فاصل 300ms بين الـ chunks
+      }
       orders=results.filter(Boolean);
     }
 
@@ -332,7 +359,7 @@ async function main(){
     orders.forEach((o,i)=>renderReceipt(o,i,i===orders.length-1));
 
     document.getElementById("loadingScreen").style.display="none";
-    // toolbar removed
+    document.getElementById("toolbar").style.display="flex";
 
     // ✅ مفيش auto print
 
@@ -345,3 +372,4 @@ main();
 </script>
 </body>
 </html>
+
