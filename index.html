@@ -1971,6 +1971,9 @@ rows = rows.map(r => {
   try{
     const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
     if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}
+    if(status==="مرتجع"){
+      api("returnStock",{orderId:id}).catch(()=>{});
+    }
     refreshAll(true);
   }
   catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
@@ -3407,8 +3410,21 @@ async function quickPartialReturn(orderId){
         returnedItems:JSON.stringify(returned)
       });
       hideLoading();
-      if(res?.ok){toast("✅ تم تسجيل المرتجع الجزئي","","ok");refreshAll(true);}
-      else toast("❌ فشل",res?.error||"","err");
+      if(res?.ok){
+        const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0);
+        allCache = allCache.map(r=>{
+          if(String(r.orderId||r.id||"")!==String(orderId)) return r;
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt)};
+        });
+        rows = rows.map(r=>{
+          if(String(r.orderId||r.id||"")!==String(orderId)) return r;
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt)};
+        });
+        saveCachedData(allCache);
+        render();
+        toast("✅ تم تسجيل المرتجع الجزئي","مرتجع: "+fmt(retAmt)+" ج","ok");
+        refreshAll(true);
+      } else toast("❌ فشل",res?.error||"","err");
     }catch(e){hideLoading();toast("❌ خطأ","","err");}
   };
 }
@@ -3480,8 +3496,6 @@ document.addEventListener('keydown', function(e){
 
 
 /* ══ INVOICE MODAL — PRINT & CONFIRM ══ */
-let _invoicePrintIds = null;
-
 function clickFramePrintBtn(){
   const frame = document.getElementById('invoiceFrame');
   if(!frame) return;
@@ -3504,6 +3518,30 @@ function clickFramePrintBtn(){
   }
 }
 
+
+
+
+
+
+
+
+/* ══ INVOICE MODAL ══ */
+let _invoicePrintIds = null;
+
+function openPrintTab(){
+  const frame = document.getElementById('invoiceFrame');
+  if(!frame || !frame.src) return;
+  try {
+    frame.contentWindow.print();
+  } catch(e) {
+    window.open(frame.src, '_blank');
+  }
+  if(_invoicePrintIds && _invoicePrintIds.length){
+    const bar = document.getElementById('invoiceConfirmBar');
+    setTimeout(()=>{ if(bar) bar.style.display = 'flex'; }, 700);
+  }
+}
+
 function openInvoiceModal(url, title, idsToMark){
   const modal  = document.getElementById('invoiceModal');
   const frame  = document.getElementById('invoiceFrame');
@@ -3511,14 +3549,9 @@ function openInvoiceModal(url, title, idsToMark){
   const bar    = document.getElementById('invoiceConfirmBar');
 
   document.getElementById('invoiceModalTitle').textContent = title || '🧾 فاتورة';
-
-  // اخبي الـ overlay دايمًا عند الفتح
   if(bar) bar.style.display = 'none';
-
-  // خزّن الـ IDs — بس لو batch، مش فاتورة عميل فردية
   _invoicePrintIds = (idsToMark && idsToMark.length) ? idsToMark : null;
 
-  // wire زرار التأكيد
   const btn = document.getElementById('invoiceConfirmBtn');
   if(btn){
     const newBtn = btn.cloneNode(true);
@@ -3530,12 +3563,10 @@ function openInvoiceModal(url, title, idsToMark){
     });
   }
 
-  // loader + iframe
   frame.src = '';
   if(loader) loader.style.display = 'flex';
   frame.onload = ()=>{ if(loader) loader.style.display = 'none'; };
   frame.src = url;
-
   modal.classList.add('open');
 }
 
@@ -3548,7 +3579,6 @@ function closeInvoiceModal(){
 }
 
 function printInvoice(orderId){
-  // فاتورة عميل — بدون تأكيد
   const url = WEB_APP_PRINT_URL+"?orderId="+encodeURIComponent(orderId)+"&v="+Date.now();
   openInvoiceModal(url, '🧾 فاتورة #'+orderId, null);
 }
