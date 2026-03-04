@@ -1236,6 +1236,7 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <div class="form-grid form-grid-3" style="margin-bottom:14px;">
       <div><label class="field-label">طريقة الدفع</label><select id="of_payment"><option value="cod">كاش عند الاستلام (COD)</option><option value="transfer_receipt">تحويل مسبق</option></select></div>
       <div><label class="field-label">الشحن (ج)</label><input id="of_shipping" type="number" value="60" min="0" oninput="calcOrderTotal()"/></div>
+      <div><label class="field-label">الشحن على مين؟</label><select id="of_shipping_paid_by"><option value="customer">على العميل</option><option value="company">على الشركة</option></select></div>
       <div><label class="field-label">خصم (ج)</label><input id="of_discount" type="number" value="0" min="0" oninput="calcOrderTotal()"/></div>
       <div><label class="field-label">كوبون</label><input id="of_coupon" placeholder="(اختياري)"/></div>
       <div style="grid-column:span 2;"><label class="field-label">ملاحظة</label><input id="of_note" placeholder="أي ملاحظات"/></div>
@@ -1810,14 +1811,20 @@ function updateDashboard(all){
   const excluded=new Set(["الغاء","مرتجع","مرتجع جزئي"]);
   const active=all.filter(r=>!excluded.has(s(r.status)));
   const sum=arr=>arr.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
-  const totalSub=sum(active);
+  // التحصيل الصح = subtotal - partialReturn (المرتجع الجزئي)
+  const totalSub=active.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0)-n(r.partialReturn||0),0);
   const totalShip=active.reduce((a,r)=>a+n(r.shipping||0),0);
+  const returnedAmt=returned.reduce((a,r)=>{
+    // مرتجع كامل = كل المبلغ، مرتجع جزئي = المبلغ المرتجع بس
+    if(String(r.status||"").trim()==="مرتجع جزئي") return a+n(r.partialReturn||0);
+    return a+n(r.subtotal||r.productTotal||0);
+  },0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set("dTotal",all.length.toLocaleString("ar-EG"));
   set("dDelivered",delivered.length);set("dDeliveredAmt",fmt(sum(delivered))+" ج");
   set("dShipped",shipped.length);set("dShippedAmt",fmt(sum(shipped))+" ج");
   set("dPrinted",printed.length);
-  set("dReturned",returned.length);set("dReturnedAmt",fmt(sum(returned))+" ج");
+  set("dReturned",returned.length);set("dReturnedAmt",fmt(returnedAmt)+" ج");
   set("dRevenue",fmt(totalSub));set("dRevenueShip","+"+fmt(totalShip)+" شحن");
   set("dashLastUpdate","آخر تحديث: "+new Date().toLocaleTimeString("ar-EG"));
 }
@@ -1870,6 +1877,7 @@ function render(){
     <td class="td-amount">
     ${fmt((r.subtotal||r.productTotal||0)-(r.partialReturn||0))}
     ${(r.partialReturn||0)>0?`<div style="font-size:9px;color:var(--red);margin-top:2px">-${fmt(r.partialReturn)} مرتجع</div>`:""}
+    ${r.shippingPaidBy==="company"?`<div style="font-size:9px;color:var(--amber);margin-top:2px">🚚 شحن على الشركة</div>`:""}
     </td>
     <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping||0)}</td>
     <td>${statusBadge(r.status)}${daysHtml}${courierHtml}</td>
@@ -2595,6 +2603,7 @@ function resetOrderForm(){
   ["of_name","of_phone","of_phone2","of_address","of_note","of_coupon"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   document.getElementById("of_city").value="";document.getElementById("of_source").value="Direct";
   document.getElementById("of_payment").value="cod";document.getElementById("of_shipping").value="60";document.getElementById("of_discount").value="0";
+  const spb=document.getElementById("of_shipping_paid_by");if(spb)spb.value="customer";
   document.getElementById("of_products_container").innerHTML="";productRowCounter=0;
   addProductRow("of_products_container","of_prod");calcOrderTotal();
 }
@@ -2619,7 +2628,8 @@ async function submitNewOrder(){
   const shipping=parseFloat(document.getElementById("of_shipping")?.value||60)||0;
   const discount=parseFloat(document.getElementById("of_discount")?.value||0)||0;
   const subtotal=products.reduce((s,p)=>s+p.lineTotal,0);
-  const payload={name,phone,phone2:document.getElementById("of_phone2")?.value||"",city,address,source:document.getElementById("of_source")?.value||"Direct",paymentMethod:document.getElementById("of_payment")?.value||"cod",shipping,discount,coupon:document.getElementById("of_coupon")?.value||"",note:document.getElementById("of_note")?.value||"",products:JSON.stringify(products),subtotal,total:subtotal+shipping-discount};
+  const shippingPaidBy=document.getElementById("of_shipping_paid_by")?.value||"customer";
+  const payload={name,phone,phone2:document.getElementById("of_phone2")?.value||"",city,address,source:document.getElementById("of_source")?.value||"Direct",paymentMethod:document.getElementById("of_payment")?.value||"cod",shipping,shippingPaidBy,discount,coupon:document.getElementById("of_coupon")?.value||"",note:document.getElementById("of_note")?.value||"",products:JSON.stringify(products),subtotal,total:subtotal+shipping-discount};
   showLoading("جاري حفظ الأوردر…");
   try{const res=await api("addNewOrder",payload);hideLoading();if(res?.ok){toast(`✅ تم حفظ الأوردر #${res.orderId}`,"","ok",4000);resetOrderForm();refreshAll(true);}else toast("❌ فشل الحفظ",res?.error||"","err");}
   catch(e){hideLoading();toast("❌ خطأ","","err");}
