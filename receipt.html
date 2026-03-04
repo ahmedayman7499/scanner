@@ -359,7 +359,9 @@ async function main(){
     orders.forEach((o,i)=>renderReceipt(o,i,i===orders.length-1));
 
     document.getElementById("loadingScreen").style.display="none";
-    document.getElementById("toolbar").style.display="flex";
+    // لو شغال جوه iframe — اخفي التولبار الداخلي
+    const inIframe = window.self !== window.top;
+    document.getElementById("toolbar").style.display = inIframe ? "none" : "flex";
 
     // ✅ مفيش auto print
 
