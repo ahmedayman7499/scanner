@@ -1028,6 +1028,7 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <button class="tab-btn" onclick="switchTab('edit-order',this)">✏️ تعديل أوردر</button>
     <button class="tab-btn" onclick="switchTab('products',this)">📦 المنتجات <span class="tab-badge" id="tabProductsBadge">0</span></button>
     <button class="tab-btn" onclick="switchTab('purchases',this)">🛒 المشتريات</button>
+    <button class="tab-btn" onclick="switchTab('suppliers',this)">🤝 ذمم الموردين <span class="tab-badge" id="tabSuppliersBadge" style="background:var(--red)">0</span></button>
     <button class="tab-btn" onclick="switchTab('expenses',this)">💸 المصاريف</button>
     <button class="tab-btn" onclick="switchTab('treasury',this)">💰 الخزينة</button>
     <button class="tab-btn" onclick="switchTab('couriers',this)">🚴 المناديب</button>
@@ -1286,7 +1287,8 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
         <div><label class="field-label">الشحن (ج)</label><input id="eo_shipping" type="number"/></div>
         <div><label class="field-label">خصم (ج)</label><input id="eo_discount" type="number" value="0"/></div>
         <div><label class="field-label">الحالة</label><select id="eo_status"><option>New</option><option>تحت الطباعة</option><option>تم الطباعة</option><option>تم الشحن</option><option>تم التسليم</option><option>مرتجع</option><option>مرتجع جزئي</option><option>الغاء</option></select></div>
-        <div style="grid-column:span 3;"><label class="field-label">ملاحظة</label><input id="eo_note"/></div>
+        <div><label class="field-label">طريقة الدفع</label><select id="eo_payment"><option value="cod">كاش عند الاستلام (COD)</option><option value="transfer_receipt">تحويل مسبق</option></select></div>
+        <div style="grid-column:span 2;"><label class="field-label">ملاحظة</label><input id="eo_note"/></div>
       </div>
       <input type="hidden" id="eo_order_id"/><input type="hidden" id="eo_row_index"/>
       <div class="input-row" style="justify-content:flex-end;gap:10px;">
@@ -1334,15 +1336,62 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
       <div><label class="field-label">الإجمالي (ج)</label><input id="pur_total" readonly style="background:var(--ink3);color:var(--gold);font-weight:700;"/></div>
       <div><label class="field-label">اسم المورد *</label><input id="pur_supplier" placeholder="اسم المورد"/></div>
       <div><label class="field-label">طريقة الدفع</label><select id="pur_method"><option>كاش</option><option>تحويل</option><option>شيك</option><option>آجل</option></select></div>
-      <div><label class="field-label">حالة الدفع</label><select id="pur_status"><option>مدفوع</option><option>جزئي</option><option>آجل</option></select></div>
+      <div><label class="field-label">حالة الدفع</label><select id="pur_status" onchange="onPurStatusChange()"><option>مدفوع</option><option>جزئي</option><option>آجل</option></select></div>
+      <div id="pur_partial_wrap" style="display:none;">
+        <label class="field-label">المدفوع الآن (ج)</label>
+        <input id="pur_paid_now" type="number" min="0" value="0" oninput="calcPurchaseTotal()" style="border-color:var(--gold);"/>
+        <div id="pur_remaining_display" style="font-size:11px;color:var(--red);margin-top:4px;"></div>
+      </div>
       <div><label class="field-label">ملاحظات</label><input id="pur_notes" placeholder="(اختياري)"/></div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:10px;"><button onclick="resetPurchaseForm()">🔄 مسح</button><button class="btn-gold" onclick="submitPurchase()">✅ حفظ المشتريات</button></div>
   </div>
   <div class="card">
-    <div class="card-header"><div class="card-title">📋 سجل المشتريات</div><span class="card-badge" id="purTableBadge">—</span></div>
-    <div class="input-row" style="margin-bottom:10px;"><input id="pur_search" placeholder="ابحث بـ SKU أو مورد…" class="flex1" oninput="renderPurchasesTable()"/><button class="btn-gold" onclick="loadPurchases()">🔄 تحديث</button></div>
+    <div class="card-header"><div class="card-title">📋 سجل المشتريات</div><span class="card-badge" id="purTableBadge">—</span><button onclick="printReport('purchases')" style="margin-inline-start:auto;font-size:11px;padding:6px 12px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.3);color:#27ae60;border-radius:4px;cursor:pointer;">🖨️ طباعة</button></div>
+    <div class="input-row" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <input id="pur_search" placeholder="ابحث بـ SKU أو مورد…" class="flex1" oninput="renderPurchasesTable()"/>
+      <input id="pur_date_from" type="date" style="width:140px;" oninput="renderPurchasesTable()" title="من تاريخ"/>
+      <input id="pur_date_to"   type="date" style="width:140px;" oninput="renderPurchasesTable()" title="إلى تاريخ"/>
+      <button onclick="document.getElementById('pur_date_from').value='';document.getElementById('pur_date_to').value='';renderPurchasesTable()" style="font-size:11px;padding:6px 10px;color:var(--mist);">✕ مسح الفلتر</button>
+      <button class="btn-gold" onclick="loadPurchases()">🔄 تحديث</button>
+    </div>
+    <div id="pur_summary" style="display:none;margin-bottom:8px;padding:8px 12px;background:rgba(201,168,76,.08);border-radius:var(--r2);border:1px solid rgba(201,168,76,.2);font-size:12px;color:var(--gold);"></div>
     <div class="tbl-wrap"><table><thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>المورد</th><th>SKU</th><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>الدفع</th><th>الحالة</th></tr></thead><tbody id="purTbody"><tr><td colspan="10"><div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">لا يوجد مشتريات بعد</div></div></td></tr></tbody></table></div>
+  </div>
+
+  <!-- ══ ذمم الموردين ══ -->
+  <div class="card" id="sup_card">
+    <div class="card-header">
+      <div class="card-title">🤝 ذمم الموردين</div>
+      <span class="card-badge" id="sup_badge" style="background:var(--red);display:none">0</span>
+      <button class="btn-gold btn-sm" style="margin-inline-start:auto;" onclick="loadSupplierPayables()">🔄 تحديث</button>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:120px;padding:10px 14px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule2);">
+        <div style="font-size:10px;color:var(--mist);">إجمالي الذمم</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red);" id="sup_total_debt">—</div>
+      </div>
+      <div style="flex:1;min-width:120px;padding:10px 14px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule2);">
+        <div style="font-size:10px;color:var(--mist);">المدفوع</div>
+        <div style="font-size:16px;font-weight:700;color:#27ae60;" id="sup_total_paid">—</div>
+      </div>
+      <div style="flex:1;min-width:120px;padding:10px 14px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule2);">
+        <div style="font-size:10px;color:var(--mist);">المتبقي</div>
+        <div style="font-size:16px;font-weight:700;color:var(--amber);" id="sup_remaining">—</div>
+      </div>
+    </div>
+
+    <!-- جدول الموردين -->
+    <div class="tbl-wrap">
+      <table><thead><tr>
+        <th>المورد</th><th>إجمالي الفواتير</th><th>المدفوع</th><th>المتبقي</th><th>إجراء</th>
+      </tr></thead>
+      <tbody id="supTbody">
+        <tr><td colspan="5"><div class="empty"><div class="empty-icon">🤝</div><div class="empty-text">اضغط تحديث لتحميل الذمم</div></div></td></tr>
+      </tbody></table>
+    </div>
   </div>
 </div>
 
@@ -1362,39 +1411,167 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
   </div>
   <div class="card">
     <div class="card-header"><div class="card-title">📋 سجل المصاريف</div><span class="card-badge" id="expTableBadge">—</span></div>
-    <div class="input-row" style="margin-bottom:10px;"><select id="exp_filter_type" onchange="renderExpensesTable()" style="min-width:160px;"><option value="">كل الأنواع</option><option>إيجار</option><option>إعلانات</option><option>رواتب</option><option>شحن</option><option>مواد تغليف</option><option>متنوع</option></select><button class="btn-gold" onclick="loadExpenses()">🔄 تحديث</button></div>
+    <div class="input-row" style="margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+      <select id="exp_filter_type" onchange="renderExpensesTable()" style="min-width:140px;"><option value="">كل الأنواع</option><option>إيجار</option><option>إعلانات</option><option>رواتب</option><option>شحن</option><option>مواد تغليف</option><option>متنوع</option></select>
+      <input id="exp_date_from" type="date" style="width:140px;" oninput="renderExpensesTable()" title="من تاريخ"/>
+      <input id="exp_date_to"   type="date" style="width:140px;" oninput="renderExpensesTable()" title="إلى تاريخ"/>
+      <button onclick="document.getElementById('exp_date_from').value='';document.getElementById('exp_date_to').value='';document.getElementById('exp_filter_type').value='';renderExpensesTable()" style="font-size:11px;padding:6px 10px;color:var(--mist);">✕ مسح</button>
+      <button onclick="printReport('expenses')" style="font-size:11px;padding:6px 12px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.3);color:#27ae60;border-radius:4px;cursor:pointer;">🖨️ طباعة</button>
+      <button class="btn-gold" onclick="loadExpenses()">🔄 تحديث</button>
+    </div>
+    <div id="exp_summary" style="display:none;margin-bottom:8px;padding:8px 12px;background:rgba(201,168,76,.08);border-radius:var(--r2);border:1px solid rgba(201,168,76,.2);font-size:12px;color:var(--gold);"></div>
     <div class="tbl-wrap"><table><thead><tr><th>التاريخ</th><th>النوع</th><th>الوصف</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th></tr></thead><tbody id="expTbody"><tr><td colspan="6"><div class="empty"><div class="empty-icon">💸</div><div class="empty-text">لا يوجد مصاريف بعد</div></div></td></tr></tbody></table></div>
   </div>
 </div>
 
+<!-- ══════════ SUPPLIERS TAB ══════════ -->
+<div class="tab-panel" id="panel-suppliers">
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="sup_kpis" style="margin-bottom:16px;">
+    <div class="kpi-tile kt-red"><div class="kpi-icon">⚠️</div><div class="kpi-val kv-red" id="sup_total_debt">0</div><div class="kpi-lbl">إجمالي الذمم</div></div>
+    <div class="kpi-tile kt-green"><div class="kpi-icon">✅</div><div class="kpi-val kv-green" id="sup_total_paid">0</div><div class="kpi-lbl">إجمالي المدفوع</div></div>
+    <div class="kpi-tile kt-amber"><div class="kpi-icon">⏳</div><div class="kpi-val kv-amber" id="sup_remaining">0</div><div class="kpi-lbl">المتبقي</div></div>
+    <div class="kpi-tile kt-blue"><div class="kpi-icon">🤝</div><div class="kpi-val kv-blue" id="sup_count">0</div><div class="kpi-lbl">موردين عليهم ذمم</div></div>
+  </div>
+
+  <!-- جدول الموردين -->
+  <div class="card" id="sup_list_card">
+    <div class="card-header">
+      <div class="card-title">🤝 الموردين</div>
+      <button class="btn-gold btn-sm" style="margin-inline-start:auto;" onclick="loadSupplierPayables()">🔄 تحديث</button>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th>المورد</th><th>إجمالي الفواتير</th><th>المدفوع</th><th>المتبقي</th><th>إجراء</th>
+    </tr></thead><tbody id="supTbody">
+      <tr><td colspan="5"><div class="empty"><div class="empty-icon">🤝</div><div class="empty-text">جاري التحميل…</div></div></td></tr>
+    </tbody></table></div>
+  </div>
+
+</div>
+
 <!-- ══════════ TREASURY TAB ══════════ -->
 <div class="tab-panel" id="panel-treasury">
-  <div class="kpi-grid">
-    <div class="kpi-tile kt-green"><div class="kpi-icon">💰</div><div class="kpi-val kv-green" id="tr_sales">0</div><div class="kpi-lbl">إجمالي المبيعات المحصّلة</div><div class="kpi-sub">تم التسليم فقط</div></div>
-    <div class="kpi-tile kt-red"><div class="kpi-icon">🛒</div><div class="kpi-val kv-red" id="tr_purchases">0</div><div class="kpi-lbl">إجمالي المشتريات</div></div>
-    <div class="kpi-tile kt-amber"><div class="kpi-icon">💸</div><div class="kpi-val kv-amber" id="tr_expenses">0</div><div class="kpi-lbl">إجمالي المصاريف</div></div>
-    <div class="kpi-tile kt-blue"><div class="kpi-icon">🚚</div><div class="kpi-val kv-blue" id="tr_shipping_cost">0</div><div class="kpi-lbl">تكلفة الشحن</div></div>
-    <div class="kpi-tile kt-gold"><div class="kpi-icon">📈</div><div class="kpi-val kv-gold" id="tr_net_profit">0</div><div class="kpi-lbl">صافي الربح</div><div class="kpi-sub" id="tr_margin">هامش: —%</div></div>
-    <div class="kpi-tile kt-purple"><div class="kpi-icon">↩️</div><div class="kpi-val kv-purple" id="tr_returns">0</div><div class="kpi-lbl">إجمالي المرتجعات</div></div>
+
+<!-- ══ هيدر ══ -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:900;color:var(--white);letter-spacing:.5px;line-height:1.1;">💰 مركز الإدارة المالية</div>
+    <div style="font-size:11px;color:var(--mist);margin-top:3px;" id="tr_last_update">آخر تحديث: —</div>
   </div>
-  <div class="card">
-    <div class="card-header"><div class="card-title">📅 الأداء الشهري</div><button class="btn-ghost" onclick="loadTreasury()">🔄 تحديث</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>الشهر</th><th>الأوردرات</th><th>المبيعات (ج)</th><th>المشتريات (ج)</th><th>المصاريف (ج)</th><th>الربح الإجمالي (ج)</th><th>هامش %</th><th>المرتجعات (ج)</th><th>صافي الربح (ج)</th></tr></thead><tbody id="treasuryTbody"></tbody></table></div>
-  </div>
-  <div class="card">
-    <div class="card-header"><div class="card-title">📦 لمحة المخزون</div></div>
-    <div class="kpi-grid">
-      <div class="kpi-tile kt-blue"><div class="kpi-icon">💵</div><div class="kpi-val kv-blue" id="tr_inv_cost">0</div><div class="kpi-lbl">قيمة المخزون (تكلفة)</div></div>
-      <div class="kpi-tile kt-green"><div class="kpi-icon">💎</div><div class="kpi-val kv-green" id="tr_inv_sale">0</div><div class="kpi-lbl">قيمة المخزون (بيع)</div></div>
-      <div class="kpi-tile kt-red"><div class="kpi-icon">❌</div><div class="kpi-val kv-red" id="tr_out_stock">0</div><div class="kpi-lbl">منتجات نفدت</div></div>
-      <div class="kpi-tile kt-amber"><div class="kpi-icon">⚠️</div><div class="kpi-val kv-amber" id="tr_low_stock">0</div><div class="kpi-lbl">منتجات قليلة</div></div>
-    </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <button onclick="setTreasuryMonth('prev')" style="padding:6px 10px;background:var(--ink3);border:1px solid var(--rule2);border-radius:6px;color:var(--mist);cursor:pointer;font-size:13px;">‹</button>
+    <div id="tr_month_label" style="font-size:13px;font-weight:700;color:var(--white);min-width:100px;text-align:center;padding:6px 12px;background:var(--ink3);border:1px solid var(--rule2);border-radius:6px;cursor:default;"></div>
+    <button onclick="setTreasuryMonth('next')" style="padding:6px 10px;background:var(--ink3);border:1px solid var(--rule2);border-radius:6px;color:var(--mist);cursor:pointer;font-size:13px;">›</button>
+    <button onclick="setTreasuryMonth('all')" id="tr_btn_all" style="font-size:11px;padding:6px 12px;background:var(--ink3);border:1px solid var(--rule2);border-radius:6px;color:var(--mist);cursor:pointer;">الكل</button>
+    <button onclick="openTreasuryArchive()" style="font-size:11px;padding:6px 12px;background:rgba(52,152,219,.12);border:1px solid rgba(52,152,219,.3);color:#3498db;border-radius:6px;cursor:pointer;">🖨️ طباعة</button>
+    <button class="btn-gold" onclick="loadTreasury()">🔄 تحديث</button>
   </div>
 </div>
+
+<!-- ══ الصف العلوي: رصيد + KPIs ══ -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+
+  <!-- رصيد الخزينة — بطاقة كبيرة -->
+  <div style="grid-column:span 2;background:linear-gradient(135deg,rgba(39,174,96,.18) 0%,rgba(39,174,96,.05) 100%);border:1px solid rgba(39,174,96,.35);border-radius:12px;padding:18px 22px;position:relative;overflow:hidden;">
+    <div style="position:absolute;bottom:-18px;left:-18px;width:90px;height:90px;border-radius:50%;background:rgba(39,174,96,.08);pointer-events:none;"></div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(39,174,96,.7);text-transform:uppercase;margin-bottom:8px;" id="tr_cash_balance_lbl">رصيد الخزينة الفعلي</div>
+    <div style="font-size:34px;font-weight:900;line-height:1;" id="tr_cash_balance">—</div>
+    <div style="font-size:9px;color:var(--mist);margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px;">إيرادات محصّلة − مشتريات مدفوعة − مصاريف</div>
+  </div>
+
+  <!-- إجمالي المبيعات -->
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:12px;padding:14px 16px;">
+    <div style="font-size:9px;color:var(--mist);letter-spacing:.5px;margin-bottom:6px;">💚 إيرادات المبيعات</div>
+    <div style="font-size:20px;font-weight:900;color:#27ae60;" id="tr_sales">—</div>
+    <div style="font-size:9px;color:var(--mist);margin-top:4px;">بدون شحن | <span id="tr_total_orders" style="color:var(--white);">—</span></div>
+  </div>
+
+  <!-- المصاريف -->
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:12px;padding:14px 16px;">
+    <div style="font-size:9px;color:var(--mist);letter-spacing:.5px;margin-bottom:6px;">🔴 مصاريف + مشتريات</div>
+    <div style="font-size:20px;font-weight:900;color:#e74c3c;" id="tr_cost_total">—</div>
+    <div style="font-size:9px;color:var(--mist);margin-top:4px;">مش: <span id="tr_purchases" style="color:#e74c3c">—</span> | مصا: <span id="tr_expenses" style="color:#e67e22">—</span></div>
+  </div>
+
+  <!-- صافي الربح -->
+  <div style="background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.3);border-radius:12px;padding:14px 16px;">
+    <div style="font-size:9px;color:var(--gold);letter-spacing:.5px;font-weight:700;margin-bottom:6px;">✨ صافي الربح</div>
+    <div style="font-size:20px;font-weight:900;" id="tr_net_profit">—</div>
+    <div style="font-size:11px;font-weight:700;margin-top:4px;" id="tr_margin">—</div>
+  </div>
+</div>
+
+<!-- ══ الصف الثاني: KPIs صغيرة ══ -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px;">
+
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">🚚 شحن محصّل</div>
+    <div style="font-size:15px;font-weight:800;color:#3498db;" id="tr_shipping_cost">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">↩️ مرتجعات</div>
+    <div style="font-size:15px;font-weight:800;color:#9b59b6;" id="tr_returns">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid rgba(231,76,60,.3);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">🤝 ذمم الموردين</div>
+    <div style="font-size:15px;font-weight:800;" id="tr_supplier_debt">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">💵 مخزون (تكلفة)</div>
+    <div style="font-size:15px;font-weight:800;color:#3498db;" id="tr_inv_cost">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">💎 مخزون (بيع)</div>
+    <div style="font-size:15px;font-weight:800;color:#27ae60;" id="tr_inv_sale">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">❌ نفد المخزون</div>
+    <div style="font-size:15px;font-weight:800;color:#e74c3c;" id="tr_out_stock">—</div>
+  </div>
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;">
+    <div style="font-size:9px;color:var(--mist);margin-bottom:4px;">⚠️ مخزون قليل</div>
+    <div style="font-size:15px;font-weight:800;color:#e67e22;" id="tr_low_stock">—</div>
+  </div>
+  <!-- شريط الربح -->
+  <div style="background:var(--ink2);border:1px solid var(--rule2);border-radius:9px;padding:10px 14px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mist);margin-bottom:6px;"><span>هامش الربح</span><span id="tr_margin_pct" style="color:var(--gold);font-weight:700;">—%</span></div>
+    <div style="height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;"><div id="tr_profit_bar" style="height:100%;border-radius:99px;width:0%;transition:width 1s ease;background:linear-gradient(90deg,#27ae60,#f0c040);"></div></div>
+  </div>
+</div>
+
+<!-- ══ جدول الأيام ══ -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📋 سجل الأيام</div>
+    <div id="tr_tbl_summary" style="font-size:11px;color:var(--gold);margin-inline-start:8px;"></div>
+    <button onclick="openTreasuryArchive()" style="margin-inline-start:auto;font-size:11px;padding:4px 10px;background:rgba(52,152,219,.12);border:1px solid rgba(52,152,219,.3);color:#3498db;border-radius:4px;cursor:pointer;">🖨️ طباعة</button>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr>
+      <th>التاريخ</th><th>أوردرات</th>
+      <th>إيرادات</th><th>مشتريات</th><th>مصاريف</th>
+      <th>مرتجعات</th><th>صافي اليوم</th>
+      <th style="color:var(--gold);">💰 رصيد الخزينة</th>
+    </tr></thead>
+    <tbody id="treasuryTbody"></tbody></table>
+  </div>
+</div>
+
+</div></div>
 
 
 <div class="tab-panel" id="panel-couriers">
   <div class="kpi-grid" id="couriers_kpi" style="margin-bottom:14px;"></div>
+
+  <!-- فلتر المناديب -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;">
+    <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-left:4px;">عرض:</div>
+    <button id="cf_all"    class="cb-chip active" onclick="filterCourierCards('all')">الكل</button>
+    <button id="cf_active" class="cb-chip"        onclick="filterCourierCards('active')">🟢 نشطين</button>
+    <button id="cf_paused" class="cb-chip"        onclick="filterCourierCards('paused')">🔴 موقوفين</button>
+  </div>
+
   <div id="couriers_cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:18px;"></div>
   <!-- ══ أرشيف الشحنات ══ -->
   <div style="background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r2);overflow:hidden;margin-top:4px;">
@@ -1577,10 +1754,15 @@ let shipTabMode="normal", courierStats={};
 let productsCache=[], purchasesCache=[], expensesCache=[];
 let qrScanner=null, lastScan={id:"",t:0}, scanLockUntil=0;
 let srSelected=new Set(), lastResults=[];
-let lastKnownIds=new Set();
+// lastKnownIds محفوظة في localStorage عشان ما تترسيتش عند إعادة التحميل
+const LS_LAST_KNOWN = "wc_last_known_ids_v1";
+function loadLastKnownIds(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_LAST_KNOWN)||"[]")); }catch{ return new Set(); } }
+function saveLastKnownIds(s){ localStorage.setItem(LS_LAST_KNOWN, JSON.stringify([...s].slice(-500))); }
+let lastKnownIds = loadLastKnownIds();
 let notifHistory=[];
 let dupTimes={};
 let productRowCounter=0;
+let eoProductRowCounter=0; // counter منفصل لـ edit order
 let _fetchPromise=null;
 
 /* ── KEYS ── */
@@ -1627,7 +1809,7 @@ function toast(title,sub="",type="",dur=2800){
 }
 
 /* ── MODAL ── */
-function openModal(html){const b=document.getElementById("inlineModalContent");if(b)b.innerHTML=html;document.getElementById("inlineModal").classList.add("open");}
+function openModal(html, maxWidth){const b=document.getElementById("inlineModalContent");if(b)b.innerHTML=html;const box=document.getElementById("inlineModalBox");if(box&&maxWidth)box.style.width=maxWidth;else if(box)box.style.width="";document.getElementById("inlineModal").classList.add("open");}
 function closeModal(){document.getElementById("inlineModal").classList.remove("open");}
 document.getElementById("inlineModal").addEventListener("click",e=>{if(e.target===document.getElementById("inlineModal"))closeModal();});
 
@@ -1685,18 +1867,54 @@ function renderCourierBar(){
 /* ── NOTIF HISTORY (Bell) ── */
 function loadNotifHistory(){try{notifHistory=JSON.parse(localStorage.getItem(LS_NOTIF)||"[]");}catch{notifHistory=[];}}
 function saveNotifHistory(){localStorage.setItem(LS_NOTIF,JSON.stringify(notifHistory.slice(0,60)));}
-function addNotifHistory(icon,txt,sub=""){notifHistory.unshift({icon,txt,sub,ts:Date.now()});if(notifHistory.length>60)notifHistory.pop();saveNotifHistory();updateBellDot();if(document.getElementById("notifDrawer")?.classList.contains("open"))renderNotifDrawer();}
+function addNotifHistory(icon,txt,sub=""){
+  const now=Date.now();
+  // امنع التكرار — لو نفس التنبيه جه خلال 30 ثانية تجاهله
+  const dup=notifHistory.find(n=>n.txt===txt && (now-n.ts)<30000);
+  if(dup) return;
+  notifHistory.unshift({icon,txt,sub,ts:now});
+  if(notifHistory.length>60)notifHistory.pop();
+  saveNotifHistory();
+  updateBellDot();
+  if(document.getElementById("notifDrawer")?.classList.contains("open")) renderNotifDrawer();
+}
 function clearNotifHistory(){notifHistory=[];saveNotifHistory();updateBellDot();renderNotifDrawer();}
 function updateBellDot(){const dot=document.getElementById("bellDot");if(dot)dot.className="bell-dot"+(notifHistory.length>0?" active":"");}
 function renderNotifDrawer(){
   const list=document.getElementById("ndList");if(!list)return;
-  if(!notifHistory.length){list.innerHTML='<div class="nd-empty">لا يوجد تنبيهات</div>';return;}
+  if(!notifHistory.length){list.innerHTML='<div class="nd-empty" style="text-align:center;padding:32px;color:var(--mist);font-size:12px;">🔔<br>لا يوجد تنبيهات</div>';return;}
   const now=Date.now();
-  list.innerHTML=notifHistory.map(no=>{
+  list.innerHTML=notifHistory.map((no,i)=>{
     const mins=Math.round((now-no.ts)/60000);
-    const ago=mins<1?"الآن":mins<60?mins+" دقيقة":Math.round(mins/60)+" ساعة";
-    return`<div class="nd-item"><div class="nd-icon">${esc(no.icon)}</div><div class="nd-body"><div class="nd-txt">${esc(no.txt)}</div><div class="nd-sub">${esc(no.sub||"")}${no.sub?" · ":""}${ago}</div></div></div>`;
+    const ago=mins<1?"الآن":mins<60?mins+" دقيقة":mins<1440?Math.round(mins/60)+" ساعة":Math.floor(mins/1440)+" يوم";
+    const isNew=no.icon==="🆕", isDup=no.icon==="⚠️", isOk=no.icon==="✅", isLate=no.icon==="🚨";
+    const accent=isNew?"#27ae60":isDup?"var(--amber)":isOk?"var(--gold)":isLate?"var(--red)":"var(--mist)";
+    // استخرج الـ orderId من النص
+    const idMatch=no.txt.match(/(?:—\s*)(\S+)$/);
+    const orderId=idMatch?idMatch[1]:"";
+    const addBtn=orderId&&isNew?`<button onclick="addFromNotif('${esc(orderId)}')" style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid rgba(39,174,96,.4);color:#27ae60;background:rgba(39,174,96,.08);cursor:pointer;margin-top:4px;">➕ أضف لقائمتي</button>`:"";
+    return`<div class="nd-item" style="border-right:2px solid ${accent};padding-right:10px;">
+      <div class="nd-icon" style="color:${accent}">${esc(no.icon)}</div>
+      <div class="nd-body">
+        <div class="nd-txt">${esc(no.txt)}</div>
+        <div class="nd-sub" style="color:var(--mist)">${esc(no.sub||"")}${no.sub?" · ":""}${ago}</div>
+        ${addBtn}
+      </div>
+    </div>`;
   }).join("");
+}
+
+function addFromNotif(orderId){
+  const id=String(orderId).trim();
+  if(!id)return;
+  if(!mineIds.has(id)){
+    mineIds.add(id);saveMine();recordScanTime(id);
+    api("scanAdd",{orderId:id}).then(r=>{if(r?.ok)toast("✅ تم الإضافة",id,"ok");});
+    // حدّث الـ cache
+    allCache=allCache.map(r=>String(r.orderId||r.id||"")===id?{...r}:r);
+    refreshAll(true);
+  }
+  toast("موجود بالفعل في قائمتك",id,"warn");
 }
 function toggleNotifDrawer(e){e.stopPropagation();const d=document.getElementById("notifDrawer");const isOpen=d.classList.toggle("open");if(isOpen)renderNotifDrawer();}
 function closeNotifDrawer(){document.getElementById("notifDrawer")?.classList.remove("open");}
@@ -1754,7 +1972,7 @@ async function fetchAllRows(force=false){
   return _fetchPromise;
 }
 
-function processAllRows(all){
+function processAllRows(all, doCheckNew=true){
   if(!all?.length)return;
   allCache=all;
     const prevSelected=new Set(selected);
@@ -1814,79 +2032,89 @@ if(prevSelected.size>0){
   if(document.getElementById("shipCard")?.style.display!=="none")renderShipTable();
   if(document.getElementById("awaitCard")?.style.display!=="none")renderAwaitTable();
 
-  _checkNewOrders(all);
+  if(doCheckNew !== false) _checkNewOrders(all);
 }
 
 let _pendingCache={newOrders:[],pending:[]};
 
 async function refreshAll(force=false){
   const cached=loadCachedData();
-  if(cached?.rows?.length)processAllRows(cached.rows);
+  // من الـ cache — بدون checkNewOrders عشان ما يتكررش
+  if(cached?.rows?.length) processAllRows(cached.rows, false);
   if(!force&&cached&&!cached.stale)return;
-  try{const res=await fetchAllRows(force);if(res?.ok&&res.rows&&!res.fromCache)processAllRows(res.rows);}
+  // من الـ API — هنا بس يعمل checkNewOrders
+  try{
+    const res=await fetchAllRows(force);
+    if(res?.ok&&res.rows&&!res.fromCache) processAllRows(res.rows, true);
+  }
   catch(e){toast("خطأ في التحديث","","err");}
 }
 
 /* ── NEW ORDER DETECTION ── */
 function _checkNewOrders(all){
-  const currentIds=new Set(all.map(r=>String(r.orderId||r.id||"")));
-  const seenIds=getSeenIds();
-  
+  const currentIds = new Set(all.map(r=>String(r.orderId||r.id||"")));
+  const seenIds    = getSeenIds();
+
+  // أول مرة — سجّل كل الأوردرات الموجودة كـ "معروفة" بدون تنبيه
   if(lastKnownIds.size===0){
-    all.forEach(r=>lastKnownIds.add(String(r.orderId||r.id||"")));
-    all.forEach(r=>seenIds.add(String(r.orderId||r.id||"")));
+    all.forEach(r=>{
+      const id=String(r.orderId||r.id||"");
+      lastKnownIds.add(id);
+      seenIds.add(id);
+    });
+    saveLastKnownIds(lastKnownIds);
     saveSeenIds(seenIds);
     return;
   }
-  
-  const newIds=[...currentIds].filter(id=>!lastKnownIds.has(id));
-  
+
+  const newIds = [...currentIds].filter(id=>!lastKnownIds.has(id));
+
   newIds.forEach(id=>{
-    const order=all.find(r=>String(r.orderId||r.id||"")===id);
-    if(!order)return;
-    
-    if(isCancelledStatus(order.status)){
-      seenIds.add(id);saveSeenIds(seenIds);lastKnownIds.add(id);return;
-    }
-    
-    // ── تحقق من التكرار بالموبايل ──
-    if(!seenIds.has(id)){
-      const phone=String(order.phone||order.phone1||"").replace(/\D/g,"");
-      if(phone){
-        const dupOrder=all.find(r=>{
-          const rId=String(r.orderId||r.id||"");
-          if(rId===id)return false;
-          const rPhone=String(r.phone||r.phone1||"").replace(/\D/g,"");
-          if(rPhone!==phone)return false;
-          // لو الأوردر التاني في آخر 24 ساعة
-          const orderDate=new Date(r.orderDate||r.date||0);
-          const newOrderDate=new Date(order.orderDate||order.date||0);
-          return Math.abs(newOrderDate-orderDate)<DUP_WINDOW_MS;
-        });
-        
-        if(dupOrder){
-          // أوردر مكرر من نفس العميل
-          beepDuplicate();
-          showDuplicateNotif(id,{
-            ...order,
-            name:order.name||order.customer,
-            status:order.status,
-            dupWith:dupOrder.orderId||dupOrder.id
-          });
-          addNotifHistory("⚠️","أوردر مكرر — "+id,(order.name||"")+" | نفس الموبايل");
-        } else {
-          beep();
-          showNewOrderNotif(id,{name:order.name||order.customer,phone:order.phone||order.phone1,status:order.status});
-          addNotifHistory("🆕","أوردر جديد — "+id,order.name||"");
-        }
-        
-        seenIds.add(id);saveSeenIds(seenIds);
-      }
-    }
-    
+    const order = all.find(r=>String(r.orderId||r.id||"")===id);
+    if(!order) return;
+
+    // أضف للـ lastKnownIds أولاً عشان ما يتكررش
     lastKnownIds.add(id);
+
+    if(isCancelledStatus(order.status)){
+      seenIds.add(id);
+      saveSeenIds(seenIds);
+      saveLastKnownIds(lastKnownIds);
+      return;
+    }
+
+    if(!seenIds.has(id)){
+      const phone = String(order.phone||order.phone1||"").replace(/\D/g,"");
+      const name  = order.name||order.customer||"";
+
+      // تحقق من التكرار بالموبايل
+      const dupOrder = phone ? all.find(r=>{
+        const rId = String(r.orderId||r.id||"");
+        if(rId===id) return false;
+        const rPhone = String(r.phone||r.phone1||"").replace(/\D/g,"");
+        if(rPhone!==phone) return false;
+        const orderDate    = new Date(r.orderDate||r.date||0);
+        const newOrderDate = new Date(order.orderDate||order.date||0);
+        return Math.abs(newOrderDate-orderDate)<DUP_WINDOW_MS;
+      }) : null;
+
+      if(dupOrder){
+        beepDuplicate();
+        showDuplicateNotif(id,{...order,name,status:order.status,dupWith:dupOrder.orderId||dupOrder.id});
+        addNotifHistory("⚠️","أوردر مكرر — "+id, name+" | مكرر مع #"+(dupOrder.orderId||dupOrder.id||"؟")+" | نفس الموبايل");
+      } else {
+        beep();
+        showNewOrderNotif(id,{name,phone:order.phone||order.phone1,status:order.status});
+        addNotifHistory("🆕","أوردر جديد — "+id,name);
+      }
+
+      seenIds.add(id);
+      saveSeenIds(seenIds);
+    }
   });
-  
+
+  // احفظ lastKnownIds في localStorage
+  saveLastKnownIds(lastKnownIds);
   updateDashboard(all);
 }
 
@@ -2046,7 +2274,7 @@ async function quickUpdate(orderId,status){
       saveCachedData(allCache); render();
       toast("فشل التحديث","","err"); return;
     }
-    if(status==="مرتجع") api("returnStock",{orderId:id}).catch(()=>{});
+    // المخزون بيتحدث في bulkUpdate على الـ Apps Script مباشرة
     refreshAll(true);
   }
   catch(e){
@@ -2286,44 +2514,90 @@ async function onQrSuccess(txt){
   // normalize للمقارنة
   const cleanNorm=String(clean).trim().replace(/\.0+$/,"");
   
-  // تحقق لو موجود في mineIds
-  const alreadyMine=[...mineIds].some(id=>String(id).trim().replace(/\.0+$/,"")===cleanNorm);
-  
+  const inCache = allCache.find(r=>String(r.orderId||r.id||"").trim().replace(/\.0+$/,"")===cleanNorm);
+  const name    = inCache ? (inCache.name||inCache.customer||"") : "";
+
+  // ══ حالة 1: موجود في قائمتك بالفعل ══
+  const alreadyMine = [...mineIds].some(id=>String(id).trim().replace(/\.0+$/,"")===cleanNorm);
   if(alreadyMine){
-    beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);
-    const ex=allCache.find(r=>String(r.orderId||r.id||"").trim().replace(/\.0+$/,"")===cleanNorm);
-    showDuplicateNotif(cleanNorm,ex||{name:"موجود في قائمتك بالفعل",status:"—"});
-    addNotifHistory("⚠️","أوردر مكرر في قائمتك","ID: "+cleanNorm);
+    // toast هادي بس — مش صوت مزعج ولا popup
+    showScanAlreadyMine(cleanNorm, inCache);
     return;
   }
 
-  // دور في الـ cache
-  const inCache=allCache.find(r=>String(r.orderId||r.id||"").trim().replace(/\.0+$/,"")===cleanNorm);
-
-  if(inCache&&!isCancelledStatus(inCache.status)&&wasScannedRecently(cleanNorm)){
-    beepDuplicate();document.body.classList.add("dup-shake");setTimeout(()=>document.body.classList.remove("dup-shake"),700);
-    showDuplicateNotif(cleanNorm,inCache);
-    addNotifHistory("⚠️","أوردر مكرر","ID: "+cleanNorm+" | "+inCache.name);
-    setTimeout(()=>{
-      mineIds.add(cleanNorm);saveMine();recordScanTime(cleanNorm);
-      rows.unshift(inCache);selected.add(cleanNorm);render();
-      api("scanAdd",{orderId:cleanNorm}).catch(()=>{});
-      setTimeout(()=>refreshAll(true),3000);
-    },600);
+  // ══ حالة 2: أوردر مكرر (نفس الموبايل في آخر 24 ساعة) ══
+  if(inCache && !isCancelledStatus(inCache.status) && wasScannedRecently(cleanNorm)){
+    beepDuplicate();
+    document.body.classList.add("dup-shake");
+    setTimeout(()=>document.body.classList.remove("dup-shake"),700);
+    showDuplicateNotif(cleanNorm, inCache);
+    addNotifHistory("⚠️","أوردر مكرر","ID: "+cleanNorm+(name?" | "+name:""));
+    // أضفه برضو عشان المندوب محتاجه
+    mineIds.add(cleanNorm);saveMine();recordScanTime(cleanNorm);
+    if(inCache){rows.unshift(inCache);selected.add(cleanNorm);render();}
+    api("scanAdd",{orderId:cleanNorm}).catch(()=>{});
+    setTimeout(()=>refreshAll(true),3000);
     return;
   }
 
+  // ══ حالة 3: أوردر جديد ✅ ══
   beep();
   mineIds.add(cleanNorm);saveMine();recordScanTime(cleanNorm);
-  addNotifHistory("✅","تم إضافة الأوردر","ID: "+cleanNorm+(inCache?" | "+(inCache.name||inCache.customer):""));
-
-  // أضف فوراً من الـ cache
+  addNotifHistory("✅","تم إضافة الأوردر","ID: "+cleanNorm+(name?" | "+name:""));
   if(inCache){rows.unshift(inCache);selected.add(cleanNorm);render();}
-  toast("تم الالتقاط",cleanNorm,"ok");
-
-  // sync في الخلفية
+  showScanSuccess(cleanNorm, inCache);
   api("scanAdd",{orderId:cleanNorm}).catch(()=>{});
   setTimeout(()=>refreshAll(true),3000);
+}
+
+// ── toast بسيط للأوردر الموجود بالفعل ──
+function showScanAlreadyMine(orderId, order){
+  const name   = order ? (order.name||order.customer||"") : "";
+  const status = order ? (order.status||"") : "";
+  const panel  = document.getElementById("notifPanel");
+  if(!panel) return;
+  const nId = "mine_"+orderId+"_"+Date.now();
+  const div = document.createElement("div");
+  div.id = nId; div.className = "notif-card";
+  div.style.cssText = "border-right:3px solid var(--amber);opacity:.92;";
+  div.innerHTML = `
+    <div class="notif-icon">📋</div>
+    <div class="notif-body">
+      <div class="notif-title" style="color:var(--amber)">موجود في قائمتك — ${esc(String(orderId))}</div>
+      <div class="notif-sub">
+        ${name?"<b>"+esc(name)+"</b><br>":""}
+        ${status?`الحالة: ${statusBadge(status)}`:""}
+      </div>
+    </div>
+    <button class="notif-close" onclick="dismissNotif('${nId}')">✕</button>
+  `;
+  panel.appendChild(div);
+  setTimeout(()=>dismissNotif(nId), 4000); // يختفي بعد 4 ثواني
+}
+
+// ── toast نجاح الـ scan ──
+function showScanSuccess(orderId, order){
+  const name   = order ? (order.name||order.customer||"") : "";
+  const status = order ? (order.status||"") : "";
+  const panel  = document.getElementById("notifPanel");
+  if(!panel) return;
+  const nId = "ok_"+orderId+"_"+Date.now();
+  const div = document.createElement("div");
+  div.id = nId; div.className = "notif-card";
+  div.style.cssText = "border-right:3px solid #27ae60;";
+  div.innerHTML = `
+    <div class="notif-icon">✅</div>
+    <div class="notif-body">
+      <div class="notif-title" style="color:#27ae60">تم الإضافة — ${esc(String(orderId))}</div>
+      <div class="notif-sub">
+        ${name?"<b>"+esc(name)+"</b><br>":""}
+        ${status?`الحالة: ${statusBadge(status)}`:""}
+      </div>
+    </div>
+    <button class="notif-close" onclick="dismissNotif('${nId}')">✕</button>
+  `;
+  panel.appendChild(div);
+  setTimeout(()=>dismissNotif(nId), 5000);
 }
 
 /* ── SEARCH ── */
@@ -2677,9 +2951,13 @@ function showDuplicateNotif(orderId,order){
   const panel=document.getElementById("notifPanel");if(!panel)return;
   const nId="dup_"+orderId+"_"+Date.now(),status=order?.status||"—",name=order?.name||order?.customer||"",phone=order?fmtPhone(order.phone||order.phone1||""):"";
   const div=document.createElement("div");div.id=nId;div.className="notif-card duplicate";
-  div.innerHTML=`<div class="notif-icon">⚠️</div><div class="notif-body"><div class="notif-title">أوردر مكرر — ${esc(String(orderId))}</div><div class="notif-sub">${name?"الاسم: <b>"+esc(name)+"</b><br>":""}${phone?"📞 "+esc(phone)+"<br>":""}الحالة: <b>${esc(status)}</b></div><div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${nId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="dismissNotif('${nId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${nId}')">✕</button>`;
+  const dupBox = order?.dupWith
+    ? `<div style="margin-top:5px;padding:4px 10px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:4px;font-size:11px;color:var(--gold)">🔗 مكرر مع أوردر <b>#${esc(String(order.dupWith))}</b></div>`
+    : "";
+  div.innerHTML=`<div class="notif-icon">⚠️</div><div class="notif-body"><div class="notif-title">أوردر مكرر — ${esc(String(orderId))}</div><div class="notif-sub">${name?"الاسم: <b>"+esc(name)+"</b><br>":""}${phone?"📞 "+esc(phone)+"<br>":""}الحالة: <b>${esc(status)}</b></div>${dupBox}<div class="notif-actions"><button class="notif-btn gold" onclick="markFollowed('${esc(String(orderId))}','${nId}')">✅ تم المتابعة</button><button class="notif-btn" onclick="dismissNotif('${nId}')">تجاهل</button></div></div><button class="notif-close" onclick="dismissNotif('${nId}')">✕</button>`;
   panel.appendChild(div);setTimeout(()=>dismissNotif(nId),30000);
-  addNotifHistory("⚠️","أوردر مكرر — "+String(orderId),name||status);
+    const dupTxt = order?.dupWith ? " | مكرر مع #"+String(order.dupWith) : "";
+  addNotifHistory("⚠️","أوردر مكرر — "+String(orderId), (name||status)+dupTxt+" | نفس الموبايل");
 }
 function showNewOrderNotif(orderId,info={}){
   const panel=document.getElementById("notifPanel");if(!panel)return;
@@ -2702,30 +2980,102 @@ function switchTab(name,btn){
   if(bar)bar.style.display=name==="delivery"?"flex":"none";
   
   // ── حمّل بس لو مفيش داتا — بدون showLoading ──
-  if(name==="products" && !productsCache.length) loadProducts();
-  if(name==="purchases" && !purchasesCache.length) loadPurchases();
-  if(name==="expenses" && !expensesCache.length) loadExpenses();
-  if(name==="treasury") loadTreasury(); // الخزينة دايماً تتحدث
-  if(name==="couriers") loadCouriersPage(); // المناديب
+  if(name==="products"  && !productsCache.length)  loadProducts();
+  if(name==="purchases"){ if(!purchasesCache.length) loadPurchases(); setCurrentMonthFilter("pur"); loadSupplierPayables(); }
+  if(name==="expenses") { if(!expensesCache.length)  loadExpenses();  setCurrentMonthFilter("exp"); }
+  if(name==="suppliers") loadSupplierPayables();
+  if(name==="treasury"){ _trMonth=new Date().getMonth();_trYear=new Date().getFullYear();_trAll=false; loadTreasury(); }
+  if(name==="couriers"  && !_couriersData.length)  loadCouriersPage();
+  else if(name==="couriers")                        renderCourierCards();
+}
+
+// ── سيت فلتر الشهر الحالي تلقائي لما تفتح التاب ──
+function setCurrentMonthFilter(prefix){
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = String(now.getMonth()+1).padStart(2,"0");
+  const from  = `${year}-${month}-01`;
+  // آخر يوم في الشهر
+  const lastDay = new Date(year, now.getMonth()+1, 0).getDate();
+  const to    = `${year}-${month}-${String(lastDay).padStart(2,"0")}`;
+
+  const fromEl = document.getElementById(prefix+"_date_from");
+  const toEl   = document.getElementById(prefix+"_date_to");
+  if(!fromEl || !toEl) return;
+
+  // سيت بس لو فاضيين (ما تغلبش لو المستخدم عدّل)
+  if(!fromEl.value) fromEl.value = from;
+  if(!toEl.value)   toEl.value   = to;
+
+  // ريندر بعد الـ set
+  if(prefix==="pur") renderPurchasesTable();
+  if(prefix==="exp") renderExpensesTable();
 }
 
 /* ══ ORDER FORM ══ */
+function buildSKUOptionsWithSelected(selected){
+  if(!productsCache.length) return `<option value="${esc(selected)}">${esc(selected)||"— اختر المنتج —"}</option>`;
+  const base = `<option value="">— اختر المنتج —</option>`;
+  return base + productsCache.map(p=>{
+    const val  = p.sku||p.name;
+    const sel  = (val===selected||p.name===selected||p.sku===selected) ? "selected" : "";
+    return `<option value="${esc(val)}" ${sel}>${esc(p.name||p.sku)}${p.color?" — "+p.color:""}${p.size?" — "+p.size:""}</option>`;
+  }).join("");
+}
+
 function buildSKUOptions(){if(!productsCache.length)return`<option value="">— اختر المنتج —</option>`;return`<option value="">— اختر المنتج —</option>`+productsCache.map(p=>`<option value="${esc(p.sku||p.name)}">${esc(p.name||p.sku)}${p.color?" — "+p.color:""}${p.size?" — "+p.size:""}</option>`).join("");}
 
 function addProductRow(containerId,prefix){
-  productRowCounter++;const id=productRowCounter;
+  // counter منفصل لكل form عشان ما يتداخلوش
+  let id;
+  if(prefix.startsWith("eo_prod")){
+    eoProductRowCounter++;
+    id = eoProductRowCounter;
+  } else {
+    productRowCounter++;
+    id = productRowCounter;
+  }
   const cont=document.getElementById(containerId);if(!cont)return;
   const div=document.createElement("div");div.className="product-item";div.id=prefix+"_row_"+id;
-  div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id}</span><button class="remove-product-btn" onclick="document.getElementById('${prefix}_row_${id}').remove();calcOrderTotal()">✕ حذف</button></div>
-  <div class="form-grid form-grid-3">
-    <div><label class="field-label">المنتج</label><select id="${prefix}_sku_${id}" class="sku-select" onchange="onProdSKUChange('${prefix}',${id})">${buildSKUOptions()}</select></div>
-    <div><label class="field-label">اللون</label><input id="${prefix}_color_${id}" placeholder="اللون"/></div>
-    <div><label class="field-label">المقاس</label><input id="${prefix}_size_${id}" placeholder="المقاس"/></div>
-    <div><label class="field-label">الكمية</label><input id="${prefix}_qty_${id}" type="number" value="1" min="1" oninput="calcOrderTotal()"/></div>
-    <div><label class="field-label">سعر القطعة (ج)</label><input id="${prefix}_price_${id}" type="number" min="0" oninput="calcOrderTotal()"/></div>
-    <div><label class="field-label">إجمالي الصنف (ج)</label><input id="${prefix}_line_${id}" type="number" readonly style="background:var(--ink3);color:var(--gold);font-weight:700;"/></div>
-  </div>`;
+
+  const isEdit = prefix.startsWith("eo_prod");
+
+  if(isEdit){
+    // edit order — dropdown + يملي تلقائي زي الأوردر الجديد
+    div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id}</span><button class="remove-product-btn" onclick="document.getElementById('${prefix}_row_${id}').remove()">✕ حذف</button></div>
+    <div class="form-grid form-grid-3">
+      <div><label class="field-label">المنتج</label><select id="${prefix}_sku_${id}" class="sku-select" onchange="onEoProdSKUChange('${prefix}',${id})">${buildSKUOptions()}</select></div>
+      <div><label class="field-label">اللون</label><input id="${prefix}_color_${id}" placeholder="اللون"/></div>
+      <div><label class="field-label">المقاس</label><input id="${prefix}_size_${id}" placeholder="المقاس"/></div>
+      <div><label class="field-label">الكمية</label><input id="${prefix}_qty_${id}" type="number" value="1" min="1"/></div>
+      <div><label class="field-label">سعر الصنف (ج)</label><input id="${prefix}_line_${id}" type="number" value="0"/></div>
+    </div>`;
+  } else {
+    // new order — dropdown من المنتجات
+    div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id}</span><button class="remove-product-btn" onclick="document.getElementById('${prefix}_row_${id}').remove();calcOrderTotal()">✕ حذف</button></div>
+    <div class="form-grid form-grid-3">
+      <div><label class="field-label">المنتج</label><select id="${prefix}_sku_${id}" class="sku-select" onchange="onProdSKUChange('${prefix}',${id})">${buildSKUOptions()}</select></div>
+      <div><label class="field-label">اللون</label><input id="${prefix}_color_${id}" placeholder="اللون"/></div>
+      <div><label class="field-label">المقاس</label><input id="${prefix}_size_${id}" placeholder="المقاس"/></div>
+      <div><label class="field-label">الكمية</label><input id="${prefix}_qty_${id}" type="number" value="1" min="1" oninput="calcOrderTotal()"/></div>
+      <div><label class="field-label">سعر القطعة (ج)</label><input id="${prefix}_price_${id}" type="number" min="0" oninput="calcOrderTotal()"/></div>
+      <div><label class="field-label">إجمالي الصنف (ج)</label><input id="${prefix}_line_${id}" type="number" readonly style="background:var(--ink3);color:var(--gold);font-weight:700;"/></div>
+    </div>`;
+  }
   cont.appendChild(div);
+}
+
+function onEoProdSKUChange(prefix,id){
+  const sku  = document.getElementById(prefix+"_sku_"+id)?.value;
+  const prod = productsCache.find(p=>p.sku===sku||p.name===sku);
+  if(prod){
+    const c=document.getElementById(prefix+"_color_"+id);
+    const s=document.getElementById(prefix+"_size_"+id);
+    const l=document.getElementById(prefix+"_line_"+id);
+    if(c&&prod.color) c.value=prod.color;
+    if(s&&prod.size)  s.value=prod.size;
+    if(l&&prod.price) l.value=prod.price;
+  }
 }
 
 function onProdSKUChange(prefix,id){
@@ -2737,7 +3087,8 @@ function onProdSKUChange(prefix,id){
 
 function calcOrderTotal(){
   let subtotal=0;
-  document.querySelectorAll(".product-item").forEach(item=>{
+  // بس منتجات فورم الأوردر الجديد (of_) مش edit (eo_)
+  document.querySelectorAll("#of_products_container .product-item").forEach(item=>{
     const idMatch=item.id.match(/_row_(\d+)$/);if(!idMatch)return;
     const id=idMatch[1],prefix=item.id.replace(/_row_\d+$/,"");
     const qty=parseFloat(document.getElementById(prefix+"_qty_"+id)?.value||0)||0;
@@ -2880,15 +3231,22 @@ async function fetchAndFillEditOrder(orderId){
     ["name","phone","city","address","shipping","discount","note","status"].forEach(f=>{
       const el=document.getElementById("eo_"+f);if(el)el.value=o[f]||"";
     });
+    // طريقة الدفع
+    const pmEl=document.getElementById("eo_payment");
+    if(pmEl) pmEl.value=o.paymentMethod||o.payment_method||"cod";
     document.getElementById("eo_row_index").value=o.rowIndex||"";
     const cont=document.getElementById("eo_products_container");
     if(cont)cont.innerHTML="";
+    eoProductRowCounter=0; // ابدأ من 1 لكل أوردر
     (o.items||[]).forEach(item=>{
-      productRowCounter++;const id2=productRowCounter;
+      eoProductRowCounter++;const id2=eoProductRowCounter;
       const div=document.createElement("div");div.className="product-item";div.id="eo_prod_row_"+id2;
-      div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id2}</span><button class="remove-product-btn" onclick="document.getElementById('eo_prod_row_${id2}').remove()">✕</button></div>
+      // بني الـ options مع تحديد المنتج الحالي
+      const itemSku = item.sku||item.name||"";
+      const skuOpts = buildSKUOptionsWithSelected(itemSku);
+      div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id2}</span><button class="remove-product-btn" onclick="document.getElementById('eo_prod_row_${id2}').remove()">✕ حذف</button></div>
       <div class="form-grid form-grid-3">
-        <div><label class="field-label">المنتج</label><input id="eo_prod_name_${id2}" value="${esc(item.name||"")}"/></div>
+        <div><label class="field-label">المنتج</label><select id="eo_prod_sku_${id2}" class="sku-select" onchange="onEoProdSKUChange('eo_prod',${id2})">${skuOpts}</select></div>
         <div><label class="field-label">اللون</label><input id="eo_prod_color_${id2}" value="${esc(item.color||"")}"/></div>
         <div><label class="field-label">المقاس</label><input id="eo_prod_size_${id2}" value="${esc(item.size||"")}"/></div>
         <div><label class="field-label">الكمية</label><input id="eo_prod_qty_${id2}" type="number" value="${item.qty||1}"/></div>
@@ -2907,13 +3265,15 @@ async function submitEditOrder(){
   document.querySelectorAll("#eo_products_container .product-item").forEach(item=>{
     const idMatch=item.id.match(/_row_(\d+)$/);if(!idMatch)return;
     const id=idMatch[1];
+    const skuVal   = (document.getElementById("eo_prod_sku_"+id)?.value||"").trim();
+    const prodObj  = productsCache.find(p=>p.sku===skuVal||p.name===skuVal);
     products.push({
-      prod:(document.getElementById("eo_prod_prod_"+id)?.value||"").trim(),
-      sku:(document.getElementById("eo_prod_sku_"+id)?.value||"").trim(),
+      prod: prodObj?.name || skuVal,
+      sku:  prodObj?.sku  || skuVal,
       color:(document.getElementById("eo_prod_color_"+id)?.value||"").trim(),
-      size:(document.getElementById("eo_prod_size_"+id)?.value||"").trim(),
-      qty:parseInt(document.getElementById("eo_prod_qty_"+id)?.value||1)||1,
-      lineTotal:parseFloat(document.getElementById("eo_prod_line_"+id)?.value||0)||0,
+      size: (document.getElementById("eo_prod_size_"+id)?.value||"").trim(),
+      qty:  parseInt(document.getElementById("eo_prod_qty_"+id)?.value||1)||1,
+      lineTotal: parseFloat(document.getElementById("eo_prod_line_"+id)?.value||0)||0,
     });
   });
 
@@ -2933,6 +3293,7 @@ async function submitEditOrder(){
     total,
     note:document.getElementById("eo_note")?.value||"",
     status:document.getElementById("eo_status")?.value||"",
+    paymentMethod:document.getElementById("eo_payment")?.value||"cod",
     products:JSON.stringify(products)
   };
 
@@ -2947,8 +3308,18 @@ async function submitEditOrder(){
 
 /* ══ PRODUCTS ══ */
 async function loadProducts(){
-  const cached=loadCache(LS_PRODUCTS, 300000);
-  if(cached){ productsCache=cached; renderProductsTable(); updateProductKPIs(); }
+  // كاش بـ version — لو الشيت اتغير يتكسر تلقائي
+  const cached = (() => {
+    try {
+      const raw = localStorage.getItem(LS_PRODUCTS);
+      if(!raw) return null;
+      const {data, ts, lm} = JSON.parse(raw);
+      if(!data) return null;
+      if(Date.now() - ts > 300000) return null; // 5 دقايق max
+      return {data, lm};
+    } catch{ return null; }
+  })();
+  if(cached){ productsCache=cached.data; renderProductsTable(); updateProductKPIs(); }
   
   try{
     const res=await api("getProducts");
@@ -2968,69 +3339,157 @@ async function loadProducts(){
     sold: salesMap[skuKey] || salesMap[nameKey] || 0
         };
       });
-      saveCache(LS_PRODUCTS, productsCache);
+      // احفظ مع lastModified عشان نكشف التغييرات
+      try {
+        localStorage.setItem(LS_PRODUCTS, JSON.stringify({
+          data: productsCache,
+          ts: Date.now(),
+          lm: res.lastModified || Date.now()
+        }));
+      } catch(e){}
+      // لو الـ lastModified اختلف عن الكاش القديم — امسح كاش الأوردرات كمان
+      if(cached && res.lastModified && cached.lm !== res.lastModified){
+        localStorage.removeItem("wc_orders_cache_v1");
+      }
       renderProductsTable();
       updateProductKPIs();
     }
   }catch(e){}
 }
 
+// ── مساعد: جيب SKU مقترح من الـ cache ──
+function _nextSku(offset=0){
+  const existing = productsCache.map(p=>String(p.sku||"")).filter(s=>/^WC-/i.test(s));
+  const max = existing.length ? Math.max(...existing.map(v=>parseInt(v.replace(/^WC-/i,""))||0)) : 0;
+  return "WC-" + String(max + 1 + offset).padStart(4,"0");
+}
+
+let _apVariants = [];
+
 function openAddProductModal(){
-  // ولّد SKU مؤقت من الـ cache
-  const existingSkus = productsCache.map(p => String(p.sku || "")).filter(s => s.startsWith("WC-"));
-  const maxNum = existingSkus.length
-    ? Math.max(...existingSkus.map(v => parseInt(v.replace("WC-", "")) || 0))
-    : 0;
-  const suggestedSku = "WC-" + String(maxNum + 1).padStart(4, "0");
+  _apVariants = [];
 
   openModal(`
     <div style="margin-bottom:14px">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">➕ إضافة منتج جديد</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white)">➕ إضافة منتج جديد</div>
     </div>
-    <div class="form-grid form-grid-3">
-      <div><label class="field-label">SKU (تلقائي)</label><input id="ap_sku" value="${esc(suggestedSku)}" placeholder="WC-0001"/></div>
-      <div><label class="field-label">اسم المنتج *</label><input id="ap_name" placeholder="اسم المنتج"/></div>
+
+    <div class="form-grid form-grid-3" style="margin-bottom:14px;">
+      <div style="grid-column:span 2"><label class="field-label">اسم المنتج *</label><input id="ap_name" placeholder="مثال: ملحفه" oninput="_apRefreshSkus()"/></div>
       <div><label class="field-label">النوع</label><input id="ap_type" placeholder="ملابس / إكسسوار"/></div>
-      <div><label class="field-label">اللون</label><input id="ap_color" placeholder="اللون"/></div>
-      <div><label class="field-label">المقاس</label><input id="ap_size" placeholder="المقاس"/></div>
-      <div><label class="field-label">التكلفة (ج)</label><input id="ap_cost" type="number" value="0"/></div>
-      <div><label class="field-label">سعر البيع (ج)</label><input id="ap_price" type="number" value="0"/></div>
-      <div><label class="field-label">المخزون</label><input id="ap_stock" type="number" value="0"/></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn-gold" style="flex:1" onclick="_apSave()">💾 حفظ</button>
+
+    <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:12px;font-weight:700;color:var(--gold);">📋 الـ Variants</div>
+      <button onclick="_apAddRow()" style="font-size:11px;padding:4px 12px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:var(--gold);border-radius:4px;cursor:pointer;">➕ إضافة صف</button>
+    </div>
+
+    <div style="overflow-x:auto;margin-bottom:12px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;" id="ap_table">
+        <thead>
+          <tr style="color:var(--mist);border-bottom:1px solid var(--rule2);">
+            <th style="padding:6px 8px;text-align:right;min-width:90px">SKU</th>
+            <th style="padding:6px 8px;text-align:right;min-width:90px">اللون</th>
+            <th style="padding:6px 8px;text-align:right;min-width:110px">المقاس</th>
+            <th style="padding:6px 8px;text-align:right;min-width:80px">التكلفة</th>
+            <th style="padding:6px 8px;text-align:right;min-width:80px">سعر البيع</th>
+            <th style="padding:6px 8px;text-align:right;min-width:70px">المخزون</th>
+            <th style="padding:6px 8px;min-width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="ap_tbody"></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-gold" style="flex:1" onclick="_apSave()">💾 حفظ الكل</button>
       <button style="flex:1" onclick="closeModal()">إلغاء</button>
     </div>
     <div id="ap_err" style="margin-top:10px;color:var(--red);font-size:11px;display:none"></div>
-  `);
+  `, "700px");
 
-  window._apSave = async ()=>{
-    const err=document.getElementById("ap_err");
-    const payload={
-      sku:  (document.getElementById("ap_sku")?.value||"").trim(),
-      name: (document.getElementById("ap_name")?.value||"").trim(),
-      type: (document.getElementById("ap_type")?.value||"").trim(),
-      color:(document.getElementById("ap_color")?.value||"").trim(),
-      size: (document.getElementById("ap_size")?.value||"").trim(),
-      cost: n(document.getElementById("ap_cost")?.value),
-      price:n(document.getElementById("ap_price")?.value),
-      stock:n(document.getElementById("ap_stock")?.value),
+  // ابدأ بصف واحد فاضي
+  setTimeout(()=>{ _apAddRow(); document.getElementById("ap_name")?.focus(); }, 50);
+}
+
+function _apAddRow(){
+  const tbody = document.getElementById("ap_tbody");
+  if(!tbody) return;
+  const idx   = _apVariants.length;
+  const sku   = _nextSku(idx);
+  _apVariants.push({});
+  const tr = document.createElement("tr");
+  tr.id = "ap_row_"+idx;
+  tr.style.cssText = "border-bottom:1px solid var(--rule);";
+  tr.innerHTML = `
+    <td style="padding:4px 6px"><input id="ap_sku_${idx}"   value="${esc(sku)}"  style="width:100px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--gold);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px"><input id="ap_color_${idx}" placeholder="اللون" style="width:90px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--white);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px"><input id="ap_size_${idx}"  placeholder="المقاس" style="width:110px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--white);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px"><input id="ap_cost_${idx}"  type="number" value="350" style="width:75px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--white);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px"><input id="ap_price_${idx}" type="number" value="450" style="width:75px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--white);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px"><input id="ap_stock_${idx}" type="number" value="50"  style="width:65px;font-size:11px;background:var(--ink3);border:1px solid var(--rule2);border-radius:3px;color:var(--white);padding:4px 6px;"/></td>
+    <td style="padding:4px 6px;text-align:center"><button onclick="document.getElementById('ap_row_${idx}').remove();_apVariants.splice(${idx},1);" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:14px;">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function _apRefreshSkus(){
+  // لو SKU لسه الـ default — حدّثه بالاقتراح الجديد
+  _apVariants.forEach((_,idx)=>{
+    const el = document.getElementById("ap_sku_"+idx);
+    if(el && /^WC-/i.test(el.value)) el.value = _nextSku(idx);
+  });
+}
+
+window._apSave = async () => {
+  const err   = document.getElementById("ap_err");
+  const name  = (document.getElementById("ap_name")?.value||"").trim();
+  const type  = (document.getElementById("ap_type")?.value||"").trim();
+  if(!name){ err.textContent="⛔ اسم المنتج مطلوب"; err.style.display="block"; return; }
+
+  // اجمع بيانات كل الصفوف الموجودة في الجدول
+  const rows = [...document.querySelectorAll("#ap_tbody tr")];
+  const variants = rows.map(tr => {
+    const i = tr.id.replace("ap_row_","");
+    return {
+      sku:   (document.getElementById("ap_sku_"+i)?.value||"").trim(),
+      color: (document.getElementById("ap_color_"+i)?.value||"").trim(),
+      size:  (document.getElementById("ap_size_"+i)?.value||"").trim(),
+      cost:  n(document.getElementById("ap_cost_"+i)?.value),
+      price: n(document.getElementById("ap_price_"+i)?.value),
+      stock: n(document.getElementById("ap_stock_"+i)?.value),
     };
-    if(!payload.name){ err.textContent="⛔ اسم المنتج مطلوب"; err.style.display="block"; return; }
-    showLoading("جاري الحفظ…");
+  }).filter(v => v.color || v.size || v.sku);
+
+  if(!variants.length){ err.textContent="⛔ ضيف variant واحد على الأقل"; err.style.display="block"; return; }
+
+  showLoading(`جاري إضافة ${variants.length} variant…`);
+  let added=0, failed=0, lastSku="";
+  for(const v of variants){
     try{
-      const res=await api("addProduct", payload);
-      hideLoading();
-      if(res?.ok){
-        toast(`✅ تم إضافة المنتج — SKU: ${res.sku}`,"","ok");
-        closeModal();
-        await loadProducts();
-      }else{
-        err.textContent="❌ "+(res?.error||"فشل الحفظ");
-        err.style.display="block";
-      }
-    }catch(e){ hideLoading(); err.textContent="❌ خطأ اتصال"; err.style.display="block"; }
-  };
+      const res = await api("addProduct",{name,type,sku:v.sku,color:v.color,size:v.size,cost:v.cost,price:v.price,stock:v.stock});
+      if(res?.ok){ added++; lastSku=res.sku||v.sku; } else failed++;
+    }catch(e){ failed++; }
+  }
+  hideLoading();
+  if(added>0){
+    toast(`✅ تم إضافة ${added} variant${failed?" | ❌ فشل "+failed:""}`, name, "ok");
+    closeModal();
+    await loadProducts();
+  } else {
+    err.textContent = "❌ فشل حفظ المنتجات";
+    err.style.display = "block";
+  }
+};
+
+// بناء كل الـ combinations من الألوان والمقاسات
+function _buildCombos(colors, sizes){
+  if(!colors.length && !sizes.length) return [];
+  if(!colors.length) return sizes.map(s=>({color:"",size:s}));
+  if(!sizes.length)  return colors.map(c=>({color:c,size:""}));
+  const out=[];
+  colors.forEach(c => sizes.forEach(s => out.push({color:c,size:s})));
+  return out;
 }
 
 function updateProductKPIs(){
@@ -3111,6 +3570,22 @@ function renderProductsTable(){
     `;
     tbody.appendChild(tr);
   });
+
+  // صف الإجمالي
+  const totalStock = data.reduce((s,p)=>s+Number(p.stock||0),0);
+  const totalSold  = data.reduce((s,p)=>s+Number(p.sold||0),0);
+  const totalRet   = data.reduce((s,p)=>s+Number(p.returned||0),0);
+  const totTr = document.createElement("tr");
+  totTr.style.cssText="background:var(--ink3);border-top:2px solid var(--rule2);font-weight:700;";
+  totTr.innerHTML=`
+    <td colspan="4" style="padding:8px 12px;color:var(--gold);font-size:12px;">📊 الإجمالي — ${data.length} منتج</td>
+    <td></td><td></td><td></td>
+    <td class="mono" style="color:var(--white)">${fmt(totalSold)}</td>
+    <td class="mono" style="color:var(--white)">${fmt(totalRet)}</td>
+    <td class="mono" style="color:var(--gold);font-size:13px;">${fmt(totalStock)}</td>
+    <td colspan="2"></td>
+  `;
+  tbody.appendChild(totTr);
 }
 
 /* Optional: quick edit modal for product (client-side only, calls API if available) */
@@ -3184,21 +3659,48 @@ function onPurchaseSKUSelect(){
 }
 
 function calcPurchaseTotal(){
-  const qty=n(document.getElementById("pur_qty")?.value);
-  const unit=n(document.getElementById("pur_unit_price")?.value);
-  const total=qty*unit;
-  const t=document.getElementById("pur_total");
+  const qty   = n(document.getElementById("pur_qty")?.value);
+  const unit  = n(document.getElementById("pur_unit_price")?.value);
+  const total = qty * unit;
+  const t = document.getElementById("pur_total");
   if(t) t.value = total.toFixed(0);
+
+  // لو حالة جزئي — احسب المتبقي
+  const status = document.getElementById("pur_status")?.value;
+  if(status === "جزئي"){
+    const paid      = n(document.getElementById("pur_paid_now")?.value);
+    const remaining = total - paid;
+    const remEl     = document.getElementById("pur_remaining_display");
+    if(remEl) remEl.textContent = remaining > 0 ? `⚠️ المتبقي للمورد: ${fmt(remaining)} ج` : remaining < 0 ? "⛔ المدفوع أكبر من الإجمالي!" : "✅ مصفّى";
+  }
+}
+
+function onPurStatusChange(){
+  const status  = document.getElementById("pur_status")?.value;
+  const wrap    = document.getElementById("pur_partial_wrap");
+  if(!wrap) return;
+  if(status === "جزئي"){
+    wrap.style.display = "block";
+    // اقتراح: نص المدفوع = نص الإجمالي
+    const total = n(document.getElementById("pur_total")?.value);
+    const paidEl = document.getElementById("pur_paid_now");
+    if(paidEl && !paidEl.value) paidEl.value = "";
+    calcPurchaseTotal();
+  } else {
+    wrap.style.display = "none";
+  }
 }
 
 function resetPurchaseForm(){
-  ["pur_sku","pur_product_name","pur_qty","pur_unit_price","pur_total","pur_supplier","pur_notes"].forEach(id=>{
+  ["pur_sku","pur_product_name","pur_qty","pur_unit_price","pur_total","pur_supplier","pur_notes","pur_paid_now"].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     if(id==="pur_qty") el.value="1";
     else el.value="";
   });
   document.getElementById("pur_method").value="كاش";
   document.getElementById("pur_status").value="مدفوع";
+  const wrap = document.getElementById("pur_partial_wrap");
+  if(wrap) wrap.style.display="none";
   calcPurchaseTotal();
 }
 
@@ -3227,10 +3729,25 @@ async function submitPurchase(){
     const res=await api("addPurchase", payload);
     hideLoading();
     if(res?.ok){
+      // لو جزئي وفيه مبلغ مدفوع — سجّله تلقائي كدفعة في ذمم الموردين
+      const status  = payload.status;
+      const paidNow = n(document.getElementById("pur_paid_now")?.value);
+      if(status === "جزئي" && paidNow > 0){
+        try{
+          await api("addSupplierPayment",{
+            supplier:   payload.supplier,
+            invoiceRef: res.invNo || "",
+            amount:     paidNow,
+            method:     payload.method,
+            notes:      "دفعة أولية عند الشراء",
+          });
+        }catch(e){}
+      }
       toast("✅ تم حفظ المشتريات","","ok");
       resetPurchaseForm();
       await loadPurchases();
-      await loadProducts(); // stock refresh if server updates
+      await loadProducts();
+      await loadSupplierPayables();
       if(document.getElementById("panel-treasury")?.classList.contains("active")) loadTreasury();
     }else{
       toast("❌ فشل الحفظ",res?.error||"","err");
@@ -3261,15 +3778,43 @@ async function loadPurchases(){
 }
 
 function renderPurchasesTable(){
-  const tbody=document.getElementById("purTbody"); if(!tbody) return;
-  const q=(document.getElementById("pur_search")?.value||"").trim().toLowerCase();
-  let data=(purchasesCache||[]);
-  if(q){
-    data=data.filter(x=>{
-      const h=[x.invoiceId,x.date,x.supplier,x.sku,x.productName].join("|").toLowerCase();
-      return h.includes(q);
+  const tbody = document.getElementById("purTbody"); if(!tbody) return;
+  const q        = (document.getElementById("pur_search")?.value||"").trim().toLowerCase();
+  const dateFrom = (document.getElementById("pur_date_from")?.value||"").trim();
+  const dateTo   = (document.getElementById("pur_date_to")?.value||"").trim();
+
+  let data = (purchasesCache||[]);
+
+  // فلتر النص
+  if(q) data = data.filter(x=>[x.invoiceId,x.date,x.supplier,x.sku,x.productName].join("|").toLowerCase().includes(q));
+
+  // فلتر التاريخ
+  if(dateFrom || dateTo){
+    data = data.filter(x=>{
+      const d = (x.date||"").replace(/\//g,"-").slice(0,10);
+      if(dateFrom && d < dateFrom) return false;
+      if(dateTo   && d > dateTo)   return false;
+      return true;
     });
   }
+
+  // سامري
+  const sumEl = document.getElementById("pur_summary");
+  if(sumEl){
+    if(dateFrom || dateTo || q){
+      const total = data.reduce((s,x)=>s+Number(x.total||0),0);
+      const qty   = data.reduce((s,x)=>s+Number(x.qty||0),0);
+      sumEl.style.display="block";
+      sumEl.innerHTML = `📊 <b>${data.length}</b> فاتورة | إجمالي كمية: <b>${qty}</b> | إجمالي مبلغ: <b>${fmt(total)} ج</b>`;
+    } else {
+      sumEl.style.display="none";
+    }
+  }
+
+  // badge
+  const badge = document.getElementById("purTableBadge");
+  if(badge) badge.textContent = data.length + (purchasesCache?.length && data.length !== purchasesCache.length ? " / "+purchasesCache.length : "");
+
   tbody.innerHTML="";
   if(!data.length){
     tbody.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">لا يوجد مشتريات</div></div></td></tr>`;
@@ -3291,6 +3836,20 @@ function renderPurchasesTable(){
     `;
     tbody.appendChild(tr);
   });
+
+  // صف الإجمالي دايماً في الآخر
+  const grandTotal = data.reduce((s,x)=>s+Number(x.total||0),0);
+  const grandQty   = data.reduce((s,x)=>s+Number(x.qty||0),0);
+  const totTr = document.createElement("tr");
+  totTr.style.cssText="background:var(--ink3);border-top:2px solid var(--rule2);font-weight:700;";
+  totTr.innerHTML=`
+    <td colspan="5" style="padding:8px 12px;color:var(--gold);font-size:12px;">📊 الإجمالي — ${data.length} فاتورة</td>
+    <td class="mono" style="color:var(--white)">${fmt(grandQty)}</td>
+    <td></td>
+    <td class="mono td-amount" style="color:var(--gold);font-size:13px;">${fmt(grandTotal)} ج</td>
+    <td colspan="2"></td>
+  `;
+  tbody.appendChild(totTr);
 }
 
 /* ───────────────── Expenses ───────────────── */
@@ -3350,9 +3909,28 @@ async function loadExpenses(){
 
 function renderExpensesTable(){
   const tbody=document.getElementById("expTbody"); if(!tbody) return;
-  const ft=(document.getElementById("exp_filter_type")?.value||"").trim();
+  const ft       = (document.getElementById("exp_filter_type")?.value||"").trim();
+  const dateFrom = (document.getElementById("exp_date_from")?.value||"").trim();
+  const dateTo   = (document.getElementById("exp_date_to")?.value||"").trim();
   let data=(expensesCache||[]);
-  if(ft) data=data.filter(x=>String(x.type||"").trim()===ft);
+
+  if(ft)       data=data.filter(x=>String(x.type||"").trim()===ft);
+  if(dateFrom||dateTo) data=data.filter(x=>{
+    const d=(x.date||"").replace(/\//g,"-").slice(0,10);
+    if(dateFrom&&d<dateFrom)return false;
+    if(dateTo&&d>dateTo)return false;
+    return true;
+  });
+
+  // سامري
+  const sumEl=document.getElementById("exp_summary");
+  if(sumEl){
+    if(ft||dateFrom||dateTo){
+      const total=data.reduce((s,x)=>s+Number(x.amount||0),0);
+      sumEl.style.display="block";
+      sumEl.innerHTML=`📊 <b>${data.length}</b> مصروف | إجمالي: <b>${fmt(total)} ج</b>`;
+    } else { sumEl.style.display="none"; }
+  }
 
   tbody.innerHTML="";
   if(!data.length){
@@ -3371,59 +3949,727 @@ function renderExpensesTable(){
     `;
     tbody.appendChild(tr);
   });
+
+  // صف الإجمالي دايماً في الآخر
+  const grandTotal = data.reduce((s,x)=>s+Number(x.amount||0),0);
+  const totTr = document.createElement("tr");
+  totTr.style.cssText="background:var(--ink3);border-top:2px solid var(--rule2);font-weight:700;";
+  totTr.innerHTML=`
+    <td colspan="3" style="padding:8px 12px;color:var(--gold);font-size:12px;">📊 الإجمالي — ${data.length} مصروف</td>
+    <td class="mono td-amount" style="color:var(--gold);font-size:13px;">${fmt(grandTotal)} ج</td>
+    <td colspan="2"></td>
+  `;
+  tbody.appendChild(totTr);
 }
+
+/* ───────────────── Print Reports ───────────────── */
+function printReport(type){
+  const isExp = type==="expenses";
+  const data  = isExp ? (expensesCache||[]) : (purchasesCache||[]);
+
+  // طبّق الفلاتر الحالية
+  let filtered = [...data];
+  if(isExp){
+    const ft       = (document.getElementById("exp_filter_type")?.value||"").trim();
+    const dateFrom = (document.getElementById("exp_date_from")?.value||"").trim();
+    const dateTo   = (document.getElementById("exp_date_to")?.value||"").trim();
+    if(ft) filtered=filtered.filter(x=>x.type===ft);
+    if(dateFrom||dateTo) filtered=filtered.filter(x=>{
+      const d=(x.date||"").replace(/\//g,"-").slice(0,10);
+      if(dateFrom&&d<dateFrom)return false;
+      if(dateTo&&d>dateTo)return false;
+      return true;
+    });
+  } else {
+    const q        = (document.getElementById("pur_search")?.value||"").trim().toLowerCase();
+    const dateFrom = (document.getElementById("pur_date_from")?.value||"").trim();
+    const dateTo   = (document.getElementById("pur_date_to")?.value||"").trim();
+    if(q) filtered=filtered.filter(x=>[x.invoiceId,x.date,x.supplier,x.sku,x.productName].join("|").toLowerCase().includes(q));
+    if(dateFrom||dateTo) filtered=filtered.filter(x=>{
+      const d=(x.date||"").replace(/\//g,"-").slice(0,10);
+      if(dateFrom&&d<dateFrom)return false;
+      if(dateTo&&d>dateTo)return false;
+      return true;
+    });
+  }
+
+  const total = isExp
+    ? filtered.reduce((s,x)=>s+Number(x.amount||0),0)
+    : filtered.reduce((s,x)=>s+Number(x.total||0),0);
+
+  const title = isExp ? "تقرير المصاريف" : "تقرير المشتريات";
+  const now   = new Date().toLocaleDateString("ar-EG");
+
+  const headers = isExp
+    ? ["التاريخ","النوع","الوصف","المبلغ (ج)","طريقة الدفع","ملاحظات"]
+    : ["رقم الفاتورة","التاريخ","المورد","SKU","المنتج","الكمية","سعر الوحدة","الإجمالي","الدفع","الحالة"];
+
+  const rows = isExp
+    ? filtered.map(x=>`<tr><td>${esc(fmtDate(x.date||""))}</td><td>${esc(x.type||"")}</td><td>${esc(x.desc||"")}</td><td style="font-weight:700">${fmt(x.amount||0)}</td><td>${esc(x.method||"")}</td><td>${esc(x.notes||"")}</td></tr>`)
+    : filtered.map(x=>`<tr><td>${esc(x.invoiceId||"")}</td><td>${esc(fmtDate(x.date||""))}</td><td>${esc(x.supplier||"")}</td><td>${esc(x.sku||"")}</td><td>${esc(x.productName||"")}</td><td>${fmt(x.qty||0)}</td><td>${fmt(x.unitPrice||0)}</td><td style="font-weight:700">${fmt(x.total||0)}</td><td>${esc(x.method||"")}</td><td>${esc(x.status||"")}</td></tr>`);
+
+  const colspan = isExp ? 6 : 10;
+  const amtCol  = isExp ? 3 : 7;
+
+  const win = window.open("","_blank","width=900,height=700");
+  win.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    body{font-family:'Cairo',sans-serif;padding:24px;color:#111;font-size:12px;}
+    h1{font-size:20px;margin:0 0 4px}
+    .meta{color:#666;font-size:11px;margin-bottom:16px;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#1a1a2e;color:#fff;padding:8px;text-align:right;font-size:11px;}
+    td{padding:7px 8px;border-bottom:1px solid #eee;text-align:right;}
+    tr:nth-child(even){background:#f9f9f9;}
+    .total-row{background:#1a1a2e!important;color:#fff;font-weight:700;}
+    .total-row td{color:#f0c040;}
+    @media print{body{padding:0} button{display:none}}
+  </style></head><body>
+  <h1>🏢 WHITE CLOTHES — ${title}</h1>
+  <div class="meta">تاريخ الطباعة: ${now} | عدد السجلات: ${filtered.length}</div>
+  <table>
+    <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows.join("")}
+    <tr class="total-row">
+      <td colspan="${amtCol}">الإجمالي</td>
+      <td>${fmt(total)} ج</td>
+      <td colspan="${colspan - amtCol - 1}"></td>
+    </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:16px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 30px;background:#1a1a2e;color:#f0c040;border:none;border-radius:6px;cursor:pointer;font-size:14px;">🖨️ طباعة</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
+
+/* ══════════════════════════════════════════
+   SUPPLIER PAYABLES — ذمم الموردين
+   ══════════════════════════════════════════ */
+let suppliersCache = [];
+
+async function loadSupplierPayables(){
+  try{
+    const res = await api("getSupplierPayables");
+    if(!res?.ok) return;
+    suppliersCache = res.suppliers || [];
+    renderSuppliersTable();
+    updateSupplierKPIs();
+  } catch(e){ toast("خطأ في تحميل ذمم الموردين","","err"); }
+}
+
+function updateSupplierKPIs(){
+  const totalDebt  = suppliersCache.reduce((s,x)=>s+x.totalDebt,0);
+  const totalPaid  = suppliersCache.reduce((s,x)=>s+x.totalPaid,0);
+  const remaining  = suppliersCache.reduce((s,x)=>s+x.remaining,0);
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set("sup_total_debt", fmt(totalDebt)+" ج");
+  set("sup_total_paid", fmt(totalPaid)+" ج");
+  set("sup_remaining",  fmt(remaining)+" ج");
+  set("sup_count",      suppliersCache.length);
+  // badge على التاب
+  const withDebt = suppliersCache.filter(s=>s.remaining>0).length;
+  const badge = document.getElementById("tabSuppliersBadge");
+  if(badge) badge.textContent = withDebt;
+  const cardBadge = document.getElementById("sup_badge");
+  if(cardBadge){
+    cardBadge.textContent = withDebt + " موردين";
+    cardBadge.style.display = withDebt > 0 ? "inline-block" : "none";
+  }
+}
+
+function renderSuppliersTable(){
+  const tbody = document.getElementById("supTbody"); if(!tbody) return;
+  if(!suppliersCache.length){
+    tbody.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">مفيش ذمم مستحقة</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = suppliersCache.map(s => `
+    <tr style="cursor:pointer" onclick="openSupplierDetail('${esc(s.supplier)}')">
+      <td><b style="color:var(--gold)">${esc(s.supplier)}</b></td>
+      <td class="mono">${fmt(s.totalDebt)} ج</td>
+      <td class="mono" style="color:#27ae60">${fmt(s.totalPaid)} ج</td>
+      <td class="mono" style="color:${s.remaining>0?"var(--red)":"#27ae60"};font-weight:700">
+        ${s.remaining>0?"⚠️ "+fmt(s.remaining)+" ج":"✅ مصفّى"}
+      </td>
+      <td>
+        ${s.remaining>0?`<button class="btn-gold btn-sm" onclick="event.stopPropagation();openPaymentModal('${esc(s.supplier)}')">💳 سدّد</button>`:""}
+        <button class="btn-sm" style="margin-right:4px" onclick="event.stopPropagation();openSupplierDetail('${esc(s.supplier)}')">📋 كشف</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+// ── كشف حساب مورد ──
+function openSupplierDetail(supplierName){
+  const s = suppliersCache.find(x=>x.supplier===supplierName);
+  if(!s) return;
+
+  const invRows = (s.invoices||[]).map(inv=>`
+    <tr>
+      <td><b>${esc(inv.invoiceId)}</b></td>
+      <td>${esc(fmtDate(String(inv.date||"")))}</td>
+      <td>${esc(inv.product)}</td>
+      <td class="mono">${fmt(inv.total)} ج</td>
+      <td class="mono" style="color:#27ae60">${fmt(inv.paid)} ج</td>
+      <td class="mono" style="color:${inv.remaining>0?"var(--red)":"#27ae60"};font-weight:700">
+        ${inv.remaining>0?fmt(inv.remaining)+" ج":"✅"}
+      </td>
+      <td>${inv.remaining>0?`<button class="btn-gold btn-sm" onclick="openPaymentModal('${esc(supplierName)}','${esc(inv.invoiceId)}')">سدّد</button>`:""}</td>
+    </tr>
+  `).join("");
+
+  const payRows = (s.payments||[]).map(p=>`
+    <tr>
+      <td>${esc(p.payId)}</td>
+      <td>${esc(fmtDate(String(p.date||"")))}</td>
+      <td class="mono" style="color:#27ae60;font-weight:700">${fmt(p.amount)} ج</td>
+      <td>${esc(p.method)}</td>
+      <td>${esc(p.invoiceRef||"عام")}</td>
+      <td>${esc(p.notes)}</td>
+    </tr>
+  `).join("");
+
+  openModal(`
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white)">📋 كشف حساب — ${esc(supplierName)}</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="printSupplierReport('${esc(supplierName)}')" style="font-size:11px;padding:6px 12px;background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.3);color:#27ae60;border-radius:4px;cursor:pointer;">🖨️ طباعة</button>
+        <button class="btn-gold btn-sm" onclick="openPaymentModal('${esc(supplierName)}')">💳 سدّد دفعة</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:14px;">
+      <div style="flex:1;padding:10px;background:var(--ink3);border-radius:var(--r2);text-align:center;">
+        <div style="font-size:10px;color:var(--mist)">إجمالي الفواتير</div>
+        <div style="font-size:16px;font-weight:700;color:var(--gold)">${fmt(s.totalDebt)} ج</div>
+      </div>
+      <div style="flex:1;padding:10px;background:var(--ink3);border-radius:var(--r2);text-align:center;">
+        <div style="font-size:10px;color:var(--mist)">المدفوع</div>
+        <div style="font-size:16px;font-weight:700;color:#27ae60">${fmt(s.totalPaid)} ج</div>
+      </div>
+      <div style="flex:1;padding:10px;background:var(--ink3);border-radius:var(--r2);text-align:center;">
+        <div style="font-size:10px;color:var(--mist)">المتبقي</div>
+        <div style="font-size:16px;font-weight:700;color:${s.remaining>0?"var(--red)":"#27ae60"}">${s.remaining>0?fmt(s.remaining)+" ج":"✅ مصفّى"}</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px;">📄 الفواتير</div>
+    <div style="overflow-x:auto;margin-bottom:14px;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="color:var(--mist);border-bottom:1px solid var(--rule2);">
+          <th style="padding:5px;text-align:right">رقم</th><th style="padding:5px;text-align:right">التاريخ</th>
+          <th style="padding:5px;text-align:right">المنتج</th><th style="padding:5px;text-align:right">الفاتورة</th>
+          <th style="padding:5px;text-align:right">المدفوع</th><th style="padding:5px;text-align:right">المتبقي</th><th></th>
+        </tr></thead>
+        <tbody>${invRows||"<tr><td colspan='7' style='text-align:center;color:var(--mist);padding:10px'>لا يوجد</td></tr>"}</tbody>
+      </table>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px;">💳 الدفعات</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="color:var(--mist);border-bottom:1px solid var(--rule2);">
+          <th style="padding:5px;text-align:right">رقم</th><th style="padding:5px;text-align:right">التاريخ</th>
+          <th style="padding:5px;text-align:right">المبلغ</th><th style="padding:5px;text-align:right">طريقة</th>
+          <th style="padding:5px;text-align:right">فاتورة</th><th style="padding:5px;text-align:right">ملاحظة</th>
+        </tr></thead>
+        <tbody>${payRows||"<tr><td colspan='6' style='text-align:center;color:var(--mist);padding:10px'>لا يوجد دفعات بعد</td></tr>"}</tbody>
+      </table>
+    </div>
+  `, "750px");
+}
+
+// ── طباعة كشف حساب مورد ──
+function printSupplierReport(supplierName){
+  const s = suppliersCache.find(x=>x.supplier===supplierName);
+  if(!s) return;
+  const now = new Date().toLocaleDateString("ar-EG");
+
+  const invRows = (s.invoices||[]).map(inv=>`
+    <tr>
+      <td><b>${inv.invoiceId||""}</b></td>
+      <td>${fmtDate(String(inv.date||""))}</td>
+      <td>${inv.product||""}</td>
+      <td style="font-weight:700">${fmt(inv.total)} ج</td>
+      <td style="color:#27ae60">${fmt(inv.paid)} ج</td>
+      <td style="color:${inv.remaining>0?"#c0392b":"#27ae60"};font-weight:700">
+        ${inv.remaining>0? fmt(inv.remaining)+" ج" : "✅ مصفّى"}
+      </td>
+    </tr>
+  `).join("") || `<tr><td colspan="6" style="text-align:center;color:#999;padding:10px">لا يوجد فواتير</td></tr>`;
+
+  const payRows = (s.payments||[]).map(p=>`
+    <tr>
+      <td>${p.payId||""}</td>
+      <td>${fmtDate(String(p.date||""))}</td>
+      <td style="color:#27ae60;font-weight:700">${fmt(p.amount)} ج</td>
+      <td>${p.method||""}</td>
+      <td>${p.invoiceRef||"عام"}</td>
+      <td>${p.notes||""}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="6" style="text-align:center;color:#999;padding:10px">لا يوجد دفعات مسجّلة</td></tr>`;
+
+  const win = window.open("","_blank","width=860,height=720");
+  win.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+  <title>كشف حساب — ${supplierName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    body{font-family:'Cairo',sans-serif;padding:24px 32px;color:#111;font-size:12px;background:#fff;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #1a1a2e;}
+    .company{font-size:22px;font-weight:900;color:#1a1a2e;}
+    .sub{font-size:11px;color:#666;margin-top:2px;}
+    .supplier-name{font-size:18px;font-weight:900;color:#1a1a2e;}
+    .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;}
+    .kpi{border:1px solid #ddd;border-radius:8px;padding:12px 16px;text-align:center;}
+    .kpi-val{font-size:18px;font-weight:900;}
+    .kpi-lbl{font-size:10px;color:#666;margin-top:2px;}
+    .red{color:#c0392b;} .green{color:#27ae60;} .amber{color:#d4a017;}
+    h3{font-size:13px;font-weight:900;color:#1a1a2e;margin:16px 0 8px;padding-right:8px;border-right:3px solid #1a1a2e;}
+    table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+    th{background:#1a1a2e;color:#f0c040;padding:8px 10px;text-align:right;font-size:11px;font-weight:700;}
+    td{padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-size:11px;}
+    tr:nth-child(even) td{background:#f9f9f9;}
+    .total-row td{background:#1a1a2e!important;color:#f0c040;font-weight:700;}
+    .footer{margin-top:20px;padding-top:12px;border-top:1px solid #ddd;font-size:10px;color:#999;display:flex;justify-content:space-between;}
+    @media print{button{display:none!important}}
+  </style></head><body>
+
+  <div class="header">
+    <div>
+      <div class="company">🏢 WHITE CLOTHES</div>
+      <div class="sub">كشف حساب مورد</div>
+    </div>
+    <div style="text-align:left">
+      <div class="supplier-name">${supplierName}</div>
+      <div class="sub">تاريخ الطباعة: ${now}</div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-val amber">${fmt(s.totalDebt)} ج</div>
+      <div class="kpi-lbl">إجمالي الفواتير</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val green">${fmt(s.totalPaid)} ج</div>
+      <div class="kpi-lbl">إجمالي المدفوع</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val ${s.remaining>0?"red":"green"}">${s.remaining>0? fmt(s.remaining)+" ج":"✅ مصفّى"}</div>
+      <div class="kpi-lbl">الرصيد المتبقي</div>
+    </div>
+  </div>
+
+  <h3>📄 الفواتير (${(s.invoices||[]).length})</h3>
+  <table>
+    <thead><tr>
+      <th>رقم الفاتورة</th><th>التاريخ</th><th>المنتج</th>
+      <th>إجمالي الفاتورة</th><th>المدفوع</th><th>المتبقي</th>
+    </tr></thead>
+    <tbody>
+      ${invRows}
+      <tr class="total-row">
+        <td colspan="3">الإجمالي</td>
+        <td>${fmt(s.totalDebt)} ج</td>
+        <td>${fmt(s.totalPaid)} ج</td>
+        <td>${s.remaining>0? fmt(s.remaining)+" ج":"✅"}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>💳 سجل الدفعات (${(s.payments||[]).length})</h3>
+  <table>
+    <thead><tr>
+      <th>رقم الدفعة</th><th>التاريخ</th><th>المبلغ</th>
+      <th>طريقة الدفع</th><th>مقابل فاتورة</th><th>ملاحظات</th>
+    </tr></thead>
+    <tbody>
+      ${payRows}
+      ${(s.payments||[]).length?`<tr class="total-row"><td colspan="2">إجمالي المدفوع</td><td>${fmt(s.totalPaid)} ج</td><td colspan="3"></td></tr>`:""}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>White Clothes Management System</span>
+    <span>طُبع بتاريخ: ${now}</span>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;">
+    <button onclick="window.print()" style="padding:10px 30px;background:#1a1a2e;color:#f0c040;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-family:'Cairo',sans-serif;">🖨️ طباعة</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── سجّل دفعة ──
+function openPaymentModal(supplierName, invoiceRef=""){
+  const s = suppliersCache.find(x=>x.supplier===supplierName);
+  const remaining = s ? s.remaining : 0;
+
+  // خيارات الفواتير
+  const invOptions = s ? (s.invoices||[])
+    .filter(i=>i.remaining>0)
+    .map(i=>`<option value="${esc(i.invoiceId)}" ${i.invoiceId===invoiceRef?"selected":""}>${esc(i.invoiceId)} — متبقي: ${fmt(i.remaining)} ج</option>`)
+    .join("") : "";
+
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">💳 تسجيل دفعة — ${esc(supplierName)}</div>
+      ${remaining>0?`<div style="margin-top:4px;font-size:12px;color:var(--red)">⚠️ المتبقي: <b>${fmt(remaining)} ج</b></div>`:""}
+    </div>
+    <div class="form-grid form-grid-2" style="margin-bottom:14px;">
+      <div>
+        <label class="field-label">الفاتورة (اختياري)</label>
+        <select id="pay_inv_ref" style="width:100%">
+          <option value="">دفعة عامة للمورد</option>
+          ${invOptions}
+        </select>
+      </div>
+      <div><label class="field-label">المبلغ (ج) *</label>
+        <input id="pay_amount" type="number" min="0" placeholder="0"
+          value="${remaining>0?remaining:""}"
+          style="border-color:var(--gold)"/>
+      </div>
+      <div><label class="field-label">التاريخ</label>
+        <input id="pay_date" type="date" value="${new Date().toISOString().slice(0,10)}"/>
+      </div>
+      <div><label class="field-label">طريقة الدفع</label>
+        <select id="pay_method"><option>كاش</option><option>تحويل</option><option>شيك</option></select>
+      </div>
+      <div style="grid-column:span 2"><label class="field-label">ملاحظات</label>
+        <input id="pay_notes" placeholder="(اختياري)"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-gold" style="flex:1" onclick="_paySave('${esc(supplierName)}')">💾 حفظ الدفعة</button>
+      <button style="flex:1" onclick="closeModal()">إلغاء</button>
+    </div>
+    <div id="pay_err" style="margin-top:8px;color:var(--red);font-size:11px;display:none"></div>
+  `);
+}
+
+window._paySave = async (supplierName) => {
+  const err      = document.getElementById("pay_err");
+  const amount   = n(document.getElementById("pay_amount")?.value);
+  const invRef   = (document.getElementById("pay_inv_ref")?.value||"").trim();
+  const date     = (document.getElementById("pay_date")?.value||"").trim().replace(/-/g,"/");
+  const method   = (document.getElementById("pay_method")?.value||"كاش");
+  const notes    = (document.getElementById("pay_notes")?.value||"").trim();
+
+  if(!amount||amount<=0){ err.textContent="⛔ ادخل المبلغ"; err.style.display="block"; return; }
+
+  showLoading("جاري التسجيل…");
+  try{
+    const res = await api("addSupplierPayment",{
+      supplier: supplierName, invoiceRef: invRef,
+      amount, date, method, notes
+    });
+    hideLoading();
+    if(res?.ok){
+      toast("✅ تم تسجيل الدفعة","","ok");
+      closeModal();
+      await loadSupplierPayables();
+    } else {
+      err.textContent="❌ "+(res?.error||"فشل");
+      err.style.display="block";
+    }
+  } catch(e){ hideLoading(); err.textContent="❌ خطأ"; err.style.display="block"; }
+};
 
 /* ───────────────── Treasury ───────────────── */
 async function loadTreasury(){
   const cached=loadCache(LS_TREASURY, 300000);
-  if(cached){ renderTreasuryData(cached); }
+  if(cached){ window._lastTreasuryData=cached; renderTreasuryData(cached); }
   try{
     const res=await api("getTreasury");
     if(res?.ok&&res.data){
       saveCache(LS_TREASURY, res.data);
+      window._lastTreasuryData = res.data;
       renderTreasuryData(res.data);
     }
   }catch(e){}
 }
 
 function renderTreasuryData(d){
-  // نفس كود loadTreasury القديم بس بياخد d كـ parameter
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  const setColor = (id,c) => { const el=document.getElementById(id); if(el) el.style.color=c; };
+
+  // ══ اليوم ══
+  set("tr_today_sales",   fmt(d.todaySales||0)+" ج");
+  set("tr_today_orders",  fmt(d.todayOrders||0)+" أوردر");
+  set("tr_today_pur",     fmt(d.todayPurchases||0)+" ج");
+  set("tr_today_exp",     fmt(d.todayExpenses||0)+" ج");
+
+  // ══ رصيد الخزينة ══
+  const bal = n(d.cashBalance||0);
+  set("tr_cash_balance", fmt(Math.abs(bal))+" ج");
+  setColor("tr_cash_balance", bal>=0?"#27ae60":"#e74c3c");
+  const balLbl = document.getElementById("tr_cash_balance_lbl");
+  if(balLbl) balLbl.textContent = bal>=0 ? "✅ رصيد الخزينة الفعلي" : "⚠️ الخزينة في عجز";
+
+  // ══ P&L الكلي ══
+  const sales     = n(d.totalSales||0);
+  const purchases = n(d.totalPurchases||0);
+  const expenses  = n(d.totalExpenses||0);
+  const returns   = n(d.totalReturns||0);
+  const debt      = n(d.supplierDebt||0);
+  const netProfit = sales - purchases - expenses;
+  const margin    = sales>0 ? Math.round((netProfit/sales)*100) : 0;
+
+  // KPIs ثابتة مش بتتأثر بالفلتر
+  set("tr_shipping_cost", fmt(d.totalShipping||0)+" ج");
+  set("tr_inv_cost",      fmt(d.invCost||0)+" ج");
+  set("tr_inv_sale",      fmt(d.invSale||0)+" ج");
+  set("tr_out_stock",     fmt(d.outOfStock||0)+" منتج");
+  set("tr_low_stock",     fmt(d.lowStock||0)+" منتج");
+
+  // ذمم الموردين
+  const debtEl = document.getElementById("tr_supplier_debt");
+  if(debtEl){ debtEl.textContent = debt>0?fmt(debt)+" ج":"✅ لا يوجد"; debtEl.style.color=debt>0?"#e74c3c":"#27ae60"; }
+
+  // صافي الربح
+  const npEl = document.getElementById("tr_net_profit");
+  if(npEl){ npEl.textContent=fmt(Math.abs(netProfit))+" ج"; npEl.style.color=netProfit>=0?"#27ae60":"#e74c3c"; }
+  const mEl = document.getElementById("tr_margin");
+  if(mEl){ mEl.textContent="هامش: "+margin+"%"; mEl.style.color=margin>=0?"#27ae60":"#e74c3c"; }
+
+  // شريط الربح
+  const barEl=document.getElementById("tr_profit_bar"), pctEl=document.getElementById("tr_margin_pct");
+  const clamp=Math.max(0,Math.min(100,margin));
+  if(barEl){ barEl.style.width=clamp+"%"; barEl.style.background=margin>=0?"linear-gradient(90deg,#27ae60,#f0c040)":"linear-gradient(90deg,#e74c3c,#e67e22)"; }
+  if(pctEl){ pctEl.textContent=margin+"%"; pctEl.style.color=margin>=0?"#27ae60":"#e74c3c"; }
+
+  // آخر تحديث
+  const updEl=document.getElementById("tr_last_update");
+  if(updEl) updEl.textContent="آخر تحديث: "+new Date().toLocaleTimeString("ar-EG");
+
+  // ══ حفظ الأيام + تفعيل فلتر الشهر ══
+  window._treasuryDays = Array.isArray(d.monthly) ? d.monthly : [];
+  _updateTreasuryMonthLabel();
+  _updateTreasuryKPIsFromFilter();
+  renderTreasuryTable();
+}
+
+function renderTreasuryTable(){
+  const tb = document.getElementById("treasuryTbody"); if(!tb) return;
+  const days = window._treasuryDays || [];
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,"/");
+
+  const data = _trAll ? days : days.filter(r => {
+    const d = new Date(r.date.replace(/\//g,"-"));
+    return d.getMonth()===_trMonth && d.getFullYear()===_trYear;
+  });
+
+  // سامري
+  const sumEl = document.getElementById("tr_tbl_summary");
+  if(sumEl && data.length){
+    const tS=data.reduce((s,r)=>s+n(r.sales),0);
+    const tN=tS-data.reduce((s,r)=>s+n(r.purchases)+n(r.expenses),0);
+    sumEl.innerHTML=`${data.length} يوم | إيرادات: <b>${fmt(tS)} ج</b> | صافي: <b style="color:${tN>=0?"#27ae60":"#e74c3c"}">${fmt(tN)} ج</b>`;
+  } else if(sumEl) sumEl.innerHTML="";
+
+  if(!data.length){
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--mist)">لا يوجد بيانات</td></tr>`;
+    return;
+  }
+
+  let totOrd=0,totS=0,totP=0,totE=0,totR=0;
+  tb.innerHTML = data.map(r=>{
+    const net = n(r.sales)-n(r.purchases)-n(r.expenses);
+    const bal = n(r.balance||0);
+    const isToday = r.date === today;
+    totOrd+=n(r.orders);totS+=n(r.sales);totP+=n(r.purchases);totE+=n(r.expenses);
+    return`<tr style="${isToday?"background:rgba(201,168,76,.08);":""}">
+      <td class="td-date" style="${isToday?"color:var(--gold);font-weight:700":""}">
+        ${isToday?"⭐ ":""}${esc(fmtDate(r.date))}
+      </td>
+      <td class="mono">${fmt(r.orders||0)}</td>
+      <td class="mono" style="color:#27ae60;font-weight:700">${fmt(r.sales||0)} ج</td>
+      <td class="mono" style="color:#e74c3c">${fmt(r.purchases||0)} ج</td>
+      <td class="mono" style="color:#e67e22">${fmt(r.expenses||0)} ج</td>
+      <td class="mono" style="color:#9b59b6">${fmt(r.returns||0)} ج</td>
+      <td class="mono" style="color:${net>=0?"#27ae60":"#e74c3c"};font-weight:700">${fmt(net)} ج</td>
+      <td class="mono" style="color:${bal>=0?"#f0c040":"#e74c3c"};font-weight:900;font-size:13px;">${fmt(bal)} ج</td>
+    </tr>`;
+  }).join("");
+
+  // صف الإجمالي
+  const totNet=totS-totP-totE;
+  tb.innerHTML+=`<tr style="background:var(--ink3);border-top:2px solid var(--rule2);font-weight:800;">
+    <td style="color:var(--gold);padding:8px 12px;">📊 الإجمالي</td>
+    <td class="mono" style="color:var(--white)">${fmt(totOrd)}</td>
+    <td class="mono" style="color:#27ae60">${fmt(totS)} ج</td>
+    <td class="mono" style="color:#e74c3c">${fmt(totP)} ج</td>
+    <td class="mono" style="color:#e67e22">${fmt(totE)} ج</td>
+    <td class="mono" style="color:#9b59b6">${fmt(totR)} ج</td>
+    <td class="mono" style="color:${totNet>=0?"#27ae60":"#e74c3c"}">${fmt(totNet)} ج</td>
+    <td class="mono" style="color:var(--gold);font-size:14px">${fmt((data[0]?.balance)||0)} ج</td>
+  </tr>`;
+}
+/* ───────────────── Treasury Month Filter ───────────────── */
+let _trMonth = new Date().getMonth(); // 0-based
+let _trYear  = new Date().getFullYear();
+let _trAll   = false;
+
+const _MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+function setTreasuryMonth(dir){
+  if(dir==="all"){ _trAll=true; }
+  else {
+    _trAll=false;
+    if(dir==="prev"){ _trMonth--; if(_trMonth<0){_trMonth=11;_trYear--;} }
+    if(dir==="next"){ _trMonth++; if(_trMonth>11){_trMonth=0;_trYear++;} }
+  }
+  _updateTreasuryMonthLabel();
+  renderTreasuryTable();
+  _updateTreasuryKPIsFromFilter();
+}
+
+function _updateTreasuryMonthLabel(){
+  const lbl = document.getElementById("tr_month_label");
+  const btn = document.getElementById("tr_btn_all");
+  if(lbl) lbl.textContent = _trAll ? "كل الوقت" : _MONTHS_AR[_trMonth]+" "+_trYear;
+  if(btn) btn.style.background = _trAll ? "rgba(201,168,76,.2)" : "var(--ink3)";
+  if(btn) btn.style.color = _trAll ? "var(--gold)" : "var(--mist)";
+  if(btn) btn.style.borderColor = _trAll ? "rgba(201,168,76,.4)" : "var(--rule2)";
+}
+
+function _updateTreasuryKPIsFromFilter(){
+  const days = window._treasuryDays || [];
+  const data = _trAll ? days : days.filter(r => {
+    const d = new Date(r.date.replace(/\//g,"-"));
+    return d.getMonth()===_trMonth && d.getFullYear()===_trYear;
+  });
+  const tS=data.reduce((s,r)=>s+n(r.sales),0);
+  const tP=data.reduce((s,r)=>s+n(r.purchases),0);
+  const tE=data.reduce((s,r)=>s+n(r.expenses),0);
+  const tR=data.reduce((s,r)=>s+n(r.returns||0),0);
+  const tO=data.reduce((s,r)=>s+n(r.orders),0);
+  const tNet=tS-tP-tE;
+  const margin=tS>0?Math.round((tNet/tS)*100):0;
+
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set("tr_sales",        fmt(d.totalSales     ||0));
-  set("tr_purchases",    fmt(d.totalPurchases  ||0));
-  set("tr_expenses",     fmt(d.totalExpenses   ||0));
-  set("tr_shipping_cost",fmt(d.totalShipping   ||0));
-  set("tr_returns",      fmt(d.totalReturns    ||0));
-  const netProfit=n(d.totalSales)-n(d.totalPurchases)-n(d.totalExpenses);
-  set("tr_net_profit",fmt(netProfit));
-  const margin=n(d.totalSales)>0?Math.round((netProfit/n(d.totalSales))*100):0;
-  const mEl=document.getElementById("tr_margin");if(mEl)mEl.textContent="هامش: "+margin+"%";
-  set("tr_inv_cost",  fmt(d.invCost   ||0));
-  set("tr_inv_sale",  fmt(d.invSale   ||0));
-  set("tr_out_stock", fmt(d.outOfStock||0));
-  set("tr_low_stock", fmt(d.lowStock  ||0));
-  const tb=document.getElementById("treasuryTbody");
-  if(tb){
-    const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-    const rowsM=Array.isArray(d.monthly)?d.monthly:[];
-    tb.innerHTML=rowsM.map(r=>{
-      const gross=n(r.sales)-n(r.purchases);
-      const net=gross-n(r.expenses);
-      const mg=n(r.sales)>0?Math.round((gross/n(r.sales))*100):0;
-      return`<tr>
-        <td class="td-name">${esc(months[(r.month||1)-1]||r.month)}</td>
-        <td class="mono">${fmt(r.orders||0)}</td>
-        <td class="mono td-amount">${fmt(r.sales||0)}</td>
-        <td class="mono">${fmt(r.purchases||0)}</td>
-        <td class="mono">${fmt(r.expenses||0)}</td>
-        <td class="mono">${fmt(gross)}</td>
-        <td class="mono">${mg}%</td>
-        <td class="mono">${fmt(r.returns||0)}</td>
-        <td class="mono td-amount">${fmt(net)}</td>
-      </tr>`;
-    }).join("")||`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">لا يوجد بيانات</div></div></td></tr>`;
+  const setColor=(id,c)=>{const el=document.getElementById(id);if(el)el.style.color=c;};
+
+  set("tr_sales",    fmt(tS)+" ج");
+  set("tr_cost_total", fmt(tP+tE)+" ج");
+  set("tr_purchases",  fmt(tP)+" ج");
+  set("tr_expenses",   fmt(tE)+" ج");
+  set("tr_returns",    fmt(tR)+" ج");
+  set("tr_total_orders", fmt(tO)+" أوردر");
+
+  const npEl=document.getElementById("tr_net_profit");
+  if(npEl){npEl.textContent=fmt(Math.abs(tNet))+" ج";npEl.style.color=tNet>=0?"#27ae60":"#e74c3c";}
+  const mEl=document.getElementById("tr_margin");
+  if(mEl){mEl.textContent="هامش "+margin+"%";mEl.style.color=margin>=0?"#27ae60":"#e74c3c";}
+  const pctEl=document.getElementById("tr_margin_pct");
+  if(pctEl){pctEl.textContent=margin+"%";pctEl.style.color=margin>=0?"#27ae60":"#e74c3c";}
+  const barEl=document.getElementById("tr_profit_bar");
+  if(barEl){barEl.style.width=Math.max(0,Math.min(100,margin))+"%";}
+}
+
+/* ───────────────── Treasury Day Filter ───────────────── */
+function filterTreasuryDay(){
+  const d = window._lastTreasuryData;
+  if(!d) return;
+
+  const sel  = (document.getElementById("tr_day_filter")?.value||"").trim();
+  const lbl  = document.getElementById("tr_day_label");
+
+  if(!sel){
+    // رجّع أرقام اليوم الافتراضية من الـ API
+    document.getElementById("tr_today_sales").textContent  = fmt(d.todaySales||0)+" ج";
+    document.getElementById("tr_today_orders").textContent = fmt(d.todayOrders||0)+" أوردر";
+    document.getElementById("tr_today_pur").textContent    = fmt(d.todayPurchases||0)+" ج";
+    document.getElementById("tr_today_exp").textContent    = fmt(d.todayExpenses||0)+" ج";
+    if(lbl) lbl.textContent = "";
+    return;
+  }
+
+  // فلتر من الكاش المحلي
+  const selDate = sel.replace(/-/g,"/");
+  const matchDate = (raw) => {
+    if(!raw) return false;
+    const s = String(raw).slice(0,10).replace(/-/g,"/");
+    return s === selDate;
+  };
+
+  // حساب من ordersCache + purchasesCache + expensesCache
+  const delivered = (window.deliveryCache||[]).filter(o =>
+    String(o.status||"").trim() === "تم التسليم" && matchDate(o.date||o.orderDate)
+  );
+  const daySales  = delivered.reduce((s,o)=>s+n(o.total||o.bill||0)-n(o.shipping||0),0);
+  const dayOrders = delivered.length;
+  const dayPur    = (purchasesCache||[]).filter(p=>matchDate(p.date)).reduce((s,p)=>s+n(p.total||0),0);
+  const dayExp    = (expensesCache||[]).filter(e=>matchDate(e.date)).reduce((s,e)=>s+n(e.amount||0),0);
+
+  document.getElementById("tr_today_sales").textContent  = fmt(daySales)+" ج";
+  document.getElementById("tr_today_orders").textContent = fmt(dayOrders)+" أوردر";
+  document.getElementById("tr_today_pur").textContent    = fmt(dayPur)+" ج";
+  document.getElementById("tr_today_exp").textContent    = fmt(dayExp)+" ج";
+
+  if(lbl){
+    const d2 = new Date(sel);
+    lbl.textContent = "📅 "+d2.toLocaleDateString("ar-EG", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
   }
 }
+
+/* ───────────────── Treasury Archive ───────────────── */
+function openTreasuryArchive(){
+  const d = window._lastTreasuryData;
+  if(!d){ toast("حمّل الخزينة الأول","","warn"); return; }
+  const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+  const rowsM = Array.isArray(d.monthly) ? d.monthly : [];
+
+  const rows = rowsM.map(r=>{
+    const gross=n(r.sales)-n(r.purchases);
+    const net=gross-n(r.expenses)-n(r.returns||0);
+    const mg=n(r.sales)>0?Math.round((gross/n(r.sales))*100):0;
+    return`<tr>
+      <td style="font-weight:700">${esc(months[(r.month||1)-1]||r.month)}</td>
+      <td class="mono">${fmt(r.orders||0)}</td>
+      <td class="mono" style="color:#27ae60">${fmt(r.sales||0)} ج</td>
+      <td class="mono" style="color:#e74c3c">${fmt(r.purchases||0)} ج</td>
+      <td class="mono" style="color:#e67e22">${fmt(r.expenses||0)} ج</td>
+      <td class="mono" style="font-weight:700">${fmt(gross)} ج</td>
+      <td class="mono" style="color:${mg>=0?"#27ae60":"#e74c3c"}">${mg}%</td>
+      <td class="mono" style="color:#9b59b6">${fmt(r.returns||0)} ج</td>
+      <td class="mono" style="color:${net>=0?"#27ae60":"#e74c3c"};font-weight:800">${fmt(net)} ج</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--mist)">لا يوجد بيانات</td></tr>`;
+
+  const win = window.open("","_blank","width=1000,height=700");
+  win.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+  <title>أرشيف الخزينة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+    body{font-family:'Cairo',sans-serif;padding:24px 32px;color:#111;font-size:12px;}
+    h1{font-size:22px;font-weight:900;margin:0 0 4px}
+    .meta{color:#666;font-size:11px;margin-bottom:20px;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#1a1a2e;color:#f0c040;padding:9px 12px;text-align:right;font-size:11px;}
+    td{padding:8px 12px;border-bottom:1px solid #eee;text-align:right;}
+    tr:nth-child(even) td{background:#f9f9f9;}
+    .total-row td{background:#1a1a2e!important;color:#f0c040;font-weight:900;}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h1>🏢 WHITE CLOTHES — أرشيف الأداء الشهري</h1>
+  <div class="meta">طُبع: ${new Date().toLocaleDateString("ar-EG")} | ${rowsM.length} شهر</div>
+  <table>
+    <thead><tr><th>الشهر</th><th>الأوردرات</th><th>المبيعات</th><th>المشتريات</th><th>المصاريف</th><th>الربح الإجمالي</th><th>هامش%</th><th>المرتجعات</th><th>صافي الربح</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="margin-top:16px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 30px;background:#1a1a2e;color:#f0c040;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-family:'Cairo',sans-serif;">🖨️ طباعة</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
 /* ───────────────── UI fixes ───────────────── */
 
 /* ✅ status select: show courier bar only for “تم الشحن” */
@@ -3490,9 +4736,34 @@ function init(){
 
   // ── sync في الخلفية بعد ثانية ──
   setTimeout(()=>refreshAll(true), 1000);
-  
+
+  // ── preload كل الصفحات في الخلفية بعد 3 ثواني ──
+  setTimeout(preloadAllTabs, 3000);
+
   // ── تحديث دوري ──
   setInterval(()=>refreshAll(false), 15000);
+}
+
+/* ════════════════════════════════════════════════════════
+   PRELOAD — بيحمّل كل الصفحات في الخلفية عشان تفتح فوراً
+   ════════════════════════════════════════════════════════ */
+async function preloadAllTabs(){
+  // حمّل واحدة واحدة بفاصل عشان ما نحملش الـ API دفعة واحدة
+  await _preloadStep("products",  ()=>!productsCache.length,  loadProducts);
+  await _preloadStep("purchases", ()=>!purchasesCache.length, loadPurchases);
+  await _preloadStep("expenses",  ()=>!expensesCache.length,  loadExpenses);
+  await _preloadStep("treasury",  ()=>true,                   loadTreasury);
+  await _preloadStep("couriers",  ()=>!_couriersData.length,  loadCouriersPage);
+}
+
+async function _preloadStep(name, needsLoad, loadFn){
+  try{
+    if(!needsLoad()) return; // محمّلة بالفعل
+    await new Promise(res=>setTimeout(res,800)); // فاصل 800ms بين كل طلب
+    await loadFn();
+  } catch(e){
+    // preload صامت — لو فشل مش مشكلة
+  }
 }
 
 // ضيفه في آخر init() قبل القفلة
@@ -3816,6 +5087,17 @@ function renderCourierKPIs(){
 function courierRatingColor(rate){ return rate<=5?"#27ae60":rate<=15?"#f39c12":"#e74c3c"; }
 function courierRatingLabel(rate){ return rate<=5?"ممتاز ⭐":rate<=15?"متوسط":"مرتفع ⚠️"; }
 
+let _courierFilter = "all";
+
+function filterCourierCards(f){
+  _courierFilter = f;
+  ["all","active","paused"].forEach(k=>{
+    const btn = document.getElementById("cf_"+k);
+    if(btn) btn.classList.toggle("active", k===f);
+  });
+  renderCourierCards();
+}
+
 function renderCourierCards(){
   const el = document.getElementById("couriers_cards");
   if(!el) return;
@@ -3824,7 +5106,21 @@ function renderCourierCards(){
     return;
   }
 
-  el.innerHTML = _couriersData.map((c,idx) => {
+  const filtered = _couriersData.filter(c=>{
+    if(_courierFilter==="active") return c.active!==false;
+    if(_courierFilter==="paused") return c.active===false;
+    return true;
+  });
+
+  if(!filtered.length){
+    const msg = _courierFilter==="paused" ? "مفيش مناديب موقوفين" : "مفيش مناديب نشطين";
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--mist)">${msg}</div>`;
+    return;
+  }
+
+  // استخدم filtered بدل _couriersData
+  el.innerHTML = filtered.map((c,_localIdx) => {
+    const idx = _couriersData.indexOf(c); // الـ idx الحقيقي للـ API
     const total  = (c.delivered||0) + (c.returned||0);
     const retRate= total>0 ? ((c.returned||0)/total*100).toFixed(1) : "0.0";
     const delRate= total>0 ? ((c.delivered||0)/total*100).toFixed(1) : "0.0";
@@ -3881,7 +5177,7 @@ function renderCourierCards(){
       <!-- Ship collected + last ship -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--gold);font-weight:700;">💰 ${fmt(c.ship_collected||0)} ج شحن محصّل</div>
-        ${c.last_ship?`<div style="font-size:9px;color:var(--mist)">آخر شحنة: ${esc(c.last_ship)}</div>`:""}
+        ${c.last_ship?`<div style="font-size:9px;color:var(--mist)">آخر شحنة: ${fmtDate(c.last_ship)}</div>`:""}
       </div>
 
       <!-- Actions -->
@@ -3947,10 +5243,10 @@ async function loadCourierArchive(){
       <td>${r.courier?`<span class="courier-chip" style="font-size:10px">${esc(r.courier)}</span>`:
         `<span style="color:var(--rule2);font-size:11px">—</span>`}</td>
       <td style="font-size:11px;color:var(--mist);text-align:center;">${r.shipDate?
-        `<div style="font-weight:600;color:var(--silver)">${esc(r.shipDate)}</div>`:
+        `<div style="font-weight:600;color:var(--silver)">${fmtDate(r.shipDate)}</div>`:
         `<span style="color:var(--rule2)">—</span>`}</td>
       <td style="font-size:11px;text-align:center;">${r.delivDate?
-        `<div style="color:#27ae60;font-weight:600">${esc(r.delivDate)}</div>`:
+        `<div style="color:#27ae60;font-weight:600">${fmtDate(r.delivDate)}</div>`:
         `<span style="color:var(--rule2)">—</span>`}</td>
       <td class="td-amount" style="font-weight:700;">${fmt(r.shipping||0)}</td>
       <td>${statusBadge(r.status)}</td>
@@ -4064,19 +5360,18 @@ async function doToggleCourier(idx){
   if(!c) return;
   showLoading();
   const res = await api("toggleCourier",{sheetRow:c.sheetRow}).catch(()=>null);
-  hideLoading();
-  if(!res?.ok){ toast("❌ فشل","","err"); return; }
+  if(!res?.ok){ hideLoading(); toast("❌ فشل","","err"); return; }
 
-  // حدّث الـ cache فوراً بدون ما تستنى reload
-  _couriersData[idx] = {...c, active: res.active};
+  toast(res.active?"✅ تم التفعيل":"🔴 تم الإيقاف", c.name, "ok");
 
-  // حدّث قايمة المناديب في نوافذ الشحن (courier bar)
+  // reload كامل من الـ API عشان نضمن الحالة الصح
+  _couriersData = [];
+  await loadCouriersPage();
+
+  // حدّث قايمة الشحن
   const activeNames = _couriersData.filter(x=>x.active!==false).map(x=>x.name);
   localStorage.setItem(LS_COURIERS, JSON.stringify(activeNames));
   renderCourierBar();
-
-  toast(res.active?"✅ تم التفعيل":"🔴 تم الإيقاف", c.name, "ok");
-  loadCouriersPage(); // يعيد تحميل الصفحة للإحصائيات
 }
 
 </script>
