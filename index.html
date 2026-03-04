@@ -1831,24 +1831,44 @@ function updateDashboard(all){
 
 /* ── RENDER MY ORDERS ── */
 function quickActionBtn(r){
-  const s=String(r.status||"").trim(), id=String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
-  
-  const printBtn=`<button class="qa-btn" style="border-color:rgba(52,152,219,.3);color:var(--blue)" onclick="printInvoice('${id}')">🧾 فاتورة</button>`;
-  
-  if(s===""||s==="جديد"||s.toLowerCase()==="new")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button>${printBtn}</div>`;
-  if(s==="تحت الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button>${printBtn}</div>`;
-  if(s==="تم الطباعة")return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button>${printBtn}</div>`;
-  if(s==="تم الشحن")return`<div class="qa-wrap">
-    <button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button>
-    <button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️ كامل</button>
-    <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ جزئي</button>
-    ${printBtn}
-  </div>`;
-  if(s==="تم التسليم")return`<div class="qa-wrap">
-    <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع جزئي</button>
-    ${printBtn}
-  </div>`;
-  if(isCancelledStatus(s))return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button>${printBtn}</div>`;
+  const s  = String(r.status||"").trim();
+  const id = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
+
+  const printBtn = `<button class="qa-btn" style="border-color:rgba(52,152,219,.3);color:var(--blue)" onclick="printInvoice('${id}')">🧾 فاتورة</button>`;
+
+  if(s===""||s==="جديد"||s.toLowerCase()==="new")
+    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button>${printBtn}</div>`;
+
+  if(s==="تحت الطباعة")
+    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button>${printBtn}</div>`;
+
+  if(s==="تم الطباعة")
+    return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button>${printBtn}</div>`;
+
+  if(s==="تم الشحن")
+    return`<div class="qa-wrap">
+      <button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button>
+      <button class="qa-btn qa-ret"  onclick="quickUpdate('${id}','مرتجع')">↩️ كامل</button>
+      <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ جزئي</button>
+      ${printBtn}
+    </div>`;
+
+  if(s==="تم التسليم")
+    return`<div class="qa-wrap">
+      <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع جزئي</button>
+      ${printBtn}
+    </div>`;
+
+  if(s==="مرتجع جزئي")
+    return`<div class="qa-wrap">
+      <button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️ مرتجع كامل</button>
+      <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع إضافي</button>
+      ${printBtn}
+    </div>`;
+
+  if(isCancelledStatus(s))
+    return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button>${printBtn}</div>`;
+
   return`<div class="qa-wrap">${printBtn}</div>`;
 }
 
@@ -1893,98 +1913,57 @@ function updateToggleBtn(){const btn=document.getElementById("toggleAllBtn");if(
 
 /* ── QUICK UPDATE ── */
 async function quickUpdate(orderId,status){
-  const id=String(orderId);
-  console.log("quickUpdate id:", id, "| rows ids:", rows.map(r=>String(r.orderId||r.id||"")));
-  
-  // حدّث الـ cache مع التحصيل
-  const updateRow = r => {
-  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
-  const cid = id.trim().replace(/\.0+$/,"");
-  if (rid !== cid) return r;
-  
-  const updated = {...r, status};
-  
-  if (status === "مرتجع") {
-    updated.subtotal = 0;
-    updated.partialReturn = 0;
-  } else if (status === "الغاء") {
-    updated.subtotal = 0;
-    updated.partialReturn = 0;
-  } else if (status === "جديد" || status === "") {
-    const original = allCache.find(x => 
-      String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
-    );
-    if (original) {
-      updated.subtotal = original.subtotal;
-      updated.partialReturn = 0;
-    }
-  }
-  
-  return updated;
-};
-  let firstSeen = false;
-allCache = allCache.map(r => {
-  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
-  const cid = id.trim().replace(/\.0+$/,"");
-  if (rid !== cid) return r;
-  const updated = {...r, status};
-  if (!firstSeen) {
-    // الصف الأول بس يتحسب
-    firstSeen = true;
-    if (status === "مرتجع" || status === "الغاء") {
-      updated.subtotal = 0;
-      updated.partialReturn = 0;
-    } else if (status === "جديد" || status === "") {
-      const original = allCache.find(x =>
-        String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
-      );
-      if (original) { updated.subtotal = original.subtotal; updated.partialReturn = 0; }
-    }
-  } else {
-    // الصفوف التانية — صفّر التحصيل عشان متتحسبش مرتين
-    updated.subtotal = 0;
-    updated.partialReturn = 0;
-  }
-  return updated;
-});
+  const id  = String(orderId).trim().replace(/\.0+$/,"");
+  const cid = id;
 
-firstSeen = false;
-rows = rows.map(r => {
-  const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
-  const cid = id.trim().replace(/\.0+$/,"");
-  if (rid !== cid) return r;
-  const updated = {...r, status};
-  if (!firstSeen) {
-    firstSeen = true;
-    if (status === "مرتجع" || status === "الغاء") {
-      updated.subtotal = 0;
-      updated.partialReturn = 0;
-    } else if (status === "جديد" || status === "") {
-      const original = allCache.find(x =>
-        String(x.orderId||x.id||"").trim().replace(/\.0+$/,"") === cid
-      );
-      if (original) { updated.subtotal = original.subtotal; updated.partialReturn = 0; }
-    }
-  } else {
-    updated.subtotal = 0;
-    updated.partialReturn = 0;
-  }
-  return updated;
-});
-  
-  saveCachedData(allCache);render();toast(status,"Order "+id,"ok",2200);
+  // snapshot للـ rollback
+  const prevCache = allCache.map(r=>({...r}));
+  const prevRows  = rows.map(r=>({...r}));
+
+  // حدّث الـ cache فوراً (optimistic)
+  const applyUpdate = arr => {
+    let firstSeen = false;
+    return arr.map(r => {
+      const rid = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
+      if(rid !== cid) return r;
+      const updated = {...r, status};
+      if(!firstSeen){
+        firstSeen = true;
+        if(status==="مرتجع"||status==="الغاء"){
+          updated.subtotal=0; updated.partialReturn=0;
+        } else if(status==="جديد"||status===""){
+          const orig = allCache.find(x=>String(x.orderId||x.id||"").trim().replace(/\.0+$/,"")=== cid);
+          if(orig){ updated.subtotal=orig.subtotal; updated.partialReturn=0; }
+        }
+      } else {
+        updated.subtotal=0; updated.partialReturn=0;
+      }
+      return updated;
+    });
+  };
+
+  allCache = applyUpdate(allCache);
+  rows     = applyUpdate(rows);
+  saveCachedData(allCache);
+  render();
+  toast(status, "Order "+id, "ok", 2200);
   if(isCancelledStatus(status)){const m=getDupTimes();delete m[id];saveDupTimes(m);}
-  
-  
+
   try{
     const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
-    if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}
-    if(status==="مرتجع"){
-      api("returnStock",{orderId:id}).catch(()=>{});
+    if(!res?.ok){
+      allCache=prevCache; rows=prevRows;
+      saveCachedData(allCache); render();
+      toast("فشل التحديث","","err"); return;
     }
+    if(status==="مرتجع") api("returnStock",{orderId:id}).catch(()=>{});
     refreshAll(true);
   }
-  catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
+  catch(e){
+    allCache=prevCache; rows=prevRows;
+    saveCachedData(allCache); render();
+    toast("خطأ في الاتصال","","err");
+  }
 }
 
 async function quickShip(orderId){
@@ -3395,12 +3374,25 @@ async function quickPartialReturn(orderId){
     </div>
   `).join("");
 
+  const orderShipping = res.order.shipping || 0;
+
   openModal(`
     <div style="margin-bottom:14px">
       <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع جزئي — ${esc(orderId)}</div>
       <div style="font-size:11px;color:var(--mist);margin-top:4px">✅ علّم المنتجات اللي رجعت</div>
     </div>
     <div id="ret_items">${itemsHtml}</div>
+
+    <!-- خانة الشحن على الشركة -->
+    <div style="margin-top:10px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="ret_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
+        <div style="font-size:10px;color:var(--mist);">العميل رفض يدفع الشحن — هيتحسب خسارة عليك</div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(orderShipping)} ج</div>
+    </div>
+
     <div id="ret_err" style="color:var(--red);font-size:11px;margin-top:8px;display:none"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn-gold" style="flex:1" onclick="_retSave()">✅ تأكيد المرتجع</button>
@@ -3412,27 +3404,33 @@ async function quickPartialReturn(orderId){
     const err=document.getElementById("ret_err");
     const returned=items.filter((_,i)=>document.getElementById("ret_"+i)?.checked);
     if(!returned.length){err.textContent="⛔ اختر منتج واحد على الأقل";err.style.display="block";return;}
+    const shipOnCompany = document.getElementById("ret_ship_company")?.checked || false;
+    const shippingLoss  = shipOnCompany ? Number(orderShipping) : 0;
     closeModal();
     showLoading("جاري الحفظ…");
     try{
       const res=await api("partialReturn",{
         orderId,
-        returnedItems:JSON.stringify(returned)
+        returnedItems:JSON.stringify(returned),
+        shippingOnCompany: shipOnCompany ? "1" : "0",
+        shippingLoss
       });
       hideLoading();
       if(res?.ok){
-        const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0);
+        // التحصيل = المنتجات المرتجعة + الشحن لو على الشركة
+        const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0) + shippingLoss;
         allCache = allCache.map(r=>{
           if(String(r.orderId||r.id||"")!==String(orderId)) return r;
-          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt)};
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer"};
         });
         rows = rows.map(r=>{
           if(String(r.orderId||r.id||"")!==String(orderId)) return r;
-          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt)};
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer"};
         });
         saveCachedData(allCache);
         render();
-        toast("✅ تم تسجيل المرتجع الجزئي","مرتجع: "+fmt(retAmt)+" ج","ok");
+        const msg = shipOnCompany ? `مرتجع: ${fmt(retAmt - shippingLoss)} ج + شحن: ${fmt(shippingLoss)} ج` : `مرتجع: ${fmt(retAmt)} ج`;
+        toast("✅ تم تسجيل المرتجع الجزئي", msg, "ok");
         refreshAll(true);
       } else toast("❌ فشل",res?.error||"","err");
     }catch(e){hideLoading();toast("❌ خطأ","","err");}
