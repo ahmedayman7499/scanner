@@ -919,6 +919,9 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
         <span class="sd-btn-label">المصاريف</span>
       </button>
 
+      <button class="sd-btn" id="sd_couriers" onclick="sdNav('couriers',this)">
+        <span class="sd-icon">🚴</span><span class="sd-label">المناديب</span>
+      </button>
       <button class="sd-btn" id="sd_treasury" onclick="sdNav('treasury',this)">
         <span class="sd-btn-icon">💰</span>
         <span class="sd-btn-label">الخزينة</span>
@@ -1027,6 +1030,7 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <button class="tab-btn" onclick="switchTab('purchases',this)">🛒 المشتريات</button>
     <button class="tab-btn" onclick="switchTab('expenses',this)">💸 المصاريف</button>
     <button class="tab-btn" onclick="switchTab('treasury',this)">💰 الخزينة</button>
+    <button class="tab-btn" onclick="switchTab('couriers',this)">🚴 المناديب</button>
     
     <button
   class="tab-btn"
@@ -1384,6 +1388,92 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
       <div class="kpi-tile kt-green"><div class="kpi-icon">💎</div><div class="kpi-val kv-green" id="tr_inv_sale">0</div><div class="kpi-lbl">قيمة المخزون (بيع)</div></div>
       <div class="kpi-tile kt-red"><div class="kpi-icon">❌</div><div class="kpi-val kv-red" id="tr_out_stock">0</div><div class="kpi-lbl">منتجات نفدت</div></div>
       <div class="kpi-tile kt-amber"><div class="kpi-icon">⚠️</div><div class="kpi-val kv-amber" id="tr_low_stock">0</div><div class="kpi-lbl">منتجات قليلة</div></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="tab-panel" id="panel-couriers">
+  <div class="kpi-grid" id="couriers_kpi" style="margin-bottom:14px;"></div>
+  <div id="couriers_cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:18px;"></div>
+  <!-- ══ أرشيف الشحنات ══ -->
+  <div style="background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r2);overflow:hidden;margin-top:4px;">
+
+    <!-- Header strip -->
+    <div style="padding:16px 18px 0;border-bottom:1px solid var(--rule);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:3px;height:22px;background:var(--gold);border-radius:2px;"></div>
+          <span style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:800;color:var(--white);">أرشيف الشحنات</span>
+          <span id="archive_count_badge" style="display:none;font-size:10px;background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:1px 8px;font-weight:700;"></span>
+        </div>
+        <button class="btn-gold" onclick="openAddCourierModal()" style="font-size:11px;padding:5px 12px;">➕ مندوب جديد</button>
+      </div>
+
+      <!-- فلاتر -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;padding-bottom:14px;">
+        <div>
+          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">المندوب</div>
+          <select id="archive_courier_filter" onchange="loadCourierArchive()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--silver);font-family:'Cairo',sans-serif;">
+            <option value="">الكل</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">الحالة</div>
+          <select id="archive_status_filter" onchange="loadCourierArchive()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--silver);font-family:'Cairo',sans-serif;">
+            <option value="">الكل</option>
+            <option value="تم الشحن">🚚 تم الشحن</option>
+            <option value="تم التسليم">✅ تم التسليم</option>
+            <option value="مرتجع">↩️ مرتجع</option>
+            <option value="مرتجع جزئي">↩️ مرتجع جزئي</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">من تاريخ</div>
+          <input id="archive_from" type="date" onchange="loadCourierArchive()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--silver);box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">إلى تاريخ</div>
+          <div style="display:flex;gap:6px;">
+            <input id="archive_to" type="date" onchange="loadCourierArchive()" style="flex:1;font-size:11px;padding:6px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--silver);">
+            <button onclick="loadCourierArchive()" style="padding:6px 10px;border-radius:var(--r2);border:1px solid var(--rule);background:rgba(255,255,255,.05);color:var(--silver);font-size:12px;cursor:pointer;">🔄</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- mini stats bar -->
+    <div id="courier_archive_footer" style="display:none;padding:10px 18px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--rule);gap:0;"></div>
+
+    <!-- loading -->
+    <div id="courier_archive_loading" style="display:none;padding:32px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;opacity:.6;">⏳</div>
+      <div style="font-size:12px;color:var(--mist);">جاري تحميل الأرشيف…</div>
+    </div>
+
+    <!-- table -->
+    <div class="tbl-wrap" style="margin:0;border-radius:0;border:none;">
+      <table style="border-radius:0;">
+        <thead><tr>
+          <th style="width:100px">الأوردر</th>
+          <th>العميل</th>
+          <th>المدينة</th>
+          <th>المندوب</th>
+          <th style="width:100px">الشحن</th>
+          <th style="width:100px">التسليم</th>
+          <th style="width:80px" class="td-amount">الشحن ج</th>
+          <th style="width:90px">الحالة</th>
+        </tr></thead>
+        <tbody id="courier_archive_tbody">
+          <tr><td colspan="8">
+            <div class="empty" style="padding:40px 0;">
+              <div class="empty-icon">📋</div>
+              <div class="empty-text">اختر مندوب أو فترة زمنية</div>
+              <div class="empty-sub">والضغط على 🔄 لتحميل الأرشيف</div>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -1847,7 +1937,7 @@ function quickActionBtn(r){
 
   if(s==="تم الشحن")
     return`<div class="qa-wrap">
-      <button class="qa-btn qa-done" onclick="quickUpdate('${id}','تم التسليم')">📦 تسليم</button>
+      <button class="qa-btn qa-done" onclick="quickDeliver('${id}')">📦 تسليم</button>
       <button class="qa-btn qa-ret"  onclick="quickUpdate('${id}','مرتجع')">↩️ كامل</button>
       <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ جزئي</button>
       ${printBtn}
@@ -1867,7 +1957,7 @@ function quickActionBtn(r){
     </div>`;
 
   if(isCancelledStatus(s))
-    return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','جديد')">🔄 إعادة</button>${printBtn}</div>`;
+    return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','New')">🔄 إعادة</button>${printBtn}</div>`;
 
   return`<div class="qa-wrap">${printBtn}</div>`;
 }
@@ -1931,9 +2021,9 @@ async function quickUpdate(orderId,status){
         firstSeen = true;
         if(status==="مرتجع"||status==="الغاء"){
           updated.subtotal=0; updated.partialReturn=0;
-        } else if(status==="جديد"||status===""){
+        } else if(status==="جديد"||status===""||status==="New"){
           const orig = allCache.find(x=>String(x.orderId||x.id||"").trim().replace(/\.0+$/,"")=== cid);
-          if(orig){ updated.subtotal=orig.subtotal; updated.partialReturn=0; }
+          if(orig){ updated.subtotal=orig.subtotal||updated.subtotal; updated.partialReturn=0; }
         }
       } else {
         updated.subtotal=0; updated.partialReturn=0;
@@ -1967,26 +2057,104 @@ async function quickUpdate(orderId,status){
 }
 
 async function quickShip(orderId){
-  const savedCourier=getLastCourier(),today=new Date().toISOString().slice(0,10);
-  if(savedCourier){const r=await showQuickShipConfirm(orderId,savedCourier,today);if(!r)return;await _doQuickShip(orderId,r.courier,r.shipDate);}
-  else{const r=await showShipModal();if(!r)return;saveCourier(r.courier);await _doQuickShip(orderId,r.courier,r.shipDate);}
+  const r = await showCourierSelectModal(String(orderId));
+  if(!r) return;
+  saveCourier(r.courier);
+  await _doQuickShip(orderId, r.courier, r.shipDate);
 }
 
-function showQuickShipConfirm(orderId,defCourier,defDate){
+async function showCourierSelectModal(orderId){
+  // جيب المناديب — لو مش محمّلين من الـ API حمّلهم
+  if(!_couriersData.length){
+    try{
+      const res = await api("getCouriers");
+      if(res?.ok) _couriersData = res.couriers||[];
+    }catch(e){}
+  }
+
+  const activeCouriers = _couriersData.filter(c=>c.active!==false);
+  const today = new Date().toISOString().slice(0,10);
+  const lastCourier = getLastCourier();
+
   return new Promise(resolve=>{
-    const couriers=getSavedCouriers();
-    const chips=couriers.map(c=>`<button class="cb-chip${c===defCourier?" active":""}" onclick="this.closest('.qsc-wrap').querySelectorAll('.cb-chip').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('qsc_courier').value='${esc(c)}'">${esc(c)}</button>`).join("");
-    openModal(`<div style="margin-bottom:12px"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:3px;">🚚 تأكيد الشحن</div><div style="font-size:11px;color:var(--mist)">Order ID: <b style="color:var(--silver)">${esc(String(orderId))}</b></div></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      ${chips?`<div class="qsc-wrap" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:2px;">${chips}</div>`:""}
-      <div><label class="field-label">اسم المندوب *</label><input id="qsc_courier" value="${esc(defCourier)}" placeholder="اسم المندوب" style="width:100%;"/></div>
-      <div><label class="field-label">تاريخ الشحن *</label><input id="qsc_date" type="date" value="${defDate}" style="width:100%;"/></div>
-      <div style="display:flex;gap:8px;margin-top:4px;"><button class="btn-gold" style="flex:1" onclick="_qscOk()">✅ تأكيد</button><button style="flex:1" onclick="_qscCancel()">إلغاء</button></div>
-      <div id="qsc_err" style="color:var(--red);font-size:11px;display:none;"></div>
-    </div>`);
-    setTimeout(()=>document.getElementById("qsc_courier")?.select(),80);
-    window._qscOk=()=>{const courier=(document.getElementById("qsc_courier")?.value||"").trim(),shipDate=(document.getElementById("qsc_date")?.value||"").trim(),err=document.getElementById("qsc_err");if(!courier){err.textContent="⛔ اكتب اسم المندوب";err.style.display="block";return;}if(!shipDate){err.textContent="⛔ اختر تاريخ الشحن";err.style.display="block";return;}saveCourier(courier);closeModal();resolve({courier,shipDate});delete window._qscOk;delete window._qscCancel;};
-    window._qscCancel=()=>{closeModal();resolve(null);delete window._qscOk;delete window._qscCancel;};
+    // ابني الـ options
+    const opts = activeCouriers.map(c=>{
+      const sub = [c.phone,c.notes].filter(Boolean).join(" — ");
+      return `<option value="${esc(c.name)}" ${c.name===lastCourier?"selected":""}>${esc(c.name)}${sub?" ("+esc(sub)+")":"" }</option>`;
+    }).join("");
+
+    const hasCouriers = activeCouriers.length > 0;
+
+    openModal(`
+      <div style="margin-bottom:14px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:800;color:var(--white);">🚚 تأكيد الشحن</div>
+        ${orderId?`<div style="font-size:11px;color:var(--mist);margin-top:3px">أوردر: <b style="color:var(--gold)">${esc(orderId)}</b></div>`:""}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- اختيار المندوب -->
+        <div>
+          <label class="field-label">المندوب *</label>
+          ${hasCouriers ? `
+            <select id="cs_courier" style="width:100%;font-size:12px;padding:8px 12px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--white);font-family:'Cairo',sans-serif;">
+              <option value="">— اختر المندوب —</option>
+              ${opts}
+            </select>
+            <!-- بطاقة تفاصيل المندوب -->
+            <div id="cs_courier_info" style="margin-top:8px;padding:10px 12px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:var(--r2);display:none;">
+              <div id="cs_courier_name" style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px;"></div>
+              <div id="cs_courier_phone" style="font-size:11px;color:var(--mist);"></div>
+              <div id="cs_courier_notes" style="font-size:11px;color:var(--mist);"></div>
+            </div>
+          ` : `
+            <input id="cs_courier" placeholder="اكتب اسم المندوب" value="${esc(lastCourier)}" style="width:100%;"/>
+            <div style="font-size:10px;color:var(--amber);margin-top:4px;">⚠️ مفيش مناديب متسجلين — روح صفحة المناديب وأضفهم</div>
+          `}
+        </div>
+
+        <!-- تاريخ الشحن -->
+        <div>
+          <label class="field-label">تاريخ الشحن *</label>
+          <input id="cs_date" type="date" value="${today}" style="width:100%;"/>
+        </div>
+
+        <div id="cs_err" style="color:var(--red);font-size:11px;display:none;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-gold" style="flex:1" onclick="_csOk()">✅ تأكيد الشحن</button>
+          <button style="flex:1" onclick="_csCancel()">إلغاء</button>
+        </div>
+      </div>
+    `);
+
+    // حدّث بطاقة تفاصيل المندوب لما يتغير الـ select
+    if(hasCouriers){
+      setTimeout(()=>{
+        const sel = document.getElementById("cs_courier");
+        const updateInfo = ()=>{
+          const name = sel?.value||"";
+          const c = _couriersData.find(x=>x.name===name);
+          const infoEl = document.getElementById("cs_courier_info");
+          if(!c||!name){ if(infoEl) infoEl.style.display="none"; return; }
+          document.getElementById("cs_courier_name").textContent  = "🚴 "+c.name;
+          document.getElementById("cs_courier_phone").textContent = c.phone ? "📞 "+c.phone : "";
+          document.getElementById("cs_courier_notes").textContent = c.notes ? "📝 "+c.notes : "";
+          if(infoEl) infoEl.style.display="block";
+        };
+        sel?.addEventListener("change", updateInfo);
+        updateInfo(); // شغّل أول ما يفتح
+      },80);
+    }
+
+    window._csOk=()=>{
+      const courier=(document.getElementById("cs_courier")?.value||"").trim();
+      const shipDate=(document.getElementById("cs_date")?.value||"").trim();
+      const err=document.getElementById("cs_err");
+      if(!courier){err.textContent="⛔ اختر المندوب";err.style.display="block";return;}
+      if(!shipDate){err.textContent="⛔ اختر تاريخ الشحن";err.style.display="block";return;}
+      closeModal();resolve({courier,shipDate});
+      delete window._csOk;delete window._csCancel;
+    };
+    window._csCancel=()=>{closeModal();resolve(null);delete window._csOk;delete window._csCancel;};
   });
 }
 
@@ -2001,12 +2169,29 @@ async function _doQuickShip(orderId,courier,shipDate){
 }
 
 /* ── BULK UPDATE ── */
+async function quickDeliver(orderId){
+  const r = await showDeliveryModal();
+  if(!r) return;
+  const id = String(orderId).trim().replace(/\.0+$/,"");
+  const prevCache = allCache.map(x=>({...x}));
+  const prevRows  = rows.map(x=>({...x}));
+  allCache = allCache.map(x=>String(x.orderId||x.id||"").trim().replace(/\.0+$/,"")=== id?{...x,status:"تم التسليم",deliveryDate:r.deliveryDate}:x);
+  rows     = rows.map(x=>String(x.orderId||x.id||"").trim().replace(/\.0+$/,"")=== id?{...x,status:"تم التسليم",deliveryDate:r.deliveryDate}:x);
+  saveCachedData(allCache); render();
+  toast("تم التسليم","تاريخ: "+r.deliveryDate,"ok",2500);
+  try{
+    const res = await api("bulkUpdate",{ids:id,status:"تم التسليم",courier:"",shipDate:"",deliveryDate:r.deliveryDate,partialAmount:""});
+    if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}
+    refreshAll(true);
+  } catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
+}
+
 async function bulkUpdate(){
   const status=document.getElementById("statusSelect").value.trim();
   if(!status){toast("اختر الحالة أولاً","","warn");return;}
   const ids=[...selected];if(!ids.length){toast("لم تحدد أي أوردرات","","warn");return;}
   let courier="",shipDate="",deliveryDate="",partialAmount="";
-  if(status==="تم الشحن"){const r=await showShipModal();if(!r){toast("تم الإلغاء","","warn");return;}courier=r.courier;shipDate=r.shipDate;if(!courier.trim()||!shipDate.trim()){toast("⛔ البيانات ناقصة","","err");return;}}
+  if(status==="تم الشحن"){const r=await showCourierSelectModal("batch");if(!r){toast("تم الإلغاء","","warn");return;}courier=r.courier;shipDate=r.shipDate;saveCourier(courier);}
   if(status==="تم التسليم"){const r=await showDeliveryModal();if(!r){toast("تم الإلغاء","","warn");return;}deliveryDate=r.deliveryDate;if(!deliveryDate.trim()){toast("⛔ لازم تكتب تاريخ التسليم","","err");return;}}
   if(status==="مرتجع جزئي"){
   closeModal();
@@ -2481,22 +2666,9 @@ async function confirmMarkPrinted(ids,notifId){
 
 /* ── MODALS ── */
 function showShipModal(){
-  return new Promise(resolve=>{
-    const today=new Date().toISOString().slice(0,10),lastCourier=getLastCourier(),couriers=getSavedCouriers();
-    const chips=couriers.map(c=>`<button class="cb-chip${c===lastCourier?" active":""}" onclick="this.closest('.qsc-wrap').querySelectorAll('.cb-chip').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.getElementById('m_courier').value='${esc(c)}'">${esc(c)}</button>`).join("");
-    openModal(`<div style="margin-bottom:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px">🚚 تأكيد الشحن</div><div style="font-size:11px;color:var(--mist)">الحقول دي مطلوبة</div></div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${chips?`<div class="qsc-wrap" style="display:flex;gap:5px;flex-wrap:wrap">${chips}</div>`:""}
-      <div><label class="field-label">اسم المندوب *</label><input id="m_courier" value="${esc(lastCourier)}" placeholder="مثال: أحمد" style="width:100%"/></div>
-      <div><label class="field-label">تاريخ الشحن *</label><input id="m_shipDate" type="date" value="${today}" style="width:100%"/></div>
-      <div style="display:flex;gap:8px;margin-top:6px"><button class="btn-gold" style="flex:1" onclick="_mShipOk()">✅ تأكيد</button><button style="flex:1" onclick="_mCancel()">إلغاء</button></div>
-      <div id="m_err" style="color:var(--red);font-size:11px;display:none"></div>
-    </div>`);
-    setTimeout(()=>{const el=document.getElementById("m_courier");if(el){el.focus();if(lastCourier)el.select();}},80);
-    window._mShipOk=()=>{const courier=(document.getElementById("m_courier")?.value||"").trim(),shipDate=(document.getElementById("m_shipDate")?.value||"").trim(),err=document.getElementById("m_err");if(!courier){err.textContent="⛔ اكتب اسم المندوب";err.style.display="block";return;}if(!shipDate){err.textContent="⛔ اختر تاريخ الشحن";err.style.display="block";return;}saveCourier(courier);closeModal();resolve({courier,shipDate});delete window._mShipOk;delete window._mCancel;};
-    window._mCancel=()=>{closeModal();resolve(null);delete window._mShipOk;delete window._mCancel;};
-  });
+  return showCourierSelectModal("");
 }
+
 function showDeliveryModal(){return new Promise(resolve=>{const today=new Date().toISOString().slice(0,10);openModal(`<div style="margin-bottom:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px">📦 تأكيد التسليم</div></div><div style="display:flex;flex-direction:column;gap:10px"><div><label class="field-label">تاريخ التسليم *</label><input id="m_delivDate" type="date" value="${today}" style="width:100%"/></div><div style="display:flex;gap:8px;margin-top:6px"><button class="btn-gold" style="flex:1" onclick="_mDelivOk()">✅ تأكيد</button><button style="flex:1" onclick="_mCancel()">إلغاء</button></div></div>`);window._mDelivOk=()=>{const d=(document.getElementById("m_delivDate")?.value||"").trim();if(!d){toast("اختر تاريخ التسليم","","err");return;}closeModal();resolve({deliveryDate:d});delete window._mDelivOk;delete window._mCancel;};window._mCancel=()=>{closeModal();resolve(null);delete window._mDelivOk;delete window._mCancel;};}); }
 function showPartialModal(){return new Promise(resolve=>{openModal(`<div style="margin-bottom:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px">↩️ مرتجع جزئي</div></div><div style="display:flex;flex-direction:column;gap:10px"><div><label class="field-label">المبلغ المدفوع *</label><input id="m_partial" type="number" placeholder="مثال: 250" style="width:100%"/></div><div style="display:flex;gap:8px;margin-top:6px"><button class="btn-gold" style="flex:1" onclick="_mPartOk()">✅ تأكيد</button><button style="flex:1" onclick="_mCancel()">إلغاء</button></div></div>`);setTimeout(()=>document.getElementById("m_partial")?.focus(),80);window._mPartOk=()=>{const v=(document.getElementById("m_partial")?.value||"").trim();if(!v){toast("اكتب المبلغ","","err");return;}closeModal();resolve({amount:v});delete window._mPartOk;delete window._mCancel;};window._mCancel=()=>{closeModal();resolve(null);delete window._mPartOk;delete window._mCancel;};}); }
 
@@ -2534,6 +2706,7 @@ function switchTab(name,btn){
   if(name==="purchases" && !purchasesCache.length) loadPurchases();
   if(name==="expenses" && !expensesCache.length) loadExpenses();
   if(name==="treasury") loadTreasury(); // الخزينة دايماً تتحدث
+  if(name==="couriers") loadCouriersPage(); // المناديب
 }
 
 /* ══ ORDER FORM ══ */
@@ -3456,10 +3629,12 @@ const _sdMap={
   'purchases':'sd_purchases',
   'expenses':'sd_expenses',
   'treasury':'sd_treasury',
+  'couriers':'sd_couriers',
 };
 const _pageLabels={
   'delivery':'التوصيل','order-form':'أوردر جديد','edit-order':'تعديل أوردر',
-  'products':'المنتجات','purchases':'المشتريات','expenses':'المصاريف','treasury':'الخزينة'
+  'products':'المنتجات','purchases':'المشتريات','expenses':'المصاريف','treasury':'الخزينة',
+  'couriers':'المناديب'
 };
 
 function sdNav(tabName, btn){
@@ -3589,6 +3764,319 @@ function closeInvoiceModal(){
 function printInvoice(orderId){
   const url = WEB_APP_PRINT_URL+"?orderId="+encodeURIComponent(orderId)+"&v="+Date.now();
   openInvoiceModal(url, '🧾 فاتورة #'+orderId, null);
+}
+
+
+/* ════════════════════════════════════════════════════════
+   COURIERS PAGE — Full Version (API-backed)
+   ════════════════════════════════════════════════════════ */
+
+let _couriersData = []; // cache
+
+function getActiveCouriers(){
+  if(_couriersData.length) return _couriersData.filter(c=>c.active!==false).map(c=>c.name);
+  return getSavedCouriers();
+}
+
+async function loadCouriersPage(){
+  document.getElementById("couriers_cards").innerHTML =
+    `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--mist)">⏳ جاري التحميل…</div>`;
+
+  try {
+    const res = await api("getCouriers");
+    if(!res?.ok){ toast("❌ فشل تحميل المناديب","","err"); return; }
+    _couriersData = res.couriers || [];
+  } catch(e){ toast("❌ خطأ في الاتصال","","err"); return; }
+
+  renderCourierKPIs();
+  renderCourierCards();
+  renderCourierArchive();
+  populateCourierFilter();
+}
+
+function renderCourierKPIs(){
+  const active   = _couriersData.filter(c=>c.active!==false);
+  const total    = active.reduce((s,c)=>s+(c.active_orders||0),0);
+  const delivered= active.reduce((s,c)=>s+(c.delivered||0),0);
+  const returned = active.reduce((s,c)=>s+(c.returned||0),0);
+  const collected= active.reduce((s,c)=>s+(c.ship_collected||0),0);
+  const retRate  = (delivered+returned)>0 ? ((returned/(delivered+returned))*100).toFixed(1) : "0.0";
+
+  const el = document.getElementById("couriers_kpi");
+  if(!el) return;
+  el.innerHTML = `
+    <div class="kpi-tile kt-blue"><div class="kpi-icon">🚴</div><div class="kpi-val kv-blue">${_couriersData.length}</div><div class="kpi-lbl">إجمالي المناديب</div></div>
+    <div class="kpi-tile kt-amber"><div class="kpi-icon">🚚</div><div class="kpi-val kv-amber">${total}</div><div class="kpi-lbl">شحنات نشطة</div></div>
+    <div class="kpi-tile kt-green"><div class="kpi-icon">✅</div><div class="kpi-val kv-green">${delivered}</div><div class="kpi-lbl">تم التسليم</div></div>
+    <div class="kpi-tile kt-red"><div class="kpi-icon">↩️</div><div class="kpi-val kv-red">${returned}</div><div class="kpi-lbl">مرتجعات</div><div class="kpi-sub">${retRate}% نسبة المرتجع</div></div>
+    <div class="kpi-tile kt-gold"><div class="kpi-icon">💰</div><div class="kpi-val kv-gold">${fmt(collected)}</div><div class="kpi-lbl">إجمالي الشحن المحصّل</div></div>
+  `;
+}
+
+function courierRatingColor(rate){ return rate<=5?"#27ae60":rate<=15?"#f39c12":"#e74c3c"; }
+function courierRatingLabel(rate){ return rate<=5?"ممتاز ⭐":rate<=15?"متوسط":"مرتفع ⚠️"; }
+
+function renderCourierCards(){
+  const el = document.getElementById("couriers_cards");
+  if(!el) return;
+  if(!_couriersData.length){
+    el.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--mist)"><div style="font-size:40px;margin-bottom:8px">🚴</div><div>مفيش مناديب بعد — اضغط "➕ مندوب جديد"</div></div>`;
+    return;
+  }
+
+  el.innerHTML = _couriersData.map((c,idx) => {
+    const total  = (c.delivered||0) + (c.returned||0);
+    const retRate= total>0 ? ((c.returned||0)/total*100).toFixed(1) : "0.0";
+    const delRate= total>0 ? ((c.delivered||0)/total*100).toFixed(1) : "0.0";
+    const rColor = courierRatingColor(parseFloat(retRate));
+    const rLabel = courierRatingLabel(parseFloat(retRate));
+    const activeBadge = c.active!==false
+      ? `<span style="font-size:9px;color:#27ae60;border:1px solid rgba(39,174,96,.3);border-radius:3px;padding:1px 6px;">نشط</span>`
+      : `<span style="font-size:9px;color:var(--red);border:1px solid rgba(192,57,43,.3);border-radius:3px;padding:1px 6px;">موقوف</span>`;
+
+    return `<div style="background:var(--ink2);border:1px solid var(--rule);border-radius:var(--r2);padding:16px;position:relative;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:var(--white);margin-bottom:4px;">${esc(c.name)}</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            ${activeBadge}
+            ${c.phone?`<span style="font-size:10px;color:var(--mist)">📞 ${esc(c.phone)}</span>`:""}
+          </div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.3);border-radius:8px;padding:6px 10px;">
+          <div style="font-size:18px;font-weight:900;color:${rColor}">${retRate}%</div>
+          <div style="font-size:8px;color:var(--mist)">نسبة المرتجع</div>
+          <div style="font-size:9px;color:${rColor};font-weight:700">${rLabel}</div>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
+        <div style="text-align:center;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);border-radius:6px;padding:6px;">
+          <div style="font-size:16px;font-weight:800;color:var(--amber)">${c.active_orders||0}</div>
+          <div style="font-size:8px;color:var(--mist)">نشط</div>
+        </div>
+        <div style="text-align:center;background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);border-radius:6px;padding:6px;">
+          <div style="font-size:16px;font-weight:800;color:#27ae60">${c.delivered||0}</div>
+          <div style="font-size:8px;color:var(--mist)">تسليم</div>
+        </div>
+        <div style="text-align:center;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:6px;">
+          <div style="font-size:16px;font-weight:800;color:var(--red)">${c.returned||0}</div>
+          <div style="font-size:8px;color:var(--mist)">مرتجع</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mist);margin-bottom:3px;">
+          <span>نسبة التسليم ${delRate}%</span>
+          <span>إجمالي: ${total} شحنة</span>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:4px;height:5px;overflow:hidden;">
+          <div style="width:${delRate}%;background:linear-gradient(90deg,#27ae60,#2ecc71);height:100%;border-radius:4px;transition:width .4s;"></div>
+        </div>
+      </div>
+
+      <!-- Ship collected + last ship -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--gold);font-weight:700;">💰 ${fmt(c.ship_collected||0)} ج شحن محصّل</div>
+        ${c.last_ship?`<div style="font-size:9px;color:var(--mist)">آخر شحنة: ${esc(c.last_ship)}</div>`:""}
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:6px;">
+        <button class="qa-btn" style="flex:1" onclick="openEditCourierModal(${idx})">✏️ تعديل</button>
+        <button class="qa-btn ${c.active===false?'qa-done':'qa-ret'}" style="flex:1" onclick="doToggleCourier(${idx})">
+          ${c.active===false?"✅ تفعيل":"🔴 إيقاف"}
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function populateCourierFilter(){
+  const sel = document.getElementById("archive_courier_filter");
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = `<option value="">كل المناديب</option>` +
+    _couriersData.map(c=>`<option value="${esc(c.name)}" ${c.name===current?"selected":""}>${esc(c.name)}</option>`).join("");
+}
+
+let _archiveData = [];
+
+async function loadCourierArchive(){
+  const tbody   = document.getElementById("courier_archive_tbody");
+  const footer  = document.getElementById("courier_archive_footer");
+  const loading = document.getElementById("courier_archive_loading");
+  if(!tbody) return;
+
+  const cFilter = (document.getElementById("archive_courier_filter")?.value||"").trim();
+  const sFilter = (document.getElementById("archive_status_filter")?.value||"").trim();
+  const from    = (document.getElementById("archive_from")?.value||"").trim();
+  const to      = (document.getElementById("archive_to")?.value||"").trim();
+
+  if(loading) loading.style.display="block";
+  tbody.innerHTML = "";
+
+  try {
+    const res = await api("getCourierArchive",{courier:cFilter, from, to});
+    if(!res?.ok){ toast("❌ فشل تحميل الأرشيف","","err"); return; }
+    _archiveData = res.rows || [];
+  } catch(e){ toast("❌ خطأ","","err"); return; }
+  finally { if(loading) loading.style.display="none"; }
+
+  // فلتر الحالة محلياً (سريع)
+  const filtered = sFilter
+    ? _archiveData.filter(r=>r.status===sFilter)
+    : _archiveData;
+
+  if(!filtered.length){
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">مفيش شحنات بالفلتر ده</div></div></td></tr>`;
+    if(footer) footer.innerHTML=""; return;
+  }
+
+  tbody.innerHTML = filtered.map((r,i)=>{
+    const isRet  = ["مرتجع","مرتجع جزئي"].includes(r.status);
+    const isDeliv= r.status==="تم التسليم";
+    const rowAccent = isRet?"border-right:2px solid var(--red)":isDeliv?"border-right:2px solid #27ae60":"border-right:2px solid var(--amber)";
+    return `<tr style="${rowAccent}">
+      <td class="td-id"><b style="color:var(--gold)">${esc(String(r.orderId||""))}</b></td>
+      <td style="font-weight:600;">${esc(r.customer||"")}</td>
+      <td style="font-size:11px;color:var(--mist)">${esc(r.city||"")}</td>
+      <td>${r.courier?`<span class="courier-chip" style="font-size:10px">${esc(r.courier)}</span>`:
+        `<span style="color:var(--rule2);font-size:11px">—</span>`}</td>
+      <td style="font-size:11px;color:var(--mist);text-align:center;">${r.shipDate?
+        `<div style="font-weight:600;color:var(--silver)">${esc(r.shipDate)}</div>`:
+        `<span style="color:var(--rule2)">—</span>`}</td>
+      <td style="font-size:11px;text-align:center;">${r.delivDate?
+        `<div style="color:#27ae60;font-weight:600">${esc(r.delivDate)}</div>`:
+        `<span style="color:var(--rule2)">—</span>`}</td>
+      <td class="td-amount" style="font-weight:700;">${fmt(r.shipping||0)}</td>
+      <td>${statusBadge(r.status)}</td>
+    </tr>`;
+  }).join("");
+
+  // ── Footer ──
+  const totalShip = filtered.reduce((s,r)=>s+Number(r.shipping||0),0);
+  const deliv     = filtered.filter(r=>r.status==="تم التسليم").length;
+  const ret       = filtered.filter(r=>["مرتجع","مرتجع جزئي"].includes(r.status)).length;
+  const active    = filtered.filter(r=>r.status==="تم الشحن").length;
+  const total     = deliv+ret;
+  const retRate   = total>0?((ret/total)*100).toFixed(1):"0.0";
+
+  const badge = document.getElementById("archive_count_badge");
+  if(badge){ badge.textContent = filtered.length+" شحنة"; badge.style.display="inline"; }
+  if(footer){
+    footer.style.display = "flex";
+    footer.style.flexWrap = "wrap";
+    footer.style.gap = "0";
+    footer.innerHTML = [
+      {label:"الكل",    val:filtered.length, color:"var(--silver)"},
+      {label:"نشط",     val:active,          color:"var(--amber)"},
+      {label:"تسليم",   val:deliv,           color:"#27ae60"},
+      {label:"مرتجع",   val:ret,             color:"var(--red)"},
+      {label:"نسبة المرتجع", val:retRate+"%", color:parseFloat(retRate)>15?"var(--red)":parseFloat(retRate)>5?"var(--amber)":"#27ae60"},
+      {label:"شحن محصّل",val:fmt(totalShip)+" ج", color:"var(--gold)"},
+    ].map(s=>`<div style="flex:1;min-width:90px;padding:8px 14px;border-left:1px solid var(--rule);text-align:center;">
+        <div style="font-size:13px;font-weight:800;color:${s.color};">${s.val}</div>
+        <div style="font-size:9px;color:var(--mist);margin-top:2px;text-transform:uppercase;letter-spacing:.8px;">${s.label}</div>
+      </div>`).join("");
+  }
+}
+
+// للاستدعاء من loadCouriersPage
+function renderCourierArchive(){ loadCourierArchive(); }
+
+/* ── Add / Edit Modals ── */
+function openAddCourierModal(){
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white)">🚴 مندوب جديد</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="field-label">اسم المندوب *</label><input id="nc_name" placeholder="مثال: أحمد محمد" style="width:100%"/></div>
+      <div><label class="field-label">رقم الموبايل</label><input id="nc_phone" type="tel" placeholder="01XXXXXXXXX" style="width:100%"/></div>
+      <div><label class="field-label">ملاحظات</label><input id="nc_notes" placeholder="(اختياري)" style="width:100%"/></div>
+      <div id="nc_err" style="color:var(--red);font-size:11px;display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn-gold" style="flex:1" onclick="_ncSave()">✅ حفظ</button>
+        <button style="flex:1" onclick="closeModal()">إلغاء</button>
+      </div>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("nc_name")?.focus(), 80);
+  window._ncSave = async () => {
+    const name  = (document.getElementById("nc_name")?.value||"").trim();
+    const phone = (document.getElementById("nc_phone")?.value||"").trim();
+    const notes = (document.getElementById("nc_notes")?.value||"").trim();
+    const err   = document.getElementById("nc_err");
+    if(!name){ err.textContent="⛔ اكتب اسم المندوب"; err.style.display="block"; return; }
+    closeModal(); showLoading("جاري الحفظ…");
+    const res = await api("addCourier",{name,phone,notes}).catch(()=>null);
+    hideLoading();
+    if(res?.ok){ toast("✅ تم إضافة المندوب",name,"ok"); loadCouriersPage(); }
+    else toast("❌ فشل",res?.error||"","err");
+    delete window._ncSave;
+  };
+}
+
+function openEditCourierModal(idx){
+  const c = _couriersData[idx];
+  if(!c) return;
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white)">✏️ تعديل: ${esc(c.name)}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="field-label">اسم المندوب *</label><input id="ec_name" value="${esc(c.name)}" style="width:100%"/></div>
+      <div><label class="field-label">رقم الموبايل</label><input id="ec_phone" type="tel" value="${esc(c.phone||'')}" style="width:100%"/></div>
+      <div><label class="field-label">ملاحظات</label><input id="ec_notes" value="${esc(c.notes||'')}" style="width:100%"/></div>
+      <div id="ec_err" style="color:var(--red);font-size:11px;display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn-gold" style="flex:1" onclick="_ecSave()">✅ حفظ</button>
+        <button style="flex:1" onclick="closeModal()">إلغاء</button>
+      </div>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("ec_name")?.focus(), 80);
+  window._ecSave = async () => {
+    const name  = (document.getElementById("ec_name")?.value||"").trim();
+    const phone = (document.getElementById("ec_phone")?.value||"").trim();
+    const notes = (document.getElementById("ec_notes")?.value||"").trim();
+    const err   = document.getElementById("ec_err");
+    if(!name){ err.textContent="⛔ اكتب الاسم"; err.style.display="block"; return; }
+    closeModal(); showLoading("جاري الحفظ…");
+    const res = await api("editCourier",{sheetRow:c.sheetRow,name,phone,notes}).catch(()=>null);
+    hideLoading();
+    if(res?.ok){
+      const renamed = res.renamed||0;
+      const msg = renamed>0 ? `تم تحديث ${renamed} سجل في الأرشيف` : "";
+      toast("✅ تم التحديث", name+(msg?" — "+msg:""), "ok", 4000);
+      loadCouriersPage();
+    } else toast("❌ فشل","","err");
+    delete window._ecSave;
+  };
+}
+
+async function doToggleCourier(idx){
+  const c = _couriersData[idx];
+  if(!c) return;
+  showLoading();
+  const res = await api("toggleCourier",{sheetRow:c.sheetRow}).catch(()=>null);
+  hideLoading();
+  if(!res?.ok){ toast("❌ فشل","","err"); return; }
+
+  // حدّث الـ cache فوراً بدون ما تستنى reload
+  _couriersData[idx] = {...c, active: res.active};
+
+  // حدّث قايمة المناديب في نوافذ الشحن (courier bar)
+  const activeNames = _couriersData.filter(x=>x.active!==false).map(x=>x.name);
+  localStorage.setItem(LS_COURIERS, JSON.stringify(activeNames));
+  renderCourierBar();
+
+  toast(res.active?"✅ تم التفعيل":"🔴 تم الإيقاف", c.name, "ok");
+  loadCouriersPage(); // يعيد تحميل الصفحة للإحصائيات
 }
 
 </script>
