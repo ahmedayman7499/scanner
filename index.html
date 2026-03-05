@@ -325,6 +325,8 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
 /* COURIER BAR */
 .courier-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 12px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule);margin-bottom:8px;font-size:11px;}
 .cb-label{color:var(--mist);flex-shrink:0;}
+.arch-status-chip{font-size:10px;padding:4px 10px;border-radius:99px;border:1px solid var(--rule2);background:var(--ink3);color:var(--mist);cursor:pointer;font-family:'Cairo',sans-serif;transition:all .15s;}
+.arch-status-chip.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:var(--gold);}
 .cb-chip{padding:3px 10px;border-radius:var(--r4);border:1px solid var(--rule2);background:rgba(255,255,255,.05);color:var(--silver);cursor:pointer;font-size:11px;font-weight:600;transition:all .15s;min-height:unset;}
 .cb-chip:hover,.cb-chip.active{background:var(--gold-faint);border-color:rgba(201,168,76,.35);color:var(--gold);}
 
@@ -1564,12 +1566,15 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
 <div class="tab-panel" id="panel-couriers">
   <div class="kpi-grid" id="couriers_kpi" style="margin-bottom:14px;"></div>
 
-  <!-- فلتر المناديب -->
-  <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;">
-    <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-left:4px;">عرض:</div>
-    <button id="cf_all"    class="cb-chip active" onclick="filterCourierCards('all')">الكل</button>
-    <button id="cf_active" class="cb-chip"        onclick="filterCourierCards('active')">🟢 نشطين</button>
-    <button id="cf_paused" class="cb-chip"        onclick="filterCourierCards('paused')">🔴 موقوفين</button>
+  <!-- هيدر + فلتر المناديب -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div style="font-size:10px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;">عرض:</div>
+      <button id="cf_all"    class="cb-chip active" onclick="filterCourierCards('all')">الكل</button>
+      <button id="cf_active" class="cb-chip"        onclick="filterCourierCards('active')">🟢 نشطين</button>
+      <button id="cf_paused" class="cb-chip"        onclick="filterCourierCards('paused')">🔴 موقوفين</button>
+    </div>
+    <button onclick="printCouriersReport()" style="font-size:11px;padding:6px 14px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'Cairo',sans-serif;">🖨️ طباعة تقرير المناديب</button>
   </div>
 
   <div id="couriers_cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:18px;"></div>
@@ -1584,7 +1589,10 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
           <span style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:800;color:var(--white);">أرشيف الشحنات</span>
           <span id="archive_count_badge" style="display:none;font-size:10px;background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:1px 8px;font-weight:700;"></span>
         </div>
-        <button class="btn-gold" onclick="openAddCourierModal()" style="font-size:11px;padding:5px 12px;">➕ مندوب جديد</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="printArchiveReport()" style="font-size:11px;padding:5px 12px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'Cairo',sans-serif;">🖨️ طباعة</button>
+          <button class="btn-gold" onclick="openAddCourierModal()" style="font-size:11px;padding:5px 12px;">➕ مندوب جديد</button>
+        </div>
       </div>
 
       <!-- فلاتر -->
@@ -1596,14 +1604,14 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
           </select>
         </div>
         <div>
-          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">الحالة</div>
-          <select id="archive_status_filter" onchange="loadCourierArchive()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--ink3);border:1px solid var(--rule);border-radius:var(--r2);color:var(--silver);font-family:'Cairo',sans-serif;">
-            <option value="">الكل</option>
-            <option value="تم الشحن">🚚 تم الشحن</option>
-            <option value="تم التسليم">✅ تم التسليم</option>
-            <option value="مرتجع">↩️ مرتجع</option>
-            <option value="مرتجع جزئي">↩️ مرتجع جزئي</option>
-          </select>
+          <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">الحالة (اختر أكتر من واحدة)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <button class="arch-status-chip active" data-status="" onclick="toggleArchiveStatus(this)">الكل</button>
+            <button class="arch-status-chip" data-status="تم الشحن" onclick="toggleArchiveStatus(this)">🚚 شحن</button>
+            <button class="arch-status-chip" data-status="تم التسليم" onclick="toggleArchiveStatus(this)">✅ تسليم</button>
+            <button class="arch-status-chip" data-status="مرتجع" onclick="toggleArchiveStatus(this)">↩️ مرتجع</button>
+            <button class="arch-status-chip" data-status="مرتجع جزئي" onclick="toggleArchiveStatus(this)">↩️ جزئي</button>
+          </div>
         </div>
         <div>
           <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">من تاريخ</div>
@@ -1638,7 +1646,8 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
           <th>المندوب</th>
           <th style="width:100px">الشحن</th>
           <th style="width:100px">التسليم</th>
-          <th style="width:80px" class="td-amount">الشحن ج</th>
+          <th style="width:80px" class="td-amount">شحن ج</th>
+          <th style="width:90px" class="td-amount" style="color:var(--gold)">💰 تحصيل</th>
           <th style="width:90px">الحالة</th>
         </tr></thead>
         <tbody id="courier_archive_tbody">
@@ -1735,6 +1744,208 @@ document.getElementById('trackingModalOverlay').addEventListener('click', functi
 </script>
 
 <script>
+/* ───────────────── Couriers Print Report ───────────────── */
+function printCouriersReport(){
+  if(!_couriersData.length){ toast("مفيش بيانات مناديب","","warn"); return; }
+
+  const now = new Date().toLocaleDateString("ar-EG",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const allC = _couriersData;
+  const active = allC.filter(c=>c.active!==false);
+
+  // إحصائيات إجمالية
+  const totOrders    = active.reduce((s,c)=>s+(c.active_orders||0),0);
+  const totDelivered = allC.reduce((s,c)=>s+(c.delivered||0),0);
+  const totReturned  = allC.reduce((s,c)=>s+(c.returned||0),0);
+  const totCollected = allC.reduce((s,c)=>s+(c.ship_collected||0),0);
+  const totTotal     = totDelivered + totReturned;
+  const avgRetRate   = totTotal>0 ? ((totReturned/totTotal)*100).toFixed(1) : "0.0";
+
+  const rows = allC.map(c=>{
+    const total = (c.delivered||0)+(c.returned||0);
+    const ret   = total>0?((c.returned||0)/total*100).toFixed(1):"0.0";
+    const del   = total>0?((c.delivered||0)/total*100).toFixed(1):"0.0";
+    const retNum= parseFloat(ret);
+    const ratingColor = retNum<=5?"#1a7a3a":retNum<=15?"#b8620a":"#8b1a1a";
+    const ratingBg    = retNum<=5?"#e8f8ee":retNum<=15?"#fef3e2":"#fde8e8";
+    const ratingLabel = retNum<=5?"ممتاز":retNum<=15?"متوسط":"مرتفع";
+    const statusColor = c.active!==false?"#1a7a3a":"#8b1a1a";
+    const statusBg    = c.active!==false?"#e8f8ee":"#fde8e8";
+    const statusLabel = c.active!==false?"نشط":"موقوف";
+    return `<tr>
+      <td style="font-weight:800;font-size:13px;">${c.name||""}</td>
+      <td>${c.phone||"—"}</td>
+      <td style="text-align:center;"><span style="background:${statusBg};color:${statusColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel}</span></td>
+      <td style="text-align:center;font-weight:800;color:#b8620a;">${c.active_orders||0}</td>
+      <td style="text-align:center;font-weight:800;color:#1a7a3a;">${c.delivered||0}</td>
+      <td style="text-align:center;font-weight:800;color:#8b1a1a;">${c.returned||0}</td>
+      <td style="text-align:center;">${total}</td>
+      <td style="text-align:center;"><span style="background:${ratingBg};color:${ratingColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${ret}% ${ratingLabel}</span></td>
+      <td style="text-align:center;font-weight:800;">${(c.ship_collected||0).toLocaleString("ar-EG")} ج</td>
+    </tr>`;
+  }).join("");
+
+  // progress bar per courier (للعرض البصري)
+  const barsHtml = allC.map(c=>{
+    const total=(c.delivered||0)+(c.returned||0);
+    const delPct=total>0?Math.round((c.delivered||0)/total*100):0;
+    const retPct=total>0?Math.round((c.returned||0)/total*100):0;
+    const retNum=total>0?((c.returned||0)/total*100):0;
+    const barColor=retNum<=5?"#27ae60":retNum<=15?"#f39c12":"#e74c3c";
+    return `<div style="margin-bottom:10px;padding:10px 14px;border:1px solid #e8e8e8;border-radius:8px;background:#fafafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:800;font-size:13px;">${c.name||""}</span>
+        <span style="font-size:11px;color:#666;">${total} شحنة إجمالي | شحن محصّل: <b>${(c.ship_collected||0).toLocaleString("ar-EG")} ج</b></span>
+      </div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#e8e8e8;">
+        <div style="width:${delPct}%;background:#27ae60;transition:width .3s;"></div>
+        <div style="width:${retPct}%;background:${barColor};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#666;">
+        <span>✅ تسليم: ${c.delivered||0} (${delPct}%)</span>
+        <span style="color:${barColor}">↩️ مرتجع: ${c.returned||0} (${retPct}%)</span>
+        <span>⏳ نشط: ${c.active_orders||0}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  const w = window.open("","_blank","width=900,height=700");
+  w.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير المناديب — WHITE CLOTHES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;direction:rtl;padding:0;}
+
+/* ── شريط الطباعة ── */
+#printBar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#111;color:#fff;position:sticky;top:0;z-index:99;}
+#printBar button{padding:7px 18px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.btn-print{background:#c9a84c;color:#111;}
+.btn-close{background:transparent;color:#aaa;border:1px solid #444!important;}
+#printBar span{font-size:12px;color:#aaa;margin-right:auto;}
+
+/* ── الصفحة ── */
+.page{max-width:210mm;margin:0 auto;padding:14mm 16mm;}
+
+/* ── الهيدر ── */
+.rpt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:20px;}
+.rpt-logo{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:2px;color:#111;}
+.rpt-logo span{display:block;font-size:11px;font-weight:400;letter-spacing:4px;color:#777;font-family:'Cairo',sans-serif;margin-top:2px;}
+.rpt-meta{text-align:left;font-size:11px;color:#555;line-height:1.8;}
+.rpt-meta strong{color:#111;font-size:13px;display:block;margin-bottom:4px;}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+.kpi-box{border:1px solid #e0e0e0;border-radius:8px;padding:12px 10px;text-align:center;background:#fafafa;}
+.kpi-box .val{font-size:22px;font-weight:900;line-height:1;}
+.kpi-box .lbl{font-size:9px;color:#777;margin-top:4px;letter-spacing:.5px;}
+
+/* ── الجدول ── */
+.section-title{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#111;border-right:3px solid #c9a84c;padding-right:10px;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+thead th{background:#111;color:#fff;padding:9px 12px;font-size:11px;font-weight:700;text-align:right;}
+thead th:first-child{border-radius:0 4px 0 0;}
+thead th:last-child{border-radius:4px 0 0 0;}
+tbody tr:nth-child(even) td{background:#f7f7f7;}
+tbody td{padding:9px 12px;font-size:12px;border-bottom:1px solid #e8e8e8;vertical-align:middle;}
+
+/* ── الباركشارت ── */
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+
+/* ── الفوتر ── */
+.rpt-footer{border-top:1px solid #ddd;padding-top:10px;text-align:center;font-size:10px;color:#999;}
+
+/* ── طباعة ── */
+@media print{
+  #printBar{display:none!important;}
+  .page{padding:8mm 10mm;}
+  body{background:#fff;}
+  .kpi-box{border:1px solid #ccc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#111!important;color:#fff!important;}
+  .bars-grid>div{break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div id="printBar">
+  <button class="btn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ إغلاق</button>
+  <span>WHITE CLOTHES — تقرير المناديب</span>
+</div>
+
+<div class="page">
+
+  <!-- هيدر -->
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-logo">WHITE CLOTHES<span>COURIER PERFORMANCE REPORT</span></div>
+    </div>
+    <div class="rpt-meta">
+      <strong>تقرير أداء المناديب</strong>
+      <div>📅 ${now}</div>
+      <div>📊 إجمالي المناديب: <b>${allC.length}</b> | نشطين: <b>${active.length}</b></div>
+    </div>
+  </div>
+
+  <!-- KPIs إجمالية -->
+  <div class="kpi-strip">
+    <div class="kpi-box">
+      <div class="val" style="color:#b8620a;">${totOrders}</div>
+      <div class="lbl">⏳ شحنات نشطة</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#1a7a3a;">${totDelivered}</div>
+      <div class="lbl">✅ تم التسليم</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#8b1a1a;">${totReturned}</div>
+      <div class="lbl">↩️ مرتجعات</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:${parseFloat(avgRetRate)<=5?"#1a7a3a":parseFloat(avgRetRate)<=15?"#b8620a":"#8b1a1a"};">${avgRetRate}%</div>
+      <div class="lbl">📉 متوسط المرتجع</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#6b4c11;font-size:16px;">${totCollected.toLocaleString("ar-EG")} ج</div>
+      <div class="lbl">💰 شحن محصّل</div>
+    </div>
+  </div>
+
+  <!-- جدول المناديب -->
+  <div class="section-title">تفاصيل كل مندوب</div>
+  <table>
+    <thead>
+      <tr>
+        <th>المندوب</th>
+        <th>الهاتف</th>
+        <th>الحالة</th>
+        <th>نشط</th>
+        <th>تسليم ✅</th>
+        <th>مرتجع ↩️</th>
+        <th>الإجمالي</th>
+        <th>نسبة المرتجع</th>
+        <th>شحن محصّل</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <!-- الباركشارت البصري -->
+  <div class="section-title">أداء كل مندوب — تسليم vs مرتجع</div>
+  <div class="bars-grid">${barsHtml}</div>
+
+  <!-- فوتر -->
+  <div class="rpt-footer">WHITE CLOTHES Management System &nbsp;•&nbsp; تم إنشاء التقرير: ${now}</div>
+
+</div>
+</body>
+</html>`);
+  w.document.close();
+}
+
 /* ══════════════════════════════════════════
    WHITE CLOTHES — FINAL MERGED SYSTEM
    ══════════════════════════════════════════ */
@@ -1780,7 +1991,26 @@ const LS_FOLLOWED ="wc_followed_ids_v1";
 /* ── UTILS ── */
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function n(v){const x=Number(v);return isNaN(x)?0:x;}
-function fmt(v){return n(v).toLocaleString("ar-EG");}
+
+// ── دالة حساب التحصيل المركزية ──
+// r يمكن يكون من allCache (subtotal+partialReturn) أو من الأرشيف (total+partialReturnAmt)
+function calcCollect(r){
+  const st      = String(r.status||"").trim();
+  const onCo    = r.shippingPaidBy==="company";
+  const ship    = n(r.shipping||0);
+  const subtotal = n(r.subtotal||r.productTotal||0);
+  const total    = n(r.total||0);
+  // bill = قيمة المنتجات بدون شحن
+  const bill     = subtotal > 0 ? subtotal : Math.max(0, total - ship);
+  const partial  = n(r.partialReturn||r.partialReturnAmt||0); // قيمة اللي اترجع
+
+  if(st==="مرتجع")       return onCo ? -ship : 0;
+  if(st==="مرتجع جزئي") return bill - partial - (onCo ? ship : 0);
+  if(st==="الغاء")       return 0;
+  // تم الشحن، تم التسليم، غيره — التحصيل = bill (لو الشحن على الشركة يتخصم)
+  return onCo ? bill - ship : bill;
+}
+function fmt(v){const x=n(v);if(x<0)return "-"+Math.abs(x).toLocaleString("ar-EG");return x.toLocaleString("ar-EG");}
 function fmtYMD(dt){return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;}
 function fmtDate(s){if(!s)return"";try{const d=new Date(String(s).replace(/\//g,"-"));if(isNaN(d))return String(s).slice(0,10);return fmtYMD(d);}catch{return String(s).slice(0,10);}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -2126,12 +2356,12 @@ function updateDashboard(all){
   const shipped=all.filter(r=>s(r.status)==="تم الشحن");
   const printed=all.filter(r=>s(r.status)==="تم الطباعة");
   const returned=all.filter(r=>["مرتجع","مرتجع جزئي"].includes(s(r.status)));
-  const excluded=new Set(["الغاء","مرتجع","مرتجع جزئي"]);
-  const active=all.filter(r=>!excluded.has(s(r.status)));
-  const sum=arr=>arr.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
-  // التحصيل الصح = subtotal - partialReturn (المرتجع الجزئي)
-  const totalSub=active.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0)-n(r.partialReturn||0),0);
-  const totalShip=active.reduce((a,r)=>a+n(r.shipping||0),0);
+  const excluded = new Set(["الغاء","مرتجع"]); // مرتجع جزئي مش مستثنى — فيه تحصيل
+  const active   = all.filter(r=>!excluded.has(s(r.status)));
+  const sum      = arr=>arr.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0),0);
+
+  const totalSub  = active.reduce((a,r)=>a+calcCollect(r),0);
+  const totalShip = active.reduce((a,r)=>a+n(r.shipping||0),0);
   const returnedAmt=returned.reduce((a,r)=>{
     // مرتجع كامل = كل المبلغ، مرتجع جزئي = المبلغ المرتجع بس
     if(String(r.status||"").trim()==="مرتجع جزئي") return a+n(r.partialReturn||0);
@@ -2191,12 +2421,20 @@ function quickActionBtn(r){
 }
 
 function render(){
+  // أعد بناء shipAll و awaitOrders من allCache عشان يتحدثوا فوراً
+  shipAll     = allCache.filter(r=>String(r.status||"").trim()==="تم الشحن");
+  awaitOrders = allCache.filter(r=>String(r.status||"").trim()==="تم الطباعة");
+  if(document.getElementById("shipCard")?.style.display!=="none") renderShipTable();
+  if(document.getElementById("awaitCard")?.style.display!=="none") renderAwaitTable();
   updateToggleBtn();
   const tbody=document.getElementById("tbody");tbody.innerHTML="";
-  const subSum=rows.reduce((a,r)=>a+n(r.subtotal||r.productTotal||0)-n(r.partialReturn||0),0);
+  const subSum=rows.reduce((a,r)=>a+calcCollect(r),0);
   const shipSum=rows.reduce((a,r)=>a+n(r.shipping||0),0);
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set("metricOrders",rows.length);set("metricSubtotal",fmt(subSum));set("metricShipping",fmt(shipSum));
+  set("metricOrders",rows.length);
+  const subEl=document.getElementById("metricSubtotal");
+  if(subEl){subEl.textContent=fmt(subSum);subEl.style.color=subSum<0?"var(--red)":"";}
+  set("metricShipping",fmt(shipSum));
   set("tabDeliveryBadge",rows.length);
   const si=document.getElementById("selectionInfo");if(si)si.textContent=selected.size+" محدد";
   if(!rows.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا يوجد أوردرات بعد</div><div class="empty-sub">ابدأ بالإضافة أو مسح QR</div></div></td></tr>`;return;}
@@ -2213,9 +2451,24 @@ function render(){
     <td class="td-name">${esc(r.name||r.customer||"")}</td>
     <td>${addrCell(r)}</td>
     <td class="td-amount">
-    ${fmt((r.subtotal||r.productTotal||0)-(r.partialReturn||0))}
-    ${(r.partialReturn||0)>0?`<div style="font-size:9px;color:var(--red);margin-top:2px">-${fmt(r.partialReturn)} مرتجع</div>`:""}
-    ${r.shippingPaidBy==="company"?`<div style="font-size:9px;color:var(--amber);margin-top:2px">🚚 شحن على الشركة</div>`:""}
+    ${(()=>{
+      const st    = String(r.status||"").trim();
+      const ship  = n(r.shipping||0);
+      const onCo  = r.shippingPaidBy==="company";
+      const collect = calcCollect(r);
+      const shipTag = onCo ? `<div style="font-size:9px;color:var(--amber);margin-top:2px">🚚 شحن ع الشركة -${fmt(ship)}</div>` : "";
+
+      if(st==="مرتجع"){
+        if(collect < 0) return `<span style="font-weight:800;color:var(--red);">${fmt(collect)}</span>${shipTag}`;
+        return `<span style="color:var(--mist)">—</span>`;
+      }
+      if(st==="مرتجع جزئي"){
+        const partial = n(r.partialReturn||0);
+        const color = collect < 0 ? "color:var(--red);" : collect===0 ? "color:var(--mist);" : "";
+        return `<span style="font-weight:800;${color}">${collect===0?"—":fmt(collect)}</span><div style="font-size:9px;color:var(--red);margin-top:2px">↩ -${fmt(partial)} مرتجع</div>${shipTag}`;
+      }
+      return `<span style="font-weight:800;">${fmt(collect)}</span>${shipTag}`;
+    })()}
     </td>
     <td class="mono" style="font-size:11px;color:var(--silver)">${fmt(r.shipping||0)}</td>
     <td>${statusBadge(r.status)}${daysHtml}${courierHtml}</td>
@@ -2231,6 +2484,46 @@ function updateToggleBtn(){const btn=document.getElementById("toggleAllBtn");if(
 
 /* ── QUICK UPDATE ── */
 async function quickUpdate(orderId,status){
+  // ── لو مرتجع كامل — اسأل عن الشحن الأول ──
+  if(status === "مرتجع"){
+    const order = allCache.find(r=>String(r.orderId||r.id||"").trim().replace(/\.0+$/,"")=== String(orderId).trim().replace(/\.0+$/,""));
+    const shipAmt = order ? Number(order.shipping||0) : 0;
+    const confirmed = await new Promise(resolve=>{
+      openModal(`
+        <div style="margin-bottom:14px">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع كامل — ${esc(String(orderId))}</div>
+          <div style="font-size:11px;color:var(--mist);margin-top:4px">الأوردر هيترجع كامل للمخزن</div>
+        </div>
+        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="ret_full_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
+            <div style="font-size:10px;color:var(--mist);">العميل رفض يدفع الشحن — هيتسجل مصروف تلقائي</div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(shipAmt)} ج</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-gold" style="flex:1" onclick="window._retFullOk(document.getElementById('ret_full_ship_company').checked)">✅ تأكيد المرتجع</button>
+          <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist)" onclick="window._retFullCancel()">إلغاء</button>
+        </div>
+      `);
+      window._retFullOk = (confirm)=>{ closeModal(); resolve({confirmed:true, shipOnCompany:confirm}); delete window._retFullOk; delete window._retFullCancel; };
+      window._retFullCancel = ()=>{ closeModal(); resolve(null); delete window._retFullOk; delete window._retFullCancel; };
+    });
+    if(!confirmed) return;
+    window._lastRetShipOnCompany = confirmed.shipOnCompany;
+    // لو الشحن على الشركة — سجّله مصروف
+    if(confirmed.shipOnCompany && shipAmt > 0){
+      const today = new Date().toISOString().slice(0,10);
+      api("addExpense",{
+        date:   today,
+        type:   "شحن مرتجع",
+        desc:   "شحن مرتجع — أوردر " + orderId,
+        amount: shipAmt,
+        method: "كاش"
+      }).catch(()=>{});
+    }
+  }
   const id  = String(orderId).trim().replace(/\.0+$/,"");
   const cid = id;
 
@@ -2239,6 +2532,7 @@ async function quickUpdate(orderId,status){
   const prevRows  = rows.map(r=>({...r}));
 
   // حدّث الـ cache فوراً (optimistic)
+  const retShipOnCompany = window._lastRetShipOnCompany || false;
   const applyUpdate = arr => {
     let firstSeen = false;
     return arr.map(r => {
@@ -2247,7 +2541,11 @@ async function quickUpdate(orderId,status){
       const updated = {...r, status};
       if(!firstSeen){
         firstSeen = true;
-        if(status==="مرتجع"||status==="الغاء"){
+        if(status==="مرتجع"){
+          updated.partialReturn = 0;
+          updated.shippingPaidBy = retShipOnCompany ? "company" : "customer";
+          // subtotal يفضل زي ما هو — التحصيل بيتحسب في render من الحالة
+        } else if(status==="الغاء"){
           updated.subtotal=0; updated.partialReturn=0;
         } else if(status==="جديد"||status===""||status==="New"){
           const orig = allCache.find(x=>String(x.orderId||x.id||"").trim().replace(/\.0+$/,"")=== cid);
@@ -2268,7 +2566,11 @@ async function quickUpdate(orderId,status){
   if(isCancelledStatus(status)){const m=getDupTimes();delete m[id];saveDupTimes(m);}
 
   try{
-    const res=await api("bulkUpdate",{ids:id,status,courier:"",shipDate:"",deliveryDate:"",partialAmount:""});
+    const res=await api("bulkUpdate",{
+      ids:id, status,
+      courier:"", shipDate:"", deliveryDate:"", partialAmount:"",
+      shippingPaidBy: status==="مرتجع" ? (window._lastRetShipOnCompany ? "company" : "customer") : ""
+    });
     if(!res?.ok){
       allCache=prevCache; rows=prevRows;
       saveCachedData(allCache); render();
@@ -2421,6 +2723,45 @@ async function bulkUpdate(){
   let courier="",shipDate="",deliveryDate="",partialAmount="";
   if(status==="تم الشحن"){const r=await showCourierSelectModal("batch");if(!r){toast("تم الإلغاء","","warn");return;}courier=r.courier;shipDate=r.shipDate;saveCourier(courier);}
   if(status==="تم التسليم"){const r=await showDeliveryModal();if(!r){toast("تم الإلغاء","","warn");return;}deliveryDate=r.deliveryDate;if(!deliveryDate.trim()){toast("⛔ لازم تكتب تاريخ التسليم","","err");return;}}
+  if(status==="مرتجع"){
+    // اسأل عن الشحن على الشركة
+    const firstId = ids[0];
+    const firstOrder = allCache.find(r=>String(r.orderId||r.id||"").trim()===String(firstId));
+    const shipAmt = ids.length===1 && firstOrder ? Number(firstOrder.shipping||0) : 0;
+    const confirmed = await new Promise(resolve=>{
+      openModal(`
+        <div style="margin-bottom:14px">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع كامل — ${ids.length} أوردر</div>
+          <div style="font-size:11px;color:var(--mist);margin-top:4px">الأوردرات هترجع للمخزن</div>
+        </div>
+        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="ret_bulk_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
+            <div style="font-size:10px;color:var(--mist);">${ids.length===1?`العميل رفض يدفع الشحن — ${fmt(shipAmt)} ج هيتسجل مصروف`:`هيتسجل مصروف شحن لكل أوردر على حدة`}</div>
+          </div>
+          ${ids.length===1?`<div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(shipAmt)} ج</div>`:""}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-gold" style="flex:1" onclick="window._retBulkOk(document.getElementById('ret_bulk_ship_company').checked)">✅ تأكيد المرتجع</button>
+          <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist)" onclick="window._retBulkCancel()">إلغاء</button>
+        </div>
+      `);
+      window._retBulkOk=(shipOnCo)=>{closeModal();resolve({shipOnCompany:shipOnCo});delete window._retBulkOk;delete window._retBulkCancel;};
+      window._retBulkCancel=()=>{closeModal();resolve(null);delete window._retBulkOk;delete window._retBulkCancel;};
+    });
+    if(!confirmed){toast("تم الإلغاء","","warn");return;}
+    window._lastRetShipOnCompany = confirmed.shipOnCompany;
+    // سجّل مصروف شحن لكل أوردر لو على الشركة
+    if(confirmed.shipOnCompany){
+      const today = new Date().toISOString().slice(0,10);
+      ids.forEach(oid=>{
+        const ord = allCache.find(r=>String(r.orderId||r.id||"").trim()===String(oid));
+        const sh  = ord ? Number(ord.shipping||0) : 0;
+        if(sh>0) api("addExpense",{date:today,type:"شحن مرتجع",desc:"شحن مرتجع — أوردر "+oid,amount:sh,method:"كاش"}).catch(()=>{});
+      });
+    }
+  }
   if(status==="مرتجع جزئي"){
   closeModal();
   const ids=[...selected];
@@ -2433,12 +2774,23 @@ async function bulkUpdate(){
 }
   const idSet=new Set(ids.map(String));
   const prevCache=allCache.map(r=>({...r})),prevRows=rows.map(r=>({...r}));
-  allCache=allCache.map(r=>idSet.has(String(r.orderId||r.id||""))?{...r,status,courier:courier||r.courier,shipDate:shipDate||r.shipDate}:r);
-  rows=rows.map(r=>idSet.has(String(r.orderId||r.id||""))?{...r,status,courier:courier||r.courier,shipDate:shipDate||r.shipDate}:r);
+  const bulkShipOnCo = status==="مرتجع" && window._lastRetShipOnCompany;
+  allCache=allCache.map(r=>{
+    if(!idSet.has(String(r.orderId||r.id||""))) return r;
+    const updated = {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate};
+    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; }
+    return updated;
+  });
+  rows=rows.map(r=>{
+    if(!idSet.has(String(r.orderId||r.id||""))) return r;
+    const updated = {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate};
+    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; }
+    return updated;
+  });
   saveCachedData(allCache);render();toast("تم التحديث",`${ids.length} أوردر — ${status}`,"ok",3500);
   document.getElementById("statusSelect").value="";
   if(isCancelledStatus(status)){const m=getDupTimes();ids.forEach(id=>delete m[String(id)]);saveDupTimes(m);}
-  try{const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount});if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}refreshAll(true);}
+  try{const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount,shippingPaidBy:status==="مرتجع"?(window._lastRetShipOnCompany?"company":"customer"):""});if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}refreshAll(true);}
   catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
 }
 
@@ -2767,7 +3119,7 @@ function downloadAllXLSX(){
   const exp=rows.filter(r=>ids.includes(String(r.orderId||r.id||"")));
   if(!exp.length){toast("\u0644\u0627 \u064a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a","","warn");return;}
 
-  const sub  = exp.reduce((a,r)=>a+n(r.subtotal||0)-n(r.partialReturn||0),0);
+  const sub  = exp.reduce((a,r)=>a+calcCollect(r),0);
   const shp  = exp.reduce((a,r)=>a+n(r.shipping||0),0);
   const total= sub+shp;
   const now  = new Date().toLocaleString("ar-EG");
@@ -2802,7 +3154,7 @@ function downloadAllXLSX(){
   aoa.push(["ORDER ID","\u0627\u0644\u0627\u0633\u0645","\u0627\u0644\u0647\u0627\u062a\u0641","\u0647\u0627\u062a\u0641 \u0625\u0636\u0627\u0641\u064a","\u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629","\u0627\u0644\u0639\u0646\u0648\u0627\u0646","\u0627\u0644\u062a\u062d\u0635\u064a\u0644","\u0627\u0644\u0634\u062d\u0646","\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a","\u0627\u0644\u062d\u0627\u0644\u0629"]);
   // data
   exp.forEach(r=>{
-    const rowSub=n(r.subtotal||0)-n(r.partialReturn||0);
+    const rowSub=calcCollect(r);
     const rowShp=n(r.shipping||0);
     aoa.push([
       String(r.orderId||r.id||""),
@@ -4046,6 +4398,208 @@ function printReport(type){
 }
 
 
+/* ───────────────── Couriers Print Report ───────────────── */
+function printCouriersReport(){
+  if(!_couriersData.length){ toast("مفيش بيانات مناديب","","warn"); return; }
+
+  const now = new Date().toLocaleDateString("ar-EG",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const allC = _couriersData;
+  const active = allC.filter(c=>c.active!==false);
+
+  // إحصائيات إجمالية
+  const totOrders    = active.reduce((s,c)=>s+(c.active_orders||0),0);
+  const totDelivered = allC.reduce((s,c)=>s+(c.delivered||0),0);
+  const totReturned  = allC.reduce((s,c)=>s+(c.returned||0),0);
+  const totCollected = allC.reduce((s,c)=>s+(c.ship_collected||0),0);
+  const totTotal     = totDelivered + totReturned;
+  const avgRetRate   = totTotal>0 ? ((totReturned/totTotal)*100).toFixed(1) : "0.0";
+
+  const rows = allC.map(c=>{
+    const total = (c.delivered||0)+(c.returned||0);
+    const ret   = total>0?((c.returned||0)/total*100).toFixed(1):"0.0";
+    const del   = total>0?((c.delivered||0)/total*100).toFixed(1):"0.0";
+    const retNum= parseFloat(ret);
+    const ratingColor = retNum<=5?"#1a7a3a":retNum<=15?"#b8620a":"#8b1a1a";
+    const ratingBg    = retNum<=5?"#e8f8ee":retNum<=15?"#fef3e2":"#fde8e8";
+    const ratingLabel = retNum<=5?"ممتاز":retNum<=15?"متوسط":"مرتفع";
+    const statusColor = c.active!==false?"#1a7a3a":"#8b1a1a";
+    const statusBg    = c.active!==false?"#e8f8ee":"#fde8e8";
+    const statusLabel = c.active!==false?"نشط":"موقوف";
+    return `<tr>
+      <td style="font-weight:800;font-size:13px;">${c.name||""}</td>
+      <td>${c.phone||"—"}</td>
+      <td style="text-align:center;"><span style="background:${statusBg};color:${statusColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel}</span></td>
+      <td style="text-align:center;font-weight:800;color:#b8620a;">${c.active_orders||0}</td>
+      <td style="text-align:center;font-weight:800;color:#1a7a3a;">${c.delivered||0}</td>
+      <td style="text-align:center;font-weight:800;color:#8b1a1a;">${c.returned||0}</td>
+      <td style="text-align:center;">${total}</td>
+      <td style="text-align:center;"><span style="background:${ratingBg};color:${ratingColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${ret}% ${ratingLabel}</span></td>
+      <td style="text-align:center;font-weight:800;">${(c.ship_collected||0).toLocaleString("ar-EG")} ج</td>
+    </tr>`;
+  }).join("");
+
+  // progress bar per courier (للعرض البصري)
+  const barsHtml = allC.map(c=>{
+    const total=(c.delivered||0)+(c.returned||0);
+    const delPct=total>0?Math.round((c.delivered||0)/total*100):0;
+    const retPct=total>0?Math.round((c.returned||0)/total*100):0;
+    const retNum=total>0?((c.returned||0)/total*100):0;
+    const barColor=retNum<=5?"#27ae60":retNum<=15?"#f39c12":"#e74c3c";
+    return `<div style="margin-bottom:10px;padding:10px 14px;border:1px solid #e8e8e8;border-radius:8px;background:#fafafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:800;font-size:13px;">${c.name||""}</span>
+        <span style="font-size:11px;color:#666;">${total} شحنة إجمالي | شحن محصّل: <b>${(c.ship_collected||0).toLocaleString("ar-EG")} ج</b></span>
+      </div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#e8e8e8;">
+        <div style="width:${delPct}%;background:#27ae60;transition:width .3s;"></div>
+        <div style="width:${retPct}%;background:${barColor};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#666;">
+        <span>✅ تسليم: ${c.delivered||0} (${delPct}%)</span>
+        <span style="color:${barColor}">↩️ مرتجع: ${c.returned||0} (${retPct}%)</span>
+        <span>⏳ نشط: ${c.active_orders||0}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  const w = window.open("","_blank","width=900,height=700");
+  w.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير المناديب — WHITE CLOTHES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;direction:rtl;padding:0;}
+
+/* ── شريط الطباعة ── */
+#printBar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#111;color:#fff;position:sticky;top:0;z-index:99;}
+#printBar button{padding:7px 18px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.btn-print{background:#c9a84c;color:#111;}
+.btn-close{background:transparent;color:#aaa;border:1px solid #444!important;}
+#printBar span{font-size:12px;color:#aaa;margin-right:auto;}
+
+/* ── الصفحة ── */
+.page{max-width:210mm;margin:0 auto;padding:14mm 16mm;}
+
+/* ── الهيدر ── */
+.rpt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:20px;}
+.rpt-logo{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:2px;color:#111;}
+.rpt-logo span{display:block;font-size:11px;font-weight:400;letter-spacing:4px;color:#777;font-family:'Cairo',sans-serif;margin-top:2px;}
+.rpt-meta{text-align:left;font-size:11px;color:#555;line-height:1.8;}
+.rpt-meta strong{color:#111;font-size:13px;display:block;margin-bottom:4px;}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+.kpi-box{border:1px solid #e0e0e0;border-radius:8px;padding:12px 10px;text-align:center;background:#fafafa;}
+.kpi-box .val{font-size:22px;font-weight:900;line-height:1;}
+.kpi-box .lbl{font-size:9px;color:#777;margin-top:4px;letter-spacing:.5px;}
+
+/* ── الجدول ── */
+.section-title{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#111;border-right:3px solid #c9a84c;padding-right:10px;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+thead th{background:#111;color:#fff;padding:9px 12px;font-size:11px;font-weight:700;text-align:right;}
+thead th:first-child{border-radius:0 4px 0 0;}
+thead th:last-child{border-radius:4px 0 0 0;}
+tbody tr:nth-child(even) td{background:#f7f7f7;}
+tbody td{padding:9px 12px;font-size:12px;border-bottom:1px solid #e8e8e8;vertical-align:middle;}
+
+/* ── الباركشارت ── */
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+
+/* ── الفوتر ── */
+.rpt-footer{border-top:1px solid #ddd;padding-top:10px;text-align:center;font-size:10px;color:#999;}
+
+/* ── طباعة ── */
+@media print{
+  #printBar{display:none!important;}
+  .page{padding:8mm 10mm;}
+  body{background:#fff;}
+  .kpi-box{border:1px solid #ccc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#111!important;color:#fff!important;}
+  .bars-grid>div{break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div id="printBar">
+  <button class="btn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ إغلاق</button>
+  <span>WHITE CLOTHES — تقرير المناديب</span>
+</div>
+
+<div class="page">
+
+  <!-- هيدر -->
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-logo">WHITE CLOTHES<span>COURIER PERFORMANCE REPORT</span></div>
+    </div>
+    <div class="rpt-meta">
+      <strong>تقرير أداء المناديب</strong>
+      <div>📅 ${now}</div>
+      <div>📊 إجمالي المناديب: <b>${allC.length}</b> | نشطين: <b>${active.length}</b></div>
+    </div>
+  </div>
+
+  <!-- KPIs إجمالية -->
+  <div class="kpi-strip">
+    <div class="kpi-box">
+      <div class="val" style="color:#b8620a;">${totOrders}</div>
+      <div class="lbl">⏳ شحنات نشطة</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#1a7a3a;">${totDelivered}</div>
+      <div class="lbl">✅ تم التسليم</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#8b1a1a;">${totReturned}</div>
+      <div class="lbl">↩️ مرتجعات</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:${parseFloat(avgRetRate)<=5?"#1a7a3a":parseFloat(avgRetRate)<=15?"#b8620a":"#8b1a1a"};">${avgRetRate}%</div>
+      <div class="lbl">📉 متوسط المرتجع</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#6b4c11;font-size:16px;">${totCollected.toLocaleString("ar-EG")} ج</div>
+      <div class="lbl">💰 شحن محصّل</div>
+    </div>
+  </div>
+
+  <!-- جدول المناديب -->
+  <div class="section-title">تفاصيل كل مندوب</div>
+  <table>
+    <thead>
+      <tr>
+        <th>المندوب</th>
+        <th>الهاتف</th>
+        <th>الحالة</th>
+        <th>نشط</th>
+        <th>تسليم ✅</th>
+        <th>مرتجع ↩️</th>
+        <th>الإجمالي</th>
+        <th>نسبة المرتجع</th>
+        <th>شحن محصّل</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <!-- الباركشارت البصري -->
+  <div class="section-title">أداء كل مندوب — تسليم vs مرتجع</div>
+  <div class="bars-grid">${barsHtml}</div>
+
+  <!-- فوتر -->
+  <div class="rpt-footer">WHITE CLOTHES Management System &nbsp;•&nbsp; تم إنشاء التقرير: ${now}</div>
+
+</div>
+</body>
+</html>`);
+  w.document.close();
+}
+
 /* ══════════════════════════════════════════
    SUPPLIER PAYABLES — ذمم الموردين
    ══════════════════════════════════════════ */
@@ -4460,8 +5014,9 @@ function renderTreasuryTable(){
   const today = new Date().toISOString().slice(0,10).replace(/-/g,"/");
 
   const data = _trAll ? days : days.filter(r => {
-    const d = new Date(r.date.replace(/\//g,"-"));
-    return d.getMonth()===_trMonth && d.getFullYear()===_trYear;
+    const parts = String(r.date||"").replace(/-/g,"/").split("/");
+    if(parts.length < 3) return false;
+    return (parseInt(parts[1])-1)===_trMonth && parseInt(parts[0])===_trYear;
   });
 
   // سامري
@@ -4541,8 +5096,9 @@ function _updateTreasuryMonthLabel(){
 function _updateTreasuryKPIsFromFilter(){
   const days = window._treasuryDays || [];
   const data = _trAll ? days : days.filter(r => {
-    const d = new Date(r.date.replace(/\//g,"-"));
-    return d.getMonth()===_trMonth && d.getFullYear()===_trYear;
+    const parts = String(r.date||"").replace(/-/g,"/").split("/");
+    if(parts.length < 3) return false;
+    return (parseInt(parts[1])-1)===_trMonth && parseInt(parts[0])===_trYear;
   });
   const tS=data.reduce((s,r)=>s+n(r.sales),0);
   const tP=data.reduce((s,r)=>s+n(r.purchases),0);
@@ -4744,6 +5300,208 @@ function init(){
   setInterval(()=>refreshAll(false), 15000);
 }
 
+/* ───────────────── Couriers Print Report ───────────────── */
+function printCouriersReport(){
+  if(!_couriersData.length){ toast("مفيش بيانات مناديب","","warn"); return; }
+
+  const now = new Date().toLocaleDateString("ar-EG",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const allC = _couriersData;
+  const active = allC.filter(c=>c.active!==false);
+
+  // إحصائيات إجمالية
+  const totOrders    = active.reduce((s,c)=>s+(c.active_orders||0),0);
+  const totDelivered = allC.reduce((s,c)=>s+(c.delivered||0),0);
+  const totReturned  = allC.reduce((s,c)=>s+(c.returned||0),0);
+  const totCollected = allC.reduce((s,c)=>s+(c.ship_collected||0),0);
+  const totTotal     = totDelivered + totReturned;
+  const avgRetRate   = totTotal>0 ? ((totReturned/totTotal)*100).toFixed(1) : "0.0";
+
+  const rows = allC.map(c=>{
+    const total = (c.delivered||0)+(c.returned||0);
+    const ret   = total>0?((c.returned||0)/total*100).toFixed(1):"0.0";
+    const del   = total>0?((c.delivered||0)/total*100).toFixed(1):"0.0";
+    const retNum= parseFloat(ret);
+    const ratingColor = retNum<=5?"#1a7a3a":retNum<=15?"#b8620a":"#8b1a1a";
+    const ratingBg    = retNum<=5?"#e8f8ee":retNum<=15?"#fef3e2":"#fde8e8";
+    const ratingLabel = retNum<=5?"ممتاز":retNum<=15?"متوسط":"مرتفع";
+    const statusColor = c.active!==false?"#1a7a3a":"#8b1a1a";
+    const statusBg    = c.active!==false?"#e8f8ee":"#fde8e8";
+    const statusLabel = c.active!==false?"نشط":"موقوف";
+    return `<tr>
+      <td style="font-weight:800;font-size:13px;">${c.name||""}</td>
+      <td>${c.phone||"—"}</td>
+      <td style="text-align:center;"><span style="background:${statusBg};color:${statusColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel}</span></td>
+      <td style="text-align:center;font-weight:800;color:#b8620a;">${c.active_orders||0}</td>
+      <td style="text-align:center;font-weight:800;color:#1a7a3a;">${c.delivered||0}</td>
+      <td style="text-align:center;font-weight:800;color:#8b1a1a;">${c.returned||0}</td>
+      <td style="text-align:center;">${total}</td>
+      <td style="text-align:center;"><span style="background:${ratingBg};color:${ratingColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${ret}% ${ratingLabel}</span></td>
+      <td style="text-align:center;font-weight:800;">${(c.ship_collected||0).toLocaleString("ar-EG")} ج</td>
+    </tr>`;
+  }).join("");
+
+  // progress bar per courier (للعرض البصري)
+  const barsHtml = allC.map(c=>{
+    const total=(c.delivered||0)+(c.returned||0);
+    const delPct=total>0?Math.round((c.delivered||0)/total*100):0;
+    const retPct=total>0?Math.round((c.returned||0)/total*100):0;
+    const retNum=total>0?((c.returned||0)/total*100):0;
+    const barColor=retNum<=5?"#27ae60":retNum<=15?"#f39c12":"#e74c3c";
+    return `<div style="margin-bottom:10px;padding:10px 14px;border:1px solid #e8e8e8;border-radius:8px;background:#fafafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:800;font-size:13px;">${c.name||""}</span>
+        <span style="font-size:11px;color:#666;">${total} شحنة إجمالي | شحن محصّل: <b>${(c.ship_collected||0).toLocaleString("ar-EG")} ج</b></span>
+      </div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#e8e8e8;">
+        <div style="width:${delPct}%;background:#27ae60;transition:width .3s;"></div>
+        <div style="width:${retPct}%;background:${barColor};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#666;">
+        <span>✅ تسليم: ${c.delivered||0} (${delPct}%)</span>
+        <span style="color:${barColor}">↩️ مرتجع: ${c.returned||0} (${retPct}%)</span>
+        <span>⏳ نشط: ${c.active_orders||0}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  const w = window.open("","_blank","width=900,height=700");
+  w.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير المناديب — WHITE CLOTHES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;direction:rtl;padding:0;}
+
+/* ── شريط الطباعة ── */
+#printBar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#111;color:#fff;position:sticky;top:0;z-index:99;}
+#printBar button{padding:7px 18px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.btn-print{background:#c9a84c;color:#111;}
+.btn-close{background:transparent;color:#aaa;border:1px solid #444!important;}
+#printBar span{font-size:12px;color:#aaa;margin-right:auto;}
+
+/* ── الصفحة ── */
+.page{max-width:210mm;margin:0 auto;padding:14mm 16mm;}
+
+/* ── الهيدر ── */
+.rpt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:20px;}
+.rpt-logo{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:2px;color:#111;}
+.rpt-logo span{display:block;font-size:11px;font-weight:400;letter-spacing:4px;color:#777;font-family:'Cairo',sans-serif;margin-top:2px;}
+.rpt-meta{text-align:left;font-size:11px;color:#555;line-height:1.8;}
+.rpt-meta strong{color:#111;font-size:13px;display:block;margin-bottom:4px;}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+.kpi-box{border:1px solid #e0e0e0;border-radius:8px;padding:12px 10px;text-align:center;background:#fafafa;}
+.kpi-box .val{font-size:22px;font-weight:900;line-height:1;}
+.kpi-box .lbl{font-size:9px;color:#777;margin-top:4px;letter-spacing:.5px;}
+
+/* ── الجدول ── */
+.section-title{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#111;border-right:3px solid #c9a84c;padding-right:10px;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+thead th{background:#111;color:#fff;padding:9px 12px;font-size:11px;font-weight:700;text-align:right;}
+thead th:first-child{border-radius:0 4px 0 0;}
+thead th:last-child{border-radius:4px 0 0 0;}
+tbody tr:nth-child(even) td{background:#f7f7f7;}
+tbody td{padding:9px 12px;font-size:12px;border-bottom:1px solid #e8e8e8;vertical-align:middle;}
+
+/* ── الباركشارت ── */
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+
+/* ── الفوتر ── */
+.rpt-footer{border-top:1px solid #ddd;padding-top:10px;text-align:center;font-size:10px;color:#999;}
+
+/* ── طباعة ── */
+@media print{
+  #printBar{display:none!important;}
+  .page{padding:8mm 10mm;}
+  body{background:#fff;}
+  .kpi-box{border:1px solid #ccc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#111!important;color:#fff!important;}
+  .bars-grid>div{break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div id="printBar">
+  <button class="btn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ إغلاق</button>
+  <span>WHITE CLOTHES — تقرير المناديب</span>
+</div>
+
+<div class="page">
+
+  <!-- هيدر -->
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-logo">WHITE CLOTHES<span>COURIER PERFORMANCE REPORT</span></div>
+    </div>
+    <div class="rpt-meta">
+      <strong>تقرير أداء المناديب</strong>
+      <div>📅 ${now}</div>
+      <div>📊 إجمالي المناديب: <b>${allC.length}</b> | نشطين: <b>${active.length}</b></div>
+    </div>
+  </div>
+
+  <!-- KPIs إجمالية -->
+  <div class="kpi-strip">
+    <div class="kpi-box">
+      <div class="val" style="color:#b8620a;">${totOrders}</div>
+      <div class="lbl">⏳ شحنات نشطة</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#1a7a3a;">${totDelivered}</div>
+      <div class="lbl">✅ تم التسليم</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#8b1a1a;">${totReturned}</div>
+      <div class="lbl">↩️ مرتجعات</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:${parseFloat(avgRetRate)<=5?"#1a7a3a":parseFloat(avgRetRate)<=15?"#b8620a":"#8b1a1a"};">${avgRetRate}%</div>
+      <div class="lbl">📉 متوسط المرتجع</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#6b4c11;font-size:16px;">${totCollected.toLocaleString("ar-EG")} ج</div>
+      <div class="lbl">💰 شحن محصّل</div>
+    </div>
+  </div>
+
+  <!-- جدول المناديب -->
+  <div class="section-title">تفاصيل كل مندوب</div>
+  <table>
+    <thead>
+      <tr>
+        <th>المندوب</th>
+        <th>الهاتف</th>
+        <th>الحالة</th>
+        <th>نشط</th>
+        <th>تسليم ✅</th>
+        <th>مرتجع ↩️</th>
+        <th>الإجمالي</th>
+        <th>نسبة المرتجع</th>
+        <th>شحن محصّل</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <!-- الباركشارت البصري -->
+  <div class="section-title">أداء كل مندوب — تسليم vs مرتجع</div>
+  <div class="bars-grid">${barsHtml}</div>
+
+  <!-- فوتر -->
+  <div class="rpt-footer">WHITE CLOTHES Management System &nbsp;•&nbsp; تم إنشاء التقرير: ${now}</div>
+
+</div>
+</body>
+</html>`);
+  w.document.close();
+}
+
 /* ════════════════════════════════════════════════════════
    PRELOAD — بيحمّل كل الصفحات في الخلفية عشان تفتح فوراً
    ════════════════════════════════════════════════════════ */
@@ -4807,16 +5565,26 @@ async function quickPartialReturn(orderId){
   const items=res.order.items||[];
   if(!items.length){toast("مفيش منتجات في الأوردر","","warn");return;}
 
-  const itemsHtml=items.map((item,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--ink3);border-radius:var(--r2);border:1px solid var(--rule);margin-bottom:8px;">
-      <input type="checkbox" id="ret_${i}" style="width:18px;height:18px;">
+  // المنتجات اللي اترجعوا قبل كده
+  const retRaw = res.order.returnedItemsRaw || "";
+  const retNames = retRaw ? retRaw.split("|").map(s=>s.trim().toLowerCase()).filter(Boolean) : [];
+  const isReturned = (item) => {
+    const key = ((item.name||"")+(item.size?" "+item.size:"")+(item.color?" "+item.color:"")).trim().toLowerCase();
+    return retNames.includes(key);
+  };
+
+  const itemsHtml=items.map((item,i)=>{
+    const done = isReturned(item);
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:${done?"rgba(255,255,255,.03)":"var(--ink3)"};border-radius:var(--r2);border:1px solid ${done?"rgba(255,255,255,.06)":"var(--rule)"};margin-bottom:8px;opacity:${done?".45":"1"};">
+      <input type="checkbox" id="ret_${i}" style="width:18px;height:18px;" ${done?"disabled checked":""}>
       <div style="flex:1">
-        <div style="font-size:12px;font-weight:700;color:var(--ivory)">${esc(item.name||"")}</div>
+        <div style="font-size:12px;font-weight:700;color:${done?"var(--mist)":"var(--ivory)"};">${esc(item.name||"")} ${done?'<span style="font-size:10px;color:var(--red);">✓ مرتجع</span>':""}</div>
         <div style="font-size:10px;color:var(--mist)">${esc(item.color||"")} ${esc(item.size||"")} × ${item.qty||1}</div>
       </div>
-      <div style="font-size:12px;color:var(--gold)">${fmt(item.lineTotal||0)} ج</div>
-    </div>
-  `).join("");
+      <div style="font-size:12px;color:${done?"var(--mist)":"var(--gold)"};">${fmt(item.lineTotal||0)} ج</div>
+    </div>`;
+  }).join("");
 
   const orderShipping = res.order.shipping || 0;
 
@@ -4846,7 +5614,10 @@ async function quickPartialReturn(orderId){
 
   window._retSave=async()=>{
     const err=document.getElementById("ret_err");
-    const returned=items.filter((_,i)=>document.getElementById("ret_"+i)?.checked);
+    const returned=items.filter((item,i)=>{
+      const el = document.getElementById("ret_"+i);
+      return el?.checked && !el?.disabled; // استثني المعطّلة (اللي اترجعوا قبل كده)
+    });
     if(!returned.length){err.textContent="⛔ اختر منتج واحد على الأقل";err.style.display="block";return;}
     const shipOnCompany = document.getElementById("ret_ship_company")?.checked || false;
     const shippingLoss  = shipOnCompany ? Number(orderShipping) : 0;
@@ -4862,7 +5633,7 @@ async function quickPartialReturn(orderId){
       hideLoading();
       if(res?.ok){
         // التحصيل = المنتجات المرتجعة + الشحن لو على الشركة
-        const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0) + shippingLoss;
+        const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0); // بدون شحن — الشحن بيتحسب من shippingPaidBy
         allCache = allCache.map(r=>{
           if(String(r.orderId||r.id||"")!==String(orderId)) return r;
           return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer"};
@@ -5038,6 +5809,208 @@ function printInvoice(orderId){
 }
 
 
+/* ───────────────── Couriers Print Report ───────────────── */
+function printCouriersReport(){
+  if(!_couriersData.length){ toast("مفيش بيانات مناديب","","warn"); return; }
+
+  const now = new Date().toLocaleDateString("ar-EG",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const allC = _couriersData;
+  const active = allC.filter(c=>c.active!==false);
+
+  // إحصائيات إجمالية
+  const totOrders    = active.reduce((s,c)=>s+(c.active_orders||0),0);
+  const totDelivered = allC.reduce((s,c)=>s+(c.delivered||0),0);
+  const totReturned  = allC.reduce((s,c)=>s+(c.returned||0),0);
+  const totCollected = allC.reduce((s,c)=>s+(c.ship_collected||0),0);
+  const totTotal     = totDelivered + totReturned;
+  const avgRetRate   = totTotal>0 ? ((totReturned/totTotal)*100).toFixed(1) : "0.0";
+
+  const rows = allC.map(c=>{
+    const total = (c.delivered||0)+(c.returned||0);
+    const ret   = total>0?((c.returned||0)/total*100).toFixed(1):"0.0";
+    const del   = total>0?((c.delivered||0)/total*100).toFixed(1):"0.0";
+    const retNum= parseFloat(ret);
+    const ratingColor = retNum<=5?"#1a7a3a":retNum<=15?"#b8620a":"#8b1a1a";
+    const ratingBg    = retNum<=5?"#e8f8ee":retNum<=15?"#fef3e2":"#fde8e8";
+    const ratingLabel = retNum<=5?"ممتاز":retNum<=15?"متوسط":"مرتفع";
+    const statusColor = c.active!==false?"#1a7a3a":"#8b1a1a";
+    const statusBg    = c.active!==false?"#e8f8ee":"#fde8e8";
+    const statusLabel = c.active!==false?"نشط":"موقوف";
+    return `<tr>
+      <td style="font-weight:800;font-size:13px;">${c.name||""}</td>
+      <td>${c.phone||"—"}</td>
+      <td style="text-align:center;"><span style="background:${statusBg};color:${statusColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${statusLabel}</span></td>
+      <td style="text-align:center;font-weight:800;color:#b8620a;">${c.active_orders||0}</td>
+      <td style="text-align:center;font-weight:800;color:#1a7a3a;">${c.delivered||0}</td>
+      <td style="text-align:center;font-weight:800;color:#8b1a1a;">${c.returned||0}</td>
+      <td style="text-align:center;">${total}</td>
+      <td style="text-align:center;"><span style="background:${ratingBg};color:${ratingColor};border-radius:4px;padding:2px 10px;font-size:11px;font-weight:700;">${ret}% ${ratingLabel}</span></td>
+      <td style="text-align:center;font-weight:800;">${(c.ship_collected||0).toLocaleString("ar-EG")} ج</td>
+    </tr>`;
+  }).join("");
+
+  // progress bar per courier (للعرض البصري)
+  const barsHtml = allC.map(c=>{
+    const total=(c.delivered||0)+(c.returned||0);
+    const delPct=total>0?Math.round((c.delivered||0)/total*100):0;
+    const retPct=total>0?Math.round((c.returned||0)/total*100):0;
+    const retNum=total>0?((c.returned||0)/total*100):0;
+    const barColor=retNum<=5?"#27ae60":retNum<=15?"#f39c12":"#e74c3c";
+    return `<div style="margin-bottom:10px;padding:10px 14px;border:1px solid #e8e8e8;border-radius:8px;background:#fafafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:800;font-size:13px;">${c.name||""}</span>
+        <span style="font-size:11px;color:#666;">${total} شحنة إجمالي | شحن محصّل: <b>${(c.ship_collected||0).toLocaleString("ar-EG")} ج</b></span>
+      </div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#e8e8e8;">
+        <div style="width:${delPct}%;background:#27ae60;transition:width .3s;"></div>
+        <div style="width:${retPct}%;background:${barColor};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#666;">
+        <span>✅ تسليم: ${c.delivered||0} (${delPct}%)</span>
+        <span style="color:${barColor}">↩️ مرتجع: ${c.returned||0} (${retPct}%)</span>
+        <span>⏳ نشط: ${c.active_orders||0}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  const w = window.open("","_blank","width=900,height=700");
+  w.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير المناديب — WHITE CLOTHES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#111;direction:rtl;padding:0;}
+
+/* ── شريط الطباعة ── */
+#printBar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#111;color:#fff;position:sticky;top:0;z-index:99;}
+#printBar button{padding:7px 18px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.btn-print{background:#c9a84c;color:#111;}
+.btn-close{background:transparent;color:#aaa;border:1px solid #444!important;}
+#printBar span{font-size:12px;color:#aaa;margin-right:auto;}
+
+/* ── الصفحة ── */
+.page{max-width:210mm;margin:0 auto;padding:14mm 16mm;}
+
+/* ── الهيدر ── */
+.rpt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:20px;}
+.rpt-logo{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:2px;color:#111;}
+.rpt-logo span{display:block;font-size:11px;font-weight:400;letter-spacing:4px;color:#777;font-family:'Cairo',sans-serif;margin-top:2px;}
+.rpt-meta{text-align:left;font-size:11px;color:#555;line-height:1.8;}
+.rpt-meta strong{color:#111;font-size:13px;display:block;margin-bottom:4px;}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+.kpi-box{border:1px solid #e0e0e0;border-radius:8px;padding:12px 10px;text-align:center;background:#fafafa;}
+.kpi-box .val{font-size:22px;font-weight:900;line-height:1;}
+.kpi-box .lbl{font-size:9px;color:#777;margin-top:4px;letter-spacing:.5px;}
+
+/* ── الجدول ── */
+.section-title{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#111;border-right:3px solid #c9a84c;padding-right:10px;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+thead th{background:#111;color:#fff;padding:9px 12px;font-size:11px;font-weight:700;text-align:right;}
+thead th:first-child{border-radius:0 4px 0 0;}
+thead th:last-child{border-radius:4px 0 0 0;}
+tbody tr:nth-child(even) td{background:#f7f7f7;}
+tbody td{padding:9px 12px;font-size:12px;border-bottom:1px solid #e8e8e8;vertical-align:middle;}
+
+/* ── الباركشارت ── */
+.bars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+
+/* ── الفوتر ── */
+.rpt-footer{border-top:1px solid #ddd;padding-top:10px;text-align:center;font-size:10px;color:#999;}
+
+/* ── طباعة ── */
+@media print{
+  #printBar{display:none!important;}
+  .page{padding:8mm 10mm;}
+  body{background:#fff;}
+  .kpi-box{border:1px solid #ccc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#111!important;color:#fff!important;}
+  .bars-grid>div{break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div id="printBar">
+  <button class="btn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ إغلاق</button>
+  <span>WHITE CLOTHES — تقرير المناديب</span>
+</div>
+
+<div class="page">
+
+  <!-- هيدر -->
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-logo">WHITE CLOTHES<span>COURIER PERFORMANCE REPORT</span></div>
+    </div>
+    <div class="rpt-meta">
+      <strong>تقرير أداء المناديب</strong>
+      <div>📅 ${now}</div>
+      <div>📊 إجمالي المناديب: <b>${allC.length}</b> | نشطين: <b>${active.length}</b></div>
+    </div>
+  </div>
+
+  <!-- KPIs إجمالية -->
+  <div class="kpi-strip">
+    <div class="kpi-box">
+      <div class="val" style="color:#b8620a;">${totOrders}</div>
+      <div class="lbl">⏳ شحنات نشطة</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#1a7a3a;">${totDelivered}</div>
+      <div class="lbl">✅ تم التسليم</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#8b1a1a;">${totReturned}</div>
+      <div class="lbl">↩️ مرتجعات</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:${parseFloat(avgRetRate)<=5?"#1a7a3a":parseFloat(avgRetRate)<=15?"#b8620a":"#8b1a1a"};">${avgRetRate}%</div>
+      <div class="lbl">📉 متوسط المرتجع</div>
+    </div>
+    <div class="kpi-box">
+      <div class="val" style="color:#6b4c11;font-size:16px;">${totCollected.toLocaleString("ar-EG")} ج</div>
+      <div class="lbl">💰 شحن محصّل</div>
+    </div>
+  </div>
+
+  <!-- جدول المناديب -->
+  <div class="section-title">تفاصيل كل مندوب</div>
+  <table>
+    <thead>
+      <tr>
+        <th>المندوب</th>
+        <th>الهاتف</th>
+        <th>الحالة</th>
+        <th>نشط</th>
+        <th>تسليم ✅</th>
+        <th>مرتجع ↩️</th>
+        <th>الإجمالي</th>
+        <th>نسبة المرتجع</th>
+        <th>شحن محصّل</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <!-- الباركشارت البصري -->
+  <div class="section-title">أداء كل مندوب — تسليم vs مرتجع</div>
+  <div class="bars-grid">${barsHtml}</div>
+
+  <!-- فوتر -->
+  <div class="rpt-footer">WHITE CLOTHES Management System &nbsp;•&nbsp; تم إنشاء التقرير: ${now}</div>
+
+</div>
+</body>
+</html>`);
+  w.document.close();
+}
+
 /* ════════════════════════════════════════════════════════
    COURIERS PAGE — Full Version (API-backed)
    ════════════════════════════════════════════════════════ */
@@ -5201,14 +6174,37 @@ function populateCourierFilter(){
 
 let _archiveData = [];
 
+function toggleArchiveStatus(btn){
+  const all = document.querySelectorAll(".arch-status-chip");
+  if(btn.dataset.status === ""){
+    // الكل — شيل كل الـ active وخلي الكل
+    all.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  } else {
+    // شيل "الكل" لو كانت active
+    document.querySelector('.arch-status-chip[data-status=""]')?.classList.remove("active");
+    btn.classList.toggle("active");
+    // لو مفيش حاجة selected، رجّع "الكل"
+    const anyActive = [...all].filter(b=>b.dataset.status!==""&&b.classList.contains("active"));
+    if(!anyActive.length) document.querySelector('.arch-status-chip[data-status=""]')?.classList.add("active");
+  }
+  loadCourierArchive();
+}
+
+function getSelectedArchiveStatuses(){
+  const chips = [...document.querySelectorAll(".arch-status-chip.active")];
+  const statuses = chips.map(b=>b.dataset.status).filter(s=>s!=="");
+  return statuses; // [] = الكل
+}
+
 async function loadCourierArchive(){
   const tbody   = document.getElementById("courier_archive_tbody");
   const footer  = document.getElementById("courier_archive_footer");
   const loading = document.getElementById("courier_archive_loading");
   if(!tbody) return;
 
-  const cFilter = (document.getElementById("archive_courier_filter")?.value||"").trim();
-  const sFilter = (document.getElementById("archive_status_filter")?.value||"").trim();
+  const cFilter   = (document.getElementById("archive_courier_filter")?.value||"").trim();
+  const sStatuses = getSelectedArchiveStatuses(); // [] = الكل
   const from    = (document.getElementById("archive_from")?.value||"").trim();
   const to      = (document.getElementById("archive_to")?.value||"").trim();
 
@@ -5222,9 +6218,9 @@ async function loadCourierArchive(){
   } catch(e){ toast("❌ خطأ","","err"); return; }
   finally { if(loading) loading.style.display="none"; }
 
-  // فلتر الحالة محلياً (سريع)
-  const filtered = sFilter
-    ? _archiveData.filter(r=>r.status===sFilter)
+  // فلتر الحالة محلياً — multi-select
+  const filtered = sStatuses.length
+    ? _archiveData.filter(r=>sStatuses.includes(r.status))
     : _archiveData;
 
   if(!filtered.length){
@@ -5249,12 +6245,22 @@ async function loadCourierArchive(){
         `<div style="color:#27ae60;font-weight:600">${fmtDate(r.delivDate)}</div>`:
         `<span style="color:var(--rule2)">—</span>`}</td>
       <td class="td-amount" style="font-weight:700;">${fmt(r.shipping||0)}</td>
+      <td class="td-amount" style="font-weight:800;color:${(()=>{const c=calcCollect(r);return c<0?'var(--red)':r.status==='تم التسليم'?'#27ae60':r.status==='تم الشحن'?'var(--amber)':r.status==='مرتجع جزئي'?'#3498db':'var(--mist)';})()};">
+        ${(()=>{
+          const c = calcCollect(r);
+          if(c > 0 && r.status==='تم الشحن') return '<span style="font-size:10px;color:var(--amber)">متوقع</span> '+fmt(c)+' ج';
+          if(c > 0) return fmt(c)+' ج';
+          if(c < 0) return '-'+fmt(Math.abs(c))+' ج';
+          return '<span style="color:var(--mist);font-size:11px">—</span>';
+        })()}
+      </td>
       <td>${statusBadge(r.status)}</td>
     </tr>`;
   }).join("");
 
   // ── Footer ──
-  const totalShip = filtered.reduce((s,r)=>s+Number(r.shipping||0),0);
+  const totalShip    = filtered.reduce((s,r)=>s+Number(r.shipping||0),0);
+  const totalCollect = filtered.reduce((s,r)=>s+calcCollect(r),0);
   const deliv     = filtered.filter(r=>r.status==="تم التسليم").length;
   const ret       = filtered.filter(r=>["مرتجع","مرتجع جزئي"].includes(r.status)).length;
   const active    = filtered.filter(r=>r.status==="تم الشحن").length;
@@ -5268,14 +6274,15 @@ async function loadCourierArchive(){
     footer.style.flexWrap = "wrap";
     footer.style.gap = "0";
     footer.innerHTML = [
-      {label:"الكل",    val:filtered.length, color:"var(--silver)"},
-      {label:"نشط",     val:active,          color:"var(--amber)"},
-      {label:"تسليم",   val:deliv,           color:"#27ae60"},
-      {label:"مرتجع",   val:ret,             color:"var(--red)"},
-      {label:"نسبة المرتجع", val:retRate+"%", color:parseFloat(retRate)>15?"var(--red)":parseFloat(retRate)>5?"var(--amber)":"#27ae60"},
-      {label:"شحن محصّل",val:fmt(totalShip)+" ج", color:"var(--gold)"},
-    ].map(s=>`<div style="flex:1;min-width:90px;padding:8px 14px;border-left:1px solid var(--rule);text-align:center;">
-        <div style="font-size:13px;font-weight:800;color:${s.color};">${s.val}</div>
+      {label:"الكل",         val:filtered.length,        color:"var(--silver)"},
+      {label:"نشط",          val:active,                 color:"var(--amber)"},
+      {label:"تسليم",        val:deliv,                  color:"#27ae60"},
+      {label:"مرتجع",        val:ret,                    color:"var(--red)"},
+      {label:"نسبة المرتجع", val:retRate+"%",            color:parseFloat(retRate)>15?"var(--red)":parseFloat(retRate)>5?"var(--amber)":"#27ae60"},
+      {label:"شحن محصّل",   val:fmt(totalShip)+" ج",    color:"var(--gold)"},
+      {label:"💰 إجمالي التحصيل", val:(totalCollect<0?'-':'')+fmt(Math.abs(totalCollect))+" ج", color:totalCollect<0?"var(--red)":"#27ae60", bold:true},
+    ].map(s=>`<div style="flex:1;min-width:90px;padding:8px 14px;border-left:1px solid var(--rule);text-align:center;${s.bold?"background:rgba(39,174,96,.06);":""}">
+        <div style="font-size:${s.bold?"15":"13"}px;font-weight:800;color:${s.color};">${s.val}</div>
         <div style="font-size:9px;color:var(--mist);margin-top:2px;text-transform:uppercase;letter-spacing:.8px;">${s.label}</div>
       </div>`).join("");
   }
@@ -5283,6 +6290,380 @@ async function loadCourierArchive(){
 
 // للاستدعاء من loadCouriersPage
 function renderCourierArchive(){ loadCourierArchive(); }
+
+function printArchiveReport(){
+  const sStatuses = getSelectedArchiveStatuses();
+  const cFilter   = (document.getElementById("archive_courier_filter")?.value||"").trim();
+  const from      = (document.getElementById("archive_from")?.value||"").replace(/-/g,"/");
+  const to        = (document.getElementById("archive_to")?.value||"").replace(/-/g,"/");
+
+  const filtered = sStatuses.length ? _archiveData.filter(r=>sStatuses.includes(r.status)) : _archiveData;
+  if(!filtered.length){ toast("مفيش بيانات للطباعة","","warn"); return; }
+
+  const now = new Date().toLocaleDateString("ar-EG",{year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit"});
+
+  // ── حساب التحصيل الصح لكل أوردر ──
+  // تم التسليم  → Total Bill - Shipping (المنتجات بس)
+  // تم الشحن   → Total Bill - Shipping (متوقع — لسه في إيده)
+  // مرتجع جزئي → Partial Return Amount (قيمة الجزء المتسلّم)
+  // مرتجع      → صفر (لو شحن على الشركة) أو صفر برضو (مش بيجيب فلوس)
+  const collectOf = r => calcCollect(r);
+
+  // ── إجمالي لكل حالة ──
+  const STATUS_LIST = ["تم الشحن","تم التسليم","مرتجع","مرتجع جزئي"];
+  const byStatus = {};
+  STATUS_LIST.forEach(s=>{
+    const rows = filtered.filter(r=>r.status===s);
+    byStatus[s] = {
+      count:   rows.length,
+      collect: rows.reduce((a,r)=>a+collectOf(r),0),
+      ship:    rows.reduce((a,r)=>a+Number(r.shipping||0),0),
+    };
+  });
+
+  const totCount   = filtered.length;
+  const totCollect = filtered.reduce((a,r)=>a+collectOf(r),0);
+  const totShip    = filtered.reduce((a,r)=>a+Number(r.shipping||0),0);
+  const deliv      = byStatus["تم التسليم"].count;
+  const ret        = byStatus["مرتجع"].count + byStatus["مرتجع جزئي"].count;
+  const retRate    = (deliv+ret)>0?((ret/(deliv+ret))*100).toFixed(1):"0.0";
+  const retColor   = parseFloat(retRate)<=5?"#1a7a3a":parseFloat(retRate)<=15?"#b8620a":"#8b1a1a";
+
+  const filterDesc = [
+    cFilter          ? "المندوب: "+cFilter             : "",
+    sStatuses.length ? "الحالة: "+sStatuses.join("، ") : "",
+    from             ? "من: "+from                     : "",
+    to               ? "إلى: "+to                     : "",
+  ].filter(Boolean).join("  |  ") || "الكل";
+
+  // ── صفوف الجدول مجمّعة حسب الحالة ──
+  const SC = {
+    "تم الشحن":    {bg:"#fef3e2",color:"#b8620a",th:"#b8620a"},
+    "تم التسليم":  {bg:"#e8f8ee",color:"#1a7a3a",th:"#1a7a3a"},
+    "مرتجع":       {bg:"#fde8e8",color:"#8b1a1a",th:"#8b1a1a"},
+    "مرتجع جزئي":  {bg:"#fde8e8",color:"#8b1a1a",th:"#8b1a1a"},
+  };
+
+  // رتّب: التسليم أولاً، ثم الشحن، ثم المرتجعات
+  const ORDER = ["تم التسليم","تم الشحن","مرتجع","مرتجع جزئي"];
+  const sorted = [...filtered].sort((a,b)=>ORDER.indexOf(a.status)-ORDER.indexOf(b.status));
+
+  let tableRows = "";
+  let lastStatus = null;
+  sorted.forEach((r,i)=>{
+    const sc = SC[r.status]||{bg:"#f5f5f5",color:"#333"};
+    const collect = collectOf(r);
+    // صف فاصل لكل مجموعة حالة
+    if(r.status !== lastStatus){
+      const grp = byStatus[r.status];
+      tableRows += `<tr class="group-row" style="background:${sc.bg};border-top-color:${sc.color};">
+        <td class="g-title" colspan="6" style="color:${sc.color};">
+          ▸ ${r.status} &nbsp;—&nbsp; ${grp.count} أوردر
+        </td>
+        <td class="g-amt" style="color:#555;">${grp.ship.toLocaleString("ar-EG")} ج</td>
+        <td class="g-amt" style="color:${grp.collect<0?"#c0392b":sc.color};">${grp.collect<0?"-"+Math.abs(grp.collect).toLocaleString("ar-EG"):grp.collect.toLocaleString("ar-EG")} ج</td>
+        <td></td>
+      </tr>`;
+      lastStatus = r.status;
+    }
+    tableRows += `<tr class="data-row">
+      <td style="font-weight:800;color:#b8941e;">${r.orderId||""}</td>
+      <td style="font-weight:600;">${r.customer||""}</td>
+      <td style="color:#666;">${r.city||""}</td>
+      <td style="font-weight:600;">${r.courier||"—"}</td>
+      <td style="text-align:center;color:#666;">${r.shipDate||"—"}</td>
+      <td style="text-align:center;color:#1a7a3a;font-weight:600;">${r.delivDate||"—"}</td>
+      <td style="text-align:center;font-weight:700;">${Number(r.shipping||0).toLocaleString("ar-EG")} ج</td>
+      <td style="text-align:center;font-weight:900;font-size:13px;color:${collect<0?"#c0392b":sc.color};">
+        ${collect > 0
+          ? collect.toLocaleString("ar-EG")+" ج"+(r.status==="تم الشحن"?" *":"")
+          : collect < 0
+            ? "-"+Math.abs(collect).toLocaleString("ar-EG")+" ج"
+            : "—"}
+      </td>
+      <td style="text-align:center;"><span style="background:${sc.bg};color:${sc.color};border-radius:3px;padding:2px 7px;font-size:10px;font-weight:700;">${r.status}</span></td>
+    </tr>`;
+  });
+
+  // صف الإجمالي الكلي
+  tableRows += `<tr class="total-row">
+    <td class="t-label" colspan="6">📊 الإجمالي الكلي — ${totCount} أوردر</td>
+    <td class="t-ship">${totShip.toLocaleString("ar-EG")} ج</td>
+    <td class="t-collect" style="color:${totCollect<0?"#c0392b":""};">${totCollect<0?"-"+Math.abs(totCollect).toLocaleString("ar-EG"):totCollect.toLocaleString("ar-EG")} ج</td>
+    <td></td>
+  </tr>`;
+
+  const w = window.open("","_blank","width=1200,height=800");
+  w.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>تقرير التحصيل — WHITE CLOTHES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+@page{size:A4 landscape;margin:8mm 10mm;}
+body{font-family:'Cairo',Arial,sans-serif;background:#f4f4f2;color:#1a1a1a;direction:rtl;font-size:12px;}
+
+/* ── شريط الطباعة — يختفي عند الطباعة ── */
+#printBar{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;background:#111;color:#fff;
+  position:sticky;top:0;z-index:99;
+  font-family:'Cairo',sans-serif;
+}
+#printBar button{padding:7px 18px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;}
+#printBar button:hover{opacity:.85;}
+.btn-p{background:#c9a84c;color:#111;}
+.btn-x{background:transparent;color:#999;border:1px solid #444!important;}
+#printBar .pb-info{font-size:11px;color:#666;margin-right:auto;letter-spacing:.3px;}
+
+/* ── الورقة ── */
+.sheet{
+  max-width:277mm;margin:0 auto;
+  background:#fff;
+  padding:10mm 12mm;
+}
+
+/* ── هيدر ── */
+.rh{
+  display:flex;align-items:stretch;justify-content:space-between;
+  border-bottom:3px solid #1a1a1a;
+  padding-bottom:10px;margin-bottom:14px;
+  gap:16px;
+}
+.rh-brand{display:flex;flex-direction:column;justify-content:center;}
+.rh-brand .logo{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:900;letter-spacing:2px;color:#1a1a1a;
+  line-height:1;
+}
+.rh-brand .sub{
+  font-size:8px;letter-spacing:4px;color:#888;
+  font-family:'Cairo',sans-serif;font-weight:300;
+  margin-top:3px;text-transform:uppercase;
+}
+.rh-brand .filter-tag{
+  margin-top:8px;font-size:10px;color:#555;
+  border-right:2px solid #c9a84c;padding-right:8px;
+  line-height:1.6;
+}
+.rh-meta{text-align:left;font-size:10px;color:#666;line-height:1.9;display:flex;flex-direction:column;justify-content:center;}
+.rh-meta strong{font-size:13px;color:#1a1a1a;font-weight:900;display:block;margin-bottom:2px;}
+.rh-badge{
+  display:inline-block;margin-top:4px;
+  background:#1a1a1a;color:#c9a84c;
+  padding:2px 12px;border-radius:3px;
+  font-size:10px;font-weight:700;letter-spacing:.5px;
+}
+
+/* ── بطاقات الملخص ── */
+.summary{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr 2fr;
+  gap:8px;margin-bottom:14px;
+}
+.sb{
+  border-radius:6px;padding:10px 14px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  min-height:70px;
+}
+.sb .s-num{font-size:26px;font-weight:900;line-height:1;}
+.sb .s-lbl{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-top:2px;}
+.sb .s-amt{font-size:13px;font-weight:800;margin-top:8px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);}
+.sb-ship  {background:#fef6e4;border:1px solid #e8c97a;}
+.sb-deliv {background:#eafaf1;border:1px solid #82c89e;}
+.sb-ret   {background:#fdecea;border:1px solid #d98080;}
+.sb-total {
+  background:#1a1a1a;border:none;
+  grid-column:span 1;
+  justify-content:center;align-items:center;text-align:center;
+}
+.sb-total .s-lbl{color:#c9a84c;}
+.sb-total .s-num{color:#fff;font-size:32px;}
+.sb-total .s-unit{color:#c9a84c;font-size:14px;font-weight:700;margin-top:4px;}
+.sb-total .s-sub{color:#888;font-size:10px;margin-top:6px;}
+
+/* ── الجدول ── */
+.tbl-wrap{overflow:hidden;border-radius:6px;border:1px solid #e0e0e0;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+
+/* هيدر الجدول */
+thead tr{background:#1a1a1a;}
+thead th{
+  color:#fff;padding:8px 9px;
+  font-size:10px;font-weight:700;
+  text-align:right;white-space:nowrap;
+}
+thead th.th-collect{background:#1a3a2a!important;color:#7ecf9a!important;}
+
+/* صف فاصل للحالة */
+.group-row td{
+  padding:5px 9px;font-weight:900;font-size:11px;
+  border-top:2px solid;
+}
+.group-row .g-title{font-size:11px;font-weight:900;}
+.group-row .g-amt{font-weight:900;font-size:12px;text-align:center;}
+
+/* صفوف البيانات */
+tbody tr.data-row td{
+  padding:6px 9px;border-bottom:1px solid #f0f0f0;
+  vertical-align:middle;
+}
+tbody tr.data-row:hover td{background:#fafaf8;}
+
+/* صف الإجمالي */
+.total-row td{
+  padding:8px 9px;
+  background:#1a1a1a!important;
+  color:#fff;font-weight:900;
+  border-top:3px solid #c9a84c;
+}
+.total-row .t-label{color:#c9a84c;font-size:12px;font-weight:900;}
+.total-row .t-ship{color:#aaa;font-size:11px;text-align:center;}
+.total-row .t-collect{color:#c9a84c;font-size:15px;font-weight:900;text-align:center;}
+
+/* ── فوتر ── */
+.rpt-footer{
+  margin-top:10px;
+  display:flex;justify-content:space-between;
+  font-size:9px;color:#aaa;
+  padding-top:7px;border-top:1px solid #e8e8e8;
+}
+
+/* ── طباعة ── */
+@media print{
+  body{background:#fff;}
+  #printBar{display:none!important;}
+  .sheet{padding:0;max-width:100%;}
+  tbody tr.data-row{page-break-inside:avoid;}
+
+  /* ── أبيض وأسود: شيل كل الخلفيات الملونة ── */
+  .sb{background:#fff!important;border:1.5px solid #000!important;}
+  .sb-total{background:#fff!important;border:2px solid #000!important;}
+  .sb .s-num{color:#000!important;}
+  .sb .s-lbl{color:#000!important;}
+  .sb .s-amt{color:#000!important;border-top-color:#ccc!important;}
+  .sb-total .s-unit,.sb-total .s-sub{color:#444!important;}
+
+  /* هيدر الجدول — أسود قاطع ── */
+  thead tr{background:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  thead th{color:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  thead th.th-collect{background:#000!important;color:#fff!important;}
+
+  /* صفوف الحالة — بوردر بدل لون خلفية ── */
+  tr.group-row{background:#fff!important;border-top:2px solid #000!important;}
+  tr.group-row td{color:#000!important;font-weight:900!important;}
+  tr.group-row .g-amt{color:#000!important;}
+
+  /* صف الإجمالي ── */
+  tr.total-row{background:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  tr.total-row td{color:#fff!important;}
+  tr.total-row .t-label,.total-row .t-collect{color:#fff!important;}
+  tr.total-row .t-ship{color:#ccc!important;}
+
+  /* صفوف البيانات — بدل ألوان الـ badge ── */
+  tbody tr.data-row td span{background:#fff!important;border:1px solid #000!important;color:#000!important;}
+  tbody tr.data-row td[style*="color"]{color:#000!important;}
+  tbody tr.data-row td:nth-child(8){color:#000!important;font-weight:900!important;}
+
+  /* عمود التحصيل — خط تحته عشان يتميز ── */
+  tbody tr.data-row td:nth-child(8){border-bottom:1px solid #000!important;}
+  tr.group-row td:nth-child(8){border-bottom:2px solid #000!important;}
+}
+</style>
+</head>
+<body>
+
+<div id="printBar">
+  <button class="btn-p" onclick="window.print()">🖨️ طباعة / PDF</button>
+  <button class="btn-x" onclick="window.close()">✕ إغلاق</button>
+  <span class="pb-info">A4 Landscape &nbsp;|&nbsp; WHITE CLOTHES — تقرير التحصيل &nbsp;|&nbsp; ${filterDesc}</span>
+</div>
+
+<div class="sheet">
+
+  <!-- هيدر -->
+  <div class="rh">
+    <div class="rh-brand">
+      <div class="logo">WHITE CLOTHES</div>
+      <div class="sub">Courier Collection Report</div>
+      <div class="filter-tag">${filterDesc}</div>
+    </div>
+    <div class="rh-meta">
+      <strong>تقرير تحصيل الشحنات</strong>
+      <div>📅 ${now}</div>
+      <div>📦 إجمالي الشحنات: <b>${totCount}</b></div>
+      <div>نسبة المرتجع: <b style="color:${retColor}">${retRate}%</b></div>
+      <span class="rh-badge">WHITE CLOTHES &copy; 2026</span>
+    </div>
+  </div>
+
+  <!-- ملخص -->
+  <div class="summary">
+    <div class="sb sb-ship">
+      <div>
+        <div class="s-num" style="color:#b8620a;">${byStatus["تم الشحن"].count}</div>
+        <div class="s-lbl" style="color:#b8620a;">⏳ تم الشحن</div>
+      </div>
+      <div class="s-amt" style="color:#b8620a;border-color:rgba(184,98,10,.15);">
+        ${byStatus["تم الشحن"].collect.toLocaleString("ar-EG")} ج
+      </div>
+    </div>
+    <div class="sb sb-deliv">
+      <div>
+        <div class="s-num" style="color:#1a7a3a;">${byStatus["تم التسليم"].count}</div>
+        <div class="s-lbl" style="color:#1a7a3a;">✅ تم التسليم</div>
+      </div>
+      <div class="s-amt" style="color:#1a7a3a;border-color:rgba(26,122,58,.15);">
+        ${byStatus["تم التسليم"].collect.toLocaleString("ar-EG")} ج
+      </div>
+    </div>
+    <div class="sb sb-ret">
+      <div>
+        <div class="s-num" style="color:#8b1a1a;">${byStatus["مرتجع"].count + byStatus["مرتجع جزئي"].count}</div>
+        <div class="s-lbl" style="color:#8b1a1a;">↩️ مرتجع</div>
+      </div>
+      <div class="s-amt" style="color:#8b1a1a;border-color:rgba(139,26,26,.15);">
+        ${(byStatus["مرتجع"].collect+byStatus["مرتجع جزئي"].collect).toLocaleString("ar-EG")} ج
+      </div>
+    </div>
+    <div class="sb sb-total">
+      <div class="s-lbl">💰 إجمالي التحصيل</div>
+      <div class="s-num">${totCollect.toLocaleString("ar-EG")}</div>
+      <div class="s-unit">جنيه مصري</div>
+      <div class="s-sub">+ شحن: ${totShip.toLocaleString("ar-EG")} ج</div>
+    </div>
+  </div>
+
+  <!-- الجدول -->
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr>
+      <th style="width:90px">الأوردر</th>
+      <th>العميل</th>
+      <th style="width:80px">المحافظة</th>
+      <th style="width:90px">المندوب</th>
+      <th style="width:85px">تاريخ الشحن</th>
+      <th style="width:85px">تاريخ التسليم</th>
+      <th style="width:70px;text-align:center;">شحن</th>
+      <th class="th-collect" style="width:90px;text-align:center;">💰 التحصيل</th>
+      <th style="width:85px;text-align:center;">الحالة</th>
+    </tr></thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  </div>
+
+  <!-- فوتر -->
+  <div class="rpt-footer">
+    <span>* تحصيل متوقع — الأوردر لسه في إيد المندوب &nbsp;|&nbsp; التحصيل = قيمة المنتجات بدون الشحن</span>
+    <span>${now} &nbsp;|&nbsp; ${totCount} شحنة</span>
+  </div>
+
+</div>
+</body></html>`);
+  w.document.close();
+}
 
 /* ── Add / Edit Modals ── */
 function openAddCourierModal(){
