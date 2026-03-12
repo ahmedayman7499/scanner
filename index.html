@@ -1981,7 +1981,7 @@ let _fetchPromise=null;
 
 /* ── KEYS ── */
 const LS_MINE     ="wc_mine_ids_v2";
-const LS_CACHE    ="wc_data_cache_v2";
+const LS_CACHE    ="wc_data_cache_v4";
 const LS_DUP      ="wc_dup_times_v1";
 const LS_COLORS   ="wc_courier_colors";
 const LS_NOTIF    ="wc_notif_history_v1";
@@ -2003,14 +2003,13 @@ function calcCollect(r){
   const ship    = n(r.shipping||0);
   const subtotal = n(r.subtotal||r.productTotal||0);
   const total    = n(r.total||0);
-  // bill = قيمة المنتجات بدون شحن
   const bill     = subtotal > 0 ? subtotal : Math.max(0, total - ship);
-  const partial  = n(r.partialReturn||r.partialReturnAmt||0); // قيمة اللي اترجع
+  const partial  = n(r.partialReturn||r.partialReturnAmt||0);
+  const shipLoss = n(r.shippingLoss || 0);
 
-  if(st==="مرتجع")       return onCo ? -ship : 0;
-  if(st==="مرتجع جزئي") return bill - partial - (onCo ? ship : 0);
+  if(st==="مرتجع")       return -shipLoss;
+  if(st==="مرتجع جزئي") return bill - partial - shipLoss;
   if(st==="الغاء")       return 0;
-  // تم الشحن، تم التسليم، غيره — التحصيل = bill (لو الشحن على الشركة يتخصم)
   return onCo ? bill - ship : bill;
 }
 function fmt(v){const x=n(v);if(x<0)return "-"+Math.abs(x).toLocaleString("ar-EG");return x.toLocaleString("ar-EG");}
@@ -2272,8 +2271,9 @@ let _pendingCache={newOrders:[],pending:[]};
 
 async function refreshAll(force=false){
   const cached=loadCachedData();
-  // من الـ cache — بدون checkNewOrders عشان ما يتكررش
-  if(cached?.rows?.length) processAllRows(cached.rows, false);
+  // لو force — امسح الـ cache عشان ما نعرضش بيانات قديمة قبل الـ API
+  if(force) { try{ localStorage.removeItem(LS_CACHE); }catch{} }
+  else if(cached?.rows?.length) processAllRows(cached.rows, false);
   if(!force&&cached&&!cached.stale)return;
   // من الـ API — هنا بس يعمل checkNewOrders
   try{
@@ -2386,41 +2386,42 @@ function quickActionBtn(r){
   const id = String(r.orderId||r.id||"").trim().replace(/\.0+$/,"");
 
   const printBtn = `<button class="qa-btn" style="border-color:rgba(52,152,219,.3);color:var(--blue)" onclick="printInvoice('${id}')">🧾 فاتورة</button>`;
+  const editBtn  = `<button class="qa-btn" style="border-color:rgba(201,168,76,.3);color:var(--gold)" onclick="openEditOrderModal('${id}')">✏️ تعديل</button>`;
 
   if(s===""||s==="جديد"||s.toLowerCase()==="new")
-    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button>${printBtn}</div>`;
+    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تحت الطباعة')">🖨️ طباعة</button>${editBtn}${printBtn}</div>`;
 
   if(s==="تحت الطباعة")
-    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button>${printBtn}</div>`;
+    return`<div class="qa-wrap"><button class="qa-btn qa-print" onclick="quickUpdate('${id}','تم الطباعة')">✅ تم الطباعة</button>${editBtn}${printBtn}</div>`;
 
   if(s==="تم الطباعة")
-    return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button>${printBtn}</div>`;
+    return`<div class="qa-wrap"><button class="qa-btn qa-ship" onclick="quickShip('${id}')">🚚 شحن</button>${editBtn}${printBtn}</div>`;
 
   if(s==="تم الشحن")
     return`<div class="qa-wrap">
       <button class="qa-btn qa-done" onclick="quickDeliver('${id}')">📦 تسليم</button>
       <button class="qa-btn qa-ret"  onclick="quickUpdate('${id}','مرتجع')">↩️ كامل</button>
       <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ جزئي</button>
-      ${printBtn}
+      ${editBtn}${printBtn}
     </div>`;
 
   if(s==="تم التسليم")
     return`<div class="qa-wrap">
       <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع جزئي</button>
-      ${printBtn}
+      ${editBtn}${printBtn}
     </div>`;
 
   if(s==="مرتجع جزئي")
     return`<div class="qa-wrap">
       <button class="qa-btn qa-ret" onclick="quickUpdate('${id}','مرتجع')">↩️ مرتجع كامل</button>
       <button class="qa-btn" style="border-color:rgba(212,150,26,.3);color:var(--amber)" onclick="quickPartialReturn('${id}')">↩️ مرتجع إضافي</button>
-      ${printBtn}
+      ${editBtn}${printBtn}
     </div>`;
 
   if(isCancelledStatus(s))
-    return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','New')">🔄 إعادة</button>${printBtn}</div>`;
+    return`<div class="qa-wrap"><button class="qa-btn" onclick="quickUpdate('${id}','New')">🔄 إعادة</button>${editBtn}${printBtn}</div>`;
 
-  return`<div class="qa-wrap">${printBtn}</div>`;
+  return`<div class="qa-wrap">${editBtn}${printBtn}</div>`;
 }
 
 function render(){
@@ -2459,7 +2460,8 @@ function render(){
       const ship  = n(r.shipping||0);
       const onCo  = r.shippingPaidBy==="company";
       const collect = calcCollect(r);
-      const shipTag = onCo ? `<div style="font-size:9px;color:var(--amber);margin-top:2px">🚚 شحن ع الشركة -${fmt(ship)}</div>` : "";
+      const shipLoss = n(r.shippingLoss || 0);
+      const shipTag = (onCo && shipLoss > 0) ? `<div style="font-size:9px;color:var(--amber);margin-top:2px">🚚 شحن ع الشركة -${fmt(shipLoss)}</div>` : "";
 
       if(st==="مرتجع"){
         if(collect < 0) return `<span style="font-weight:800;color:var(--red);">${fmt(collect)}</span>${shipTag}`;
@@ -2486,6 +2488,51 @@ function toggleAll(){const allIds=rows.map(r=>String(r.orderId||r.id||""));const
 function updateToggleBtn(){const btn=document.getElementById("toggleAllBtn");if(!btn)return;const allIds=rows.map(r=>String(r.orderId||r.id||""));btn.textContent=(allIds.length&&allIds.every(id=>selected.has(id)))?"إلغاء الكل":"تحديد الكل";}
 
 /* ── QUICK UPDATE ── */
+function _retFullShipToggle(maxAmt){
+  const wrap = document.getElementById("ret_full_ship_amt_wrap");
+  const inp  = document.getElementById("ret_full_ship_amt");
+  const chk  = document.getElementById("ret_full_ship_company");
+  if(!wrap||!inp||!chk) return;
+  wrap.style.display = chk.checked ? "block" : "none";
+  if(chk.checked && !inp.value) inp.value = maxAmt; // حط الكامل بس لو الخانة فاضية
+  if(!chk.checked) inp.value = 0;
+}
+function _retFullConfirm(maxAmt){
+  const chk = document.getElementById("ret_full_ship_company");
+  const inp = document.getElementById("ret_full_ship_amt");
+  const checked = chk?.checked || false;
+  const val = inp?.value === "" ? maxAmt : Number(inp?.value||0);
+  const amt = checked ? Math.min(val, maxAmt) : 0;
+  if(window._retFullOk) window._retFullOk(checked, amt);
+}
+function _retPartShipToggle(maxAmt){
+  const wrap = document.getElementById("ret_ship_amt_wrap");
+  const inp  = document.getElementById("ret_ship_amt");
+  const chk  = document.getElementById("ret_ship_company");
+  if(!wrap||!inp||!chk) return;
+  wrap.style.display = chk.checked ? "block" : "none";
+  if(chk.checked && !inp.value) inp.value = maxAmt;
+  if(!chk.checked) inp.value = 0;
+}
+function _retBulkShipToggle(maxAmt, singleOrder){
+  if(!singleOrder) return;
+  const wrap = document.getElementById("ret_bulk_ship_amt_wrap");
+  const inp  = document.getElementById("ret_bulk_ship_amt");
+  const chk  = document.getElementById("ret_bulk_ship_company");
+  if(!wrap||!inp||!chk) return;
+  wrap.style.display = chk.checked ? "block" : "none";
+  if(chk.checked && !inp.value) inp.value = maxAmt;
+  if(!chk.checked) inp.value = 0;
+}
+function _retBulkConfirm(maxAmt, singleOrder){
+  const chk     = document.getElementById("ret_bulk_ship_company");
+  const inp     = document.getElementById("ret_bulk_ship_amt");
+  const checked = chk?.checked || false;
+  const val     = (!inp || inp.value === "") ? maxAmt : Number(inp.value||0);
+  const amt     = (checked && singleOrder) ? Math.min(val, maxAmt) : (checked ? maxAmt : 0);
+  if(window._retBulkOk) window._retBulkOk(checked, amt);
+}
+
 async function quickUpdate(orderId,status){
   // ── لو مرتجع كامل — اسأل عن الشحن الأول ──
   if(status === "مرتجع"){
@@ -2497,32 +2544,39 @@ async function quickUpdate(orderId,status){
           <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع كامل — ${esc(String(orderId))}</div>
           <div style="font-size:11px;color:var(--mist);margin-top:4px">الأوردر هيترجع كامل للمخزن</div>
         </div>
-        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
-          <input type="checkbox" id="ret_full_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
-            <div style="font-size:10px;color:var(--mist);">العميل رفض يدفع الشحن — هيتسجل مصروف تلقائي</div>
+        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <input type="checkbox" id="ret_full_ship_company" style="width:18px;height:18px;accent-color:var(--amber);" onchange="_retFullShipToggle(${n(shipAmt)})">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 جزء من الشحن على الشركة</div>
+              <div style="font-size:10px;color:var(--mist);">العميل مدفعش الشحن كله — اكتب المبلغ اللي دفعته إنت</div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--amber);">الكل: ${fmt(shipAmt)} ج</div>
           </div>
-          <div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(shipAmt)} ج</div>
+          <div id="ret_full_ship_amt_wrap" style="display:none;">
+            <label style="font-size:11px;color:var(--mist);">المبلغ اللي دفعته إنت (ج)</label>
+            <input id="ret_full_ship_amt" type="number" min="0" max="${n(shipAmt)}" value="" style="width:100%;margin-top:4px;border-color:var(--amber);" placeholder="الكامل: ${n(shipAmt)} ج">
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:4px">
-          <button class="btn-gold" style="flex:1" onclick="window._retFullOk(document.getElementById('ret_full_ship_company').checked)">✅ تأكيد المرتجع</button>
+          <button class="btn-gold" style="flex:1" onclick="_retFullConfirm(${n(shipAmt)})">✅ تأكيد المرتجع</button>
           <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist)" onclick="window._retFullCancel()">إلغاء</button>
         </div>
       `);
-      window._retFullOk = (confirm)=>{ closeModal(); resolve({confirmed:true, shipOnCompany:confirm}); delete window._retFullOk; delete window._retFullCancel; };
+      window._retFullOk = (confirm, lossAmt=0)=>{ closeModal(); resolve({confirmed:true, shipOnCompany:confirm, shippingLoss:lossAmt}); delete window._retFullOk; delete window._retFullCancel; };
       window._retFullCancel = ()=>{ closeModal(); resolve(null); delete window._retFullOk; delete window._retFullCancel; };
     });
     if(!confirmed) return;
     window._lastRetShipOnCompany = confirmed.shipOnCompany;
-    // لو الشحن على الشركة — سجّله مصروف
-    if(confirmed.shipOnCompany && shipAmt > 0){
+    window._lastRetShipLoss      = confirmed.shippingLoss || 0;
+    // لو الشحن على الشركة — سجّله مصروف بالمبلغ الفعلي
+    if(confirmed.shipOnCompany && confirmed.shippingLoss > 0){
       const today = new Date().toISOString().slice(0,10);
       api("addExpense",{
         date:   today,
         type:   "شحن مرتجع",
         desc:   "شحن مرتجع — أوردر " + orderId,
-        amount: shipAmt,
+        amount: confirmed.shippingLoss,
         method: "كاش"
       }).catch(()=>{});
     }
@@ -2545,9 +2599,9 @@ async function quickUpdate(orderId,status){
       if(!firstSeen){
         firstSeen = true;
         if(status==="مرتجع"){
-          updated.partialReturn = 0;
+          updated.partialReturn  = 0;
           updated.shippingPaidBy = retShipOnCompany ? "company" : "customer";
-          // subtotal يفضل زي ما هو — التحصيل بيتحسب في render من الحالة
+          updated.shippingLoss   = window._lastRetShipLoss || 0;
         } else if(status==="الغاء"){
           updated.subtotal=0; updated.partialReturn=0;
         } else if(status==="جديد"||status===""||status==="New"){
@@ -2727,40 +2781,47 @@ async function bulkUpdate(){
   if(status==="تم الشحن"){const r=await showCourierSelectModal("batch");if(!r){toast("تم الإلغاء","","warn");return;}courier=r.courier;shipDate=r.shipDate;saveCourier(courier);}
   if(status==="تم التسليم"){const r=await showDeliveryModal();if(!r){toast("تم الإلغاء","","warn");return;}deliveryDate=r.deliveryDate;if(!deliveryDate.trim()){toast("⛔ لازم تكتب تاريخ التسليم","","err");return;}}
   if(status==="مرتجع"){
-    // اسأل عن الشحن على الشركة
     const firstId = ids[0];
     const firstOrder = allCache.find(r=>String(r.orderId||r.id||"").trim()===String(firstId));
     const shipAmt = ids.length===1 && firstOrder ? Number(firstOrder.shipping||0) : 0;
+    const singleOrder = ids.length===1;
     const confirmed = await new Promise(resolve=>{
       openModal(`
         <div style="margin-bottom:14px">
           <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">↩️ مرتجع كامل — ${ids.length} أوردر</div>
           <div style="font-size:11px;color:var(--mist);margin-top:4px">الأوردرات هترجع للمخزن</div>
         </div>
-        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
-          <input type="checkbox" id="ret_bulk_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
-            <div style="font-size:10px;color:var(--mist);">${ids.length===1?`العميل رفض يدفع الشحن — ${fmt(shipAmt)} ج هيتسجل مصروف`:`هيتسجل مصروف شحن لكل أوردر على حدة`}</div>
+        <div style="margin-bottom:12px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);">
+          <div style="display:flex;align-items:center;gap:10px;${singleOrder?"margin-bottom:8px":""}">
+            <input type="checkbox" id="ret_bulk_ship_company" style="width:18px;height:18px;accent-color:var(--amber);" onchange="_retBulkShipToggle(${n(shipAmt)}, ${singleOrder})">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 جزء من الشحن على الشركة</div>
+              <div style="font-size:10px;color:var(--mist);">${singleOrder ? "اكتب المبلغ اللي دفعته إنت" : "هيتسجل مصروف شحن لكل أوردر على حدة"}</div>
+            </div>
+            ${singleOrder ? `<div style="font-size:12px;font-weight:700;color:var(--amber);">الكل: ${fmt(shipAmt)} ج</div>` : ""}
           </div>
-          ${ids.length===1?`<div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(shipAmt)} ج</div>`:""}
+          ${singleOrder ? `
+          <div id="ret_bulk_ship_amt_wrap" style="display:none;">
+            <label style="font-size:11px;color:var(--mist);">المبلغ اللي دفعته إنت (ج)</label>
+            <input id="ret_bulk_ship_amt" type="number" min="0" max="${n(shipAmt)}" value="" style="width:100%;margin-top:4px;border-color:var(--amber);" placeholder="الكامل: ${n(shipAmt)} ج">
+          </div>` : ""}
         </div>
         <div style="display:flex;gap:8px;margin-top:4px">
-          <button class="btn-gold" style="flex:1" onclick="window._retBulkOk(document.getElementById('ret_bulk_ship_company').checked)">✅ تأكيد المرتجع</button>
+          <button class="btn-gold" style="flex:1" onclick="_retBulkConfirm(${n(shipAmt)}, ${singleOrder})">✅ تأكيد المرتجع</button>
           <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist)" onclick="window._retBulkCancel()">إلغاء</button>
         </div>
       `);
-      window._retBulkOk=(shipOnCo)=>{closeModal();resolve({shipOnCompany:shipOnCo});delete window._retBulkOk;delete window._retBulkCancel;};
+      window._retBulkOk=(shipOnCo,loss)=>{closeModal();resolve({shipOnCompany:shipOnCo,shippingLoss:loss||0});delete window._retBulkOk;delete window._retBulkCancel;};
       window._retBulkCancel=()=>{closeModal();resolve(null);delete window._retBulkOk;delete window._retBulkCancel;};
     });
     if(!confirmed){toast("تم الإلغاء","","warn");return;}
     window._lastRetShipOnCompany = confirmed.shipOnCompany;
-    // سجّل مصروف شحن لكل أوردر لو على الشركة
+    window._lastRetShipLoss      = confirmed.shippingLoss || 0;
     if(confirmed.shipOnCompany){
       const today = new Date().toISOString().slice(0,10);
       ids.forEach(oid=>{
         const ord = allCache.find(r=>String(r.orderId||r.id||"").trim()===String(oid));
-        const sh  = ord ? Number(ord.shipping||0) : 0;
+        const sh  = singleOrder ? confirmed.shippingLoss : Number(ord?.shipping||0);
         if(sh>0) api("addExpense",{date:today,type:"شحن مرتجع",desc:"شحن مرتجع — أوردر "+oid,amount:sh,method:"كاش"}).catch(()=>{});
       });
     }
@@ -2777,23 +2838,24 @@ async function bulkUpdate(){
 }
   const idSet=new Set(ids.map(String));
   const prevCache=allCache.map(r=>({...r})),prevRows=rows.map(r=>({...r}));
-  const bulkShipOnCo = status==="مرتجع" && window._lastRetShipOnCompany;
+  const bulkShipOnCo   = status==="مرتجع" && window._lastRetShipOnCompany;
+  const bulkShipLoss   = status==="مرتجع" ? (window._lastRetShipLoss||0) : 0;
   allCache=allCache.map(r=>{
     if(!idSet.has(String(r.orderId||r.id||""))) return r;
     const updated = {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate};
-    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; }
+    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; updated.shippingLoss=bulkShipLoss; }
     return updated;
   });
   rows=rows.map(r=>{
     if(!idSet.has(String(r.orderId||r.id||""))) return r;
     const updated = {...r, status, courier:courier||r.courier, shipDate:shipDate||r.shipDate};
-    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; }
+    if(status==="مرتجع"){ updated.partialReturn=0; updated.shippingPaidBy=bulkShipOnCo?"company":"customer"; updated.shippingLoss=bulkShipLoss; }
     return updated;
   });
   saveCachedData(allCache);render();toast("تم التحديث",`${ids.length} أوردر — ${status}`,"ok",3500);
   document.getElementById("statusSelect").value="";
   if(isCancelledStatus(status)){const m=getDupTimes();ids.forEach(id=>delete m[String(id)]);saveDupTimes(m);}
-  try{const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount,shippingPaidBy:status==="مرتجع"?(window._lastRetShipOnCompany?"company":"customer"):""});if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}refreshAll(true);}
+  try{const res=await api("bulkUpdate",{ids:ids.join(","),status,courier,shipDate,deliveryDate,partialAmount,shippingPaidBy:status==="مرتجع"?(bulkShipOnCo?"company":"customer"):"",shippingLoss:bulkShipLoss});if(!res?.ok){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("فشل التحديث","","err");return;}refreshAll(true);}
   catch(e){allCache=prevCache;rows=prevRows;saveCachedData(allCache);render();toast("خطأ في الاتصال","","err");}
 }
 
@@ -3498,21 +3560,25 @@ async function searchOrderForEdit(){
   const q=(document.getElementById("eo_search_id")?.value||"").trim().toLowerCase();
   if(!q){toast("اكتب Order ID أو موبايل","","warn");return;}
 
+  // normalize WC IDs: wc-0051 → wc-51
+  const normalizeId = s => s.replace(/^(wc-0*)(\d+)$/i, (_,p,n)=>"wc-"+n);
+  const qNorm = normalizeId(q);
+
   // دور في الـ cache الأول
   if(allCache.length){
     const digits=q.replace(/\D/g,""),isD=digits.length>=4;
     const results=allCache.filter(r=>{
-  const rowId=String(r.orderId||r.id||"").toLowerCase();
-  const rowPhone=String(r.phone||r.phone1||"").replace(/\s/g,"").toLowerCase();
-  const rowPhone2=String(r.altPhone||r.phone2||"").replace(/\s/g,"").toLowerCase();
-  const rowName=String(r.name||r.customer||"").toLowerCase();
-  // لو Order ID — exact match بس
-  if(rowId===q) return true;
-  // لو رقم موبايل — exact match بس
-  if(isD) return rowPhone===digits||rowPhone2===digits||rowPhone.endsWith(digits)||rowPhone2.endsWith(digits);
-  // لو اسم — contains
-  return rowName.includes(q);
-});
+      const rowId=normalizeId(String(r.orderId||r.id||"").toLowerCase());
+      const rowPhone=String(r.phone||r.phone1||"").replace(/\s/g,"").toLowerCase();
+      const rowPhone2=String(r.altPhone||r.phone2||"").replace(/\s/g,"").toLowerCase();
+      const rowName=String(r.name||r.customer||"").toLowerCase();
+      // لو Order ID — exact match بس (مع normalize)
+      if(rowId===qNorm || rowId===q) return true;
+      // لو رقم موبايل — exact match بس
+      if(isD) return rowPhone===digits||rowPhone2===digits||rowPhone.endsWith(digits)||rowPhone2.endsWith(digits);
+      // لو اسم — contains
+      return rowName.includes(q);
+    });
 
     if(results.length>1){
       // أكتر من نتيجة — وريه قايمة يختار منها
@@ -3550,6 +3616,72 @@ function showEditSearchResults(results){
       </tbody></table>
     </div>`;
 }
+async function openEditOrderModal(orderId){
+  const id = String(orderId).trim();
+  openModal(`
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white)">✏️ تعديل أوردر</div>
+      <div id="eo_modal_info" style="font-size:11px;color:var(--mist);margin-top:3px;">#${id}</div>
+    </div>
+
+    <!-- loading overlay -->
+    <div id="eo_modal_loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;">
+      <div style="width:36px;height:36px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="font-size:12px;color:var(--mist);">جاري تحميل بيانات الأوردر…</div>
+    </div>
+
+    <!-- form — مخفي لحد ما يحمل -->
+    <div id="eo_modal_form" style="display:none;">
+      <div class="form-section-title">👤 بيانات العميل</div>
+      <div class="form-grid form-grid-2" style="margin-bottom:14px;">
+        <div><label class="field-label">الاسم</label><input id="eo_name"/></div>
+        <div><label class="field-label">الموبايل</label><input id="eo_phone" type="tel"/></div>
+        <div><label class="field-label">المحافظة</label><select id="eo_city"><option value="">— اختر —</option><option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option><option>الدقهلية</option><option>الغربية</option><option>المنوفية</option><option>الشرقية</option><option>القليوبية</option><option>كفر الشيخ</option><option>دمياط</option><option>البحيرة</option><option>الفيوم</option><option>بني سويف</option><option>المنيا</option><option>أسيوط</option><option>سوهاج</option></select></div>
+        <div><label class="field-label">العنوان</label><input id="eo_address"/></div>
+      </div>
+
+      <div class="form-section-title">📦 المنتجات</div>
+      <div id="eo_products_container" style="margin-bottom:10px;"></div>
+      <button class="btn-blue" style="margin-bottom:14px;" onclick="addProductRow('eo_products_container','eo_prod')">➕ إضافة منتج</button>
+
+      <div class="form-section-title">📝 تفاصيل</div>
+      <div class="form-grid form-grid-3" style="margin-bottom:14px;">
+        <div><label class="field-label">الشحن (ج)</label><input id="eo_shipping" type="number"/></div>
+        <div><label class="field-label">خصم (ج)</label><input id="eo_discount" type="number" value="0"/></div>
+        <div><label class="field-label">الحالة</label><select id="eo_status"><option>New</option><option>تحت الطباعة</option><option>تم الطباعة</option><option>تم الشحن</option><option>تم التسليم</option><option>مرتجع</option><option>مرتجع جزئي</option><option>الغاء</option></select></div>
+        <div><label class="field-label">طريقة الدفع</label><select id="eo_payment"><option value="cod">كاش عند الاستلام (COD)</option><option value="transfer_receipt">تحويل مسبق</option></select></div>
+        <div style="grid-column:span 2;"><label class="field-label">ملاحظة</label><input id="eo_note"/></div>
+      </div>
+
+      <input type="hidden" id="eo_order_id"/>
+      <input type="hidden" id="eo_row_index"/>
+
+      <div id="eo_modal_err" style="display:none;color:var(--red);font-size:11px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="closeModal()">إلغاء</button>
+        <button class="btn-gold" style="min-width:160px;" onclick="_submitEditOrderModal()">💾 حفظ التعديلات</button>
+      </div>
+    </div>
+  `, "700px");
+
+  // حمّل البيانات — لما يخلص أظهر الفورم
+  await fetchAndFillEditOrder(id);
+  const loading = document.getElementById("eo_modal_loading");
+  const form    = document.getElementById("eo_modal_form");
+  if(loading) loading.style.display = "none";
+  if(form)    form.style.display    = "block";
+}
+
+async function _submitEditOrderModal(){
+  const errEl = document.getElementById("eo_modal_err");
+  try{
+    await submitEditOrder();
+    closeModal();
+  } catch(e){
+    if(errEl){ errEl.textContent="❌ خطأ في الحفظ"; errEl.style.display="block"; }
+  }
+}
+
 async function fetchAndFillEditOrder(orderId){
   const id=String(orderId).trim();
   
@@ -5599,13 +5731,21 @@ async function quickPartialReturn(orderId){
     <div id="ret_items">${itemsHtml}</div>
 
     <!-- خانة الشحن على الشركة -->
-    <div style="margin-top:10px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;">
-      <input type="checkbox" id="ret_ship_company" style="width:18px;height:18px;accent-color:var(--amber);">
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 الشحن على الشركة</div>
-        <div style="font-size:10px;color:var(--mist);">العميل رفض يدفع الشحن — هيتحسب خسارة عليك</div>
+    <div style="margin-top:10px;padding:10px 12px;background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);border-radius:var(--r2);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <input type="checkbox" id="ret_ship_company" style="width:18px;height:18px;accent-color:var(--amber);" onchange="_retPartShipToggle(${n(orderShipping)})">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--amber);">🚚 جزء من الشحن على الشركة</div>
+          <div style="font-size:10px;color:var(--mist);">العميل مدفعش الشحن كله — اكتب المبلغ اللي دفعته إنت</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--amber);">الكل: ${fmt(orderShipping)} ج</div>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--amber);">${fmt(orderShipping)} ج</div>
+      <div id="ret_ship_amt_wrap" style="display:none;">
+        <label style="font-size:11px;color:var(--mist);">المبلغ اللي دفعته إنت (ج)</label>
+        <input id="ret_ship_amt" type="number" min="0" max="${n(orderShipping)}" value="" 
+          style="width:100%;margin-top:4px;border-color:var(--amber);"
+          placeholder="مثال: 30">
+      </div>
     </div>
 
     <div id="ret_err" style="color:var(--red);font-size:11px;margin-top:8px;display:none"></div>
@@ -5623,7 +5763,10 @@ async function quickPartialReturn(orderId){
     });
     if(!returned.length){err.textContent="⛔ اختر منتج واحد على الأقل";err.style.display="block";return;}
     const shipOnCompany = document.getElementById("ret_ship_company")?.checked || false;
-    const shippingLoss  = shipOnCompany ? Number(orderShipping) : 0;
+    const shippingLoss  = shipOnCompany ? Math.min(
+      document.getElementById("ret_ship_amt")?.value === "" ? Number(orderShipping) : Number(document.getElementById("ret_ship_amt")?.value||0),
+      Number(orderShipping)
+    ) : 0;
     closeModal();
     showLoading("جاري الحفظ…");
     try{
@@ -5639,16 +5782,17 @@ async function quickPartialReturn(orderId){
         const retAmt = returned.reduce((s,it)=>s+Number(it.lineTotal||0),0); // بدون شحن — الشحن بيتحسب من shippingPaidBy
         allCache = allCache.map(r=>{
           if(String(r.orderId||r.id||"")!==String(orderId)) return r;
-          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer"};
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer", shippingLoss};
         });
         rows = rows.map(r=>{
           if(String(r.orderId||r.id||"")!==String(orderId)) return r;
-          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer"};
+          return{...r, status:"مرتجع جزئي", partialReturn:(Number(r.partialReturn||0)+retAmt), shippingPaidBy: shipOnCompany?"company":"customer", shippingLoss};
         });
         saveCachedData(allCache);
         render();
         const msg = shipOnCompany ? `مرتجع: ${fmt(retAmt - shippingLoss)} ج + شحن: ${fmt(shippingLoss)} ج` : `مرتجع: ${fmt(retAmt)} ج`;
         toast("✅ تم تسجيل المرتجع الجزئي", msg, "ok");
+        try{ localStorage.removeItem(LS_CACHE); }catch{}
         refreshAll(true);
       } else toast("❌ فشل",res?.error||"","err");
     }catch(e){hideLoading();toast("❌ خطأ","","err");}
@@ -5656,6 +5800,23 @@ async function quickPartialReturn(orderId){
 }
 
 /* ══ SIDEBAR DRAWER ══ */
+async function runBackfillShippingLoss(){
+  showLoading("جاري إصلاح شحن المرتجعات…");
+  try{
+    const res = await api("backfillShippingLoss");
+    hideLoading();
+    if(res?.ok) {
+      toast("تم الإصلاح", `${res.updated} أوردر اتصلح`, "ok", 4000);
+      refreshAll(true);
+    } else {
+      toast("فشل الإصلاح", res?.error||"", "err");
+    }
+  } catch(e) {
+    hideLoading();
+    toast("خطأ في الاتصال","","err");
+  }
+}
+
 function openSideDrawer(){
   document.getElementById('sideDrawer').classList.add('open');
   document.body.style.overflow='hidden';
