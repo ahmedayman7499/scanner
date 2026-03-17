@@ -6113,7 +6113,7 @@ async function _doImportPhones(){
   if(!raw){ toast('الصق الأرقام أولاً','','warn'); return; }
 
   // قسّم السطور
-  const tokens = raw.split(/[\n\r,،\t;]+/).map(s=>s.trim()).filter(Boolean);
+  const tokens = raw.split(/[\n\r,،\t;،\-\/|]+/).map(s=>s.trim()).filter(Boolean);
 
   // افصل: أرقام موبايل vs Order IDs
   const phones  = [];
@@ -6157,6 +6157,7 @@ async function _doImportPhones(){
   resEl.innerHTML = `⏳ جاري البحث عن <b>${totalInput}</b> ${orderIds.length&&phones.length?'رقم (موبايل + أوردر)':orderIds.length?'أوردر':'رقم موبايل'}…`;
 
   let found=[], notFound=[], alreadyAdded=[];
+  const seenFoundIds = new Set(); // منع تكرار نفس الأوردر
 
   // ── بحث بـ Order ID ──
   orderIds.forEach(oid=>{
@@ -6166,6 +6167,8 @@ async function _doImportPhones(){
       notFound.push(oid);
     } else {
       const id = String(r.orderId||r.id||'').trim();
+      if(seenFoundIds.has(id)) return; // تجاهل التكرار
+      seenFoundIds.add(id);
       if(mineIds.has(id)){
         alreadyAdded.push({id, phone:oid, name:r.name||r.customer||''});
       } else {
@@ -6188,6 +6191,8 @@ async function _doImportPhones(){
     } else {
       matches.forEach(r=>{
         const id = String(r.orderId||r.id||'').trim();
+        if(seenFoundIds.has(id)) return; // تجاهل التكرار
+        seenFoundIds.add(id);
         if(mineIds.has(id)){
           alreadyAdded.push({id, phone, name:r.name||r.customer||''});
         } else {
