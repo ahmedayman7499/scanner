@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b1220">
-<link rel="apple-touch-icon" href="icon-192.png">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>WC — نظام الإدارة الكامل</title>
@@ -1076,6 +1073,9 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <button class="tb-btn" onclick="showLoading('جاري التحديث…');refreshAll(true).finally(hideLoading)">
       <span class="tb-icon">🔄</span><span class="tb-label">تحديث</span>
     </button>
+    <button class="tb-btn" onclick="openImportShippingModal()" style="border-color:rgba(52,152,219,.35);color:var(--blue);background:rgba(52,152,219,.08);">
+      <span class="tb-icon">📋</span><span class="tb-label">استيراد شحن</span>
+    </button>
   </div>
 </div>
 
@@ -1410,12 +1410,38 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
   <div class="card">
     <div class="card-header"><div class="card-title">💸 إضافة مصروف</div></div>
     <div class="form-grid form-grid-3" style="margin-bottom:12px;">
-      <div><label class="field-label">نوع المصروف *</label><select id="exp_type"><option>إيجار</option><option>إعلانات</option><option>رواتب</option><option>شحن</option><option>مواد تغليف</option><option>صيانة</option><option>كهرباء وغاز</option><option>أدوات مكتبية</option><option>متنوع</option></select></div>
+      <div><label class="field-label">نوع المصروف *</label><select id="exp_type" onchange="_onExpTypeChange()"><option>إيجار</option><option>إعلانات</option><option>رواتب</option><option>شحن</option><option>مواد تغليف</option><option>صيانة</option><option>كهرباء وغاز</option><option>أدوات مكتبية</option><option>متنوع</option></select></div>
       <div><label class="field-label">الوصف *</label><input id="exp_desc" placeholder="وصف المصروف"/></div>
       <div><label class="field-label">المبلغ (ج) *</label><input id="exp_amount" type="number" min="0" placeholder="0"/></div>
       <div><label class="field-label">التاريخ</label><input id="exp_date" type="date"/></div>
       <div><label class="field-label">طريقة الدفع</label><select id="exp_method"><option>كاش</option><option>تحويل</option><option>شيك</option></select></div>
       <div><label class="field-label">ملاحظات</label><input id="exp_notes" placeholder="(اختياري)"/></div>
+    </div>
+    <!-- حقول الإعلانات — بتظهر بس لما النوع إعلانات -->
+    <div id="exp_ads_fields" style="display:none;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:var(--r2);padding:12px;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📣 تفاصيل الإعلان</div>
+      <div class="form-grid form-grid-2">
+        <div>
+          <label class="field-label">المنصة</label>
+          <select id="exp_ad_src" onchange="_onAdSrcChange();_showPayUrlBtn()">
+            <option value="">— اختر —</option>
+            <option>Facebook</option>
+            <option>TikTok</option>
+            <option>Instagram</option>
+            <option>Google</option>
+            <option>أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">الحملة</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input id="exp_ad_camp" placeholder="اسم الحملة (اختياري)" list="exp_ad_camp_list" oninput="_onAdSrcChange();_showPayUrlBtn()"/>
+            <datalist id="exp_ad_camp_list"></datalist>
+            <a id="exp_pay_url_btn" href="#" target="_blank" style="display:none;white-space:nowrap;font-size:11px;font-weight:700;color:#27ae60;background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);border-radius:6px;padding:5px 10px;text-decoration:none;">🔗 افتح رابط الدفع</a>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--mist);margin-top:8px;">💡 الوصف هيتملى تلقائي — أو عدّله يدوياً</div>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:10px;"><button onclick="resetExpenseForm()">🔄 مسح</button><button class="btn-gold" onclick="submitExpense()">✅ حفظ المصروف</button></div>
   </div>
@@ -1575,85 +1601,149 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
 <div class="tab-panel" id="panel-ads">
 <style>
 #panel-ads { background: var(--ink1); }
-.adp { padding: 16px; max-width: 1200px; margin: 0 auto; }
+.adp { padding: 16px; max-width: 900px; margin: 0 auto; }
 
 .adp-chips { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
 .adp-chip { padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700; border:1px solid var(--rule2); background:transparent; color:var(--mist); cursor:pointer; transition:all .18s; }
 .adp-chip:hover { border-color:var(--gold); color:var(--gold); }
 .adp-chip.on { background:var(--gold); color:#111; border-color:var(--gold); }
-.adp-date-in { font-size:11px; background:var(--ink3); border:1px solid var(--rule2); border-radius:8px; padding:5px 10px; color:var(--white); outline:none; width:124px; }
+.adp-date-in { font-size:11px; background:var(--ink3); border:1px solid var(--rule2); border-radius:8px; padding:5px 10px; color:var(--white); outline:none; width:120px; }
 .adp-date-in:focus { border-color:var(--gold); }
 
-.adp-kpis { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:14px; }
-@media(max-width:800px){.adp-kpis{grid-template-columns:repeat(4,1fr);}}
-@media(max-width:480px){.adp-kpis{grid-template-columns:repeat(2,1fr);}}
-.adp-kpi { background:var(--ink3); border:1px solid var(--rule2); border-radius:12px; padding:12px 8px; text-align:center; position:relative; overflow:hidden; }
-.adp-kpi-glow { position:absolute; inset:0; opacity:.08; background:radial-gradient(circle at 50% 0%,var(--kc) 0%,transparent 70%); }
-.adp-kpi-ico { font-size:15px; margin-bottom:5px; }
-.adp-kpi-num { font-size:18px; font-weight:900; color:var(--kc); line-height:1; }
-.adp-kpi-lbl { font-size:8px; color:var(--mist); margin-top:3px; text-transform:uppercase; letter-spacing:.4px; }
+/* KPIs */
+.adp-kpis { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:16px; }
+@media(max-width:700px){.adp-kpis{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:420px){.adp-kpis{grid-template-columns:repeat(2,1fr);}}
+.adp-kpi { background:var(--ink3); border:1px solid var(--rule2); border-radius:10px; padding:10px 6px; text-align:center; position:relative; overflow:hidden; }
+.adp-kpi-glow { position:absolute; inset:0; opacity:.07; background:radial-gradient(circle at 50% 0%,var(--kc) 0%,transparent 70%); }
+.adp-kpi-ico { font-size:14px; margin-bottom:4px; }
+.adp-kpi-num { font-size:16px; font-weight:900; color:var(--kc); line-height:1; }
+.adp-kpi-lbl { font-size:8px; color:var(--mist); margin-top:3px; text-transform:uppercase; letter-spacing:.3px; }
 
-.adp-chart { background:var(--ink3); border:1px solid var(--rule2); border-radius:14px; padding:14px 16px 10px; margin-bottom:14px; display:none; }
-.adp-chart-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.adp-chart-ttl { font-size:11px; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:.6px; }
+/* Chart */
+.adp-chart { background:var(--ink3); border:1px solid var(--rule2); border-radius:12px; padding:14px 16px 10px; margin-bottom:16px; display:none; }
+.adp-chart-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.adp-chart-ttl { font-size:10px; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:.5px; }
 .adp-chart-leg { display:flex; gap:12px; }
 .adp-chart-leg span { font-size:9px; color:var(--mist); display:flex; align-items:center; gap:4px; }
 .adp-chart-leg i { width:8px; height:8px; border-radius:2px; display:inline-block; }
-.adp-bars-wrap { display:flex; align-items:flex-end; gap:3px; height:80px; }
+.adp-bars-wrap { display:flex; align-items:flex-end; gap:2px; height:72px; }
 .adp-bc { flex:1; display:flex; flex-direction:column; align-items:center; min-width:0; }
-.adp-bc-bars { display:flex; align-items:flex-end; gap:1px; width:100%; height:76px; }
-.adp-bf { flex:1; min-height:2px; border-radius:3px 3px 0 0; }
-.adp-bl { font-size:7px; color:var(--mist); margin-top:3px; white-space:nowrap; overflow:hidden; max-width:28px; text-overflow:ellipsis; }
+.adp-bc-bars { display:flex; align-items:flex-end; gap:1px; width:100%; height:68px; }
+.adp-bf { flex:1; min-height:2px; border-radius:2px 2px 0 0; }
+.adp-bl { font-size:7px; color:var(--mist); margin-top:3px; white-space:nowrap; overflow:hidden; max-width:26px; text-overflow:ellipsis; }
 
-.adp-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-@media(max-width:680px){.adp-grid{grid-template-columns:1fr;}}
+/* Source block */
+.adp-src-block { margin-bottom:12px; border:1px solid var(--rule2); border-radius:14px; overflow:hidden; }
+.adp-src-block.top-src { border-color:rgba(212,150,26,.3); }
 
-.adp-panel { background:var(--ink3); border:1px solid var(--rule2); border-radius:14px; overflow:hidden; }
-.adp-panel-hd { padding:12px 16px; border-bottom:1px solid var(--rule2); display:flex; align-items:center; justify-content:space-between; }
-.adp-panel-ttl { font-size:10px; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:.8px; }
-.adp-panel-tag { font-size:10px; color:var(--gold); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.adp-src-hd {
+  display:flex; align-items:center; gap:12px; padding:14px 16px;
+  background:var(--ink3); border-bottom:1px solid var(--rule2);
+}
+.adp-src-logo { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.adp-src-logo svg { width:20px; height:20px; }
+.adp-src-hd-info { flex:1; min-width:0; }
+.adp-src-hd-name { font-size:15px; font-weight:800; color:var(--white); }
+.adp-src-hd-sub { font-size:10px; color:var(--mist); margin-top:2px; }
+.adp-src-hd-right { text-align:left; flex-shrink:0; }
+.adp-src-hd-rev { font-size:16px; font-weight:900; color:var(--gold); }
+.adp-src-hd-rlbl { font-size:9px; color:var(--mist); }
 
-.adp-winner { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--rule2); }
-.adp-winner-logo { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.adp-winner-logo svg { width:22px; height:22px; }
-.adp-winner-info { flex:1; min-width:0; }
-.adp-winner-name { font-size:15px; font-weight:800; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.adp-winner-meta { font-size:10px; color:var(--mist); margin-top:3px; }
-.adp-winner-right { text-align:left; flex-shrink:0; }
-.adp-winner-rev { font-size:18px; font-weight:900; color:var(--gold); }
-.adp-winner-rev-lbl { font-size:9px; color:var(--mist); margin-top:2px; }
+/* conv bar */
+.adp-src-cbar { height:2px; background:var(--rule2); }
+.adp-src-cbar-f { height:100%; transition:width .7s ease; }
 
-.adp-conv-track { height:2px; background:var(--rule2); margin:0 16px 2px; }
-.adp-conv-fill { height:100%; border-radius:1px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+/* stats row under source */
+.adp-src-stats { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--rule2); }
+.adp-src-stat { padding:8px; text-align:center; border-left:1px solid var(--rule2); }
+.adp-src-stat:last-child { border-left:none; }
+.adp-src-stat-v { font-size:13px; font-weight:800; }
+.adp-src-stat-l { font-size:8px; color:var(--mist); margin-top:1px; text-transform:uppercase; }
 
-.adp-src-row { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,.03); }
-.adp-src-row:last-child { border-bottom:none; }
-.adp-src-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.adp-src-name { flex:1; font-size:12px; font-weight:600; color:var(--silver); }
-.adp-src-cnt { font-size:11px; color:var(--mist); min-width:36px; text-align:center; }
-.adp-src-bar-tr { width:70px; height:3px; background:var(--rule2); border-radius:2px; }
-.adp-src-bar-f { height:100%; border-radius:2px; }
-.adp-src-conv { font-size:11px; font-weight:700; min-width:34px; text-align:left; }
-
-.adp-camp-row { display:flex; align-items:center; gap:8px; padding:9px 16px; border-bottom:1px solid rgba(255,255,255,.03); }
+/* Campaigns under source */
+.adp-camps-ttl { padding:8px 16px; font-size:9px; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:.6px; background:var(--ink2); border-bottom:1px solid var(--rule2); }
+.adp-camp-row { display:flex; align-items:center; gap:8px; padding:9px 16px; border-bottom:1px solid rgba(255,255,255,.03); background:var(--ink3); }
 .adp-camp-row:last-child { border-bottom:none; }
-.adp-camp-idx { width:18px; height:18px; border-radius:5px; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,.05); color:var(--mist); }
-.adp-camp-idx.r1 { background:rgba(255,215,0,.12); color:#ffd700; }
-.adp-camp-idx.r2 { background:rgba(192,192,192,.1); color:#c0c0c0; }
-.adp-camp-idx.r3 { background:rgba(205,127,50,.1); color:#cd7f32; }
-.adp-camp-src-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.adp-camp-rank { width:18px; height:18px; border-radius:5px; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,.05); color:var(--mist); }
+.adp-camp-rank.r1 { background:rgba(255,215,0,.12); color:#ffd700; }
+.adp-camp-rank.r2 { background:rgba(192,192,192,.1); color:#c0c0c0; }
+.adp-camp-rank.r3 { background:rgba(205,127,50,.1); color:#cd7f32; }
 .adp-camp-name { flex:1; font-size:11px; color:var(--silver); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .adp-camp-cnt { font-size:10px; color:var(--mist); min-width:28px; text-align:center; }
-.adp-camp-bar-tr { width:44px; height:2px; background:var(--rule2); border-radius:1px; flex-shrink:0; }
+.adp-camp-bar-tr { width:50px; height:2px; background:var(--rule2); border-radius:1px; flex-shrink:0; }
 .adp-camp-bar-f { height:100%; border-radius:1px; }
-.adp-camp-conv { font-size:11px; font-weight:700; min-width:30px; text-align:center; }
-.adp-camp-rev { font-size:11px; font-weight:600; color:var(--gold); min-width:64px; text-align:left; }
+.adp-camp-conv { font-size:11px; font-weight:700; min-width:32px; text-align:center; }
+.adp-camp-rev { font-size:11px; font-weight:600; color:var(--gold); min-width:62px; text-align:left; }
+
+/* ROI input row */
+.adp-roi-row {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  background:var(--ink2); border-bottom:1px solid var(--rule2); flex-wrap:wrap;
+}
+.adp-roi-lbl { font-size:10px; color:var(--mist); white-space:nowrap; }
+.adp-roi-inp {
+  width:100px; font-size:12px; font-weight:700; background:var(--ink3);
+  border:1px solid var(--rule2); border-radius:6px; padding:5px 10px;
+  color:var(--white); outline:none; text-align:center;
+}
+.adp-roi-inp:focus { border-color:var(--gold); }
+.adp-roi-metrics { display:flex; gap:14px; flex-wrap:wrap; margin-right:auto; }
+.adp-roi-metric { text-align:center; }
+.adp-roi-metric-v { font-size:13px; font-weight:800; }
+.adp-roi-metric-l { font-size:8px; color:var(--mist); text-transform:uppercase; letter-spacing:.3px; }
 
 .adp-empty { padding:50px 20px; text-align:center; color:var(--mist); font-size:12px; }
-.adp-empty-ico { font-size:40px; opacity:.3; margin-bottom:10px; }
+
+/* ── Budget Manager ── */
+.adp-bud-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px;
+}
+.adp-bud-ttl { font-size:10px; font-weight:700; color:var(--mist); text-transform:uppercase; letter-spacing:.8px; }
+.adp-bud-add { font-size:11px; font-weight:700; color:var(--gold); background:rgba(212,150,26,.1); border:1px solid rgba(212,150,26,.25); border-radius:8px; padding:4px 12px; cursor:pointer; }
+.adp-bud-add:hover { background:rgba(212,150,26,.2); }
+
+.adp-bud-card {
+  background:var(--ink3); border:1px solid var(--rule2); border-radius:12px;
+  overflow:hidden; margin-bottom:8px;
+}
+.adp-bud-card.paused { opacity:.6; border-style:dashed; }
+.adp-bud-card-hd {
+  display:flex; align-items:center; gap:10px; padding:12px 14px;
+  border-bottom:1px solid var(--rule2);
+}
+.adp-bud-card-logo { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.adp-bud-card-logo svg { width:16px; height:16px; }
+.adp-bud-card-info { flex:1; min-width:0; }
+.adp-bud-card-name { font-size:13px; font-weight:800; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.adp-bud-card-src { font-size:10px; color:var(--mist); margin-top:1px; }
+.adp-bud-paused-badge { font-size:9px; font-weight:700; color:var(--red); background:rgba(192,57,43,.12); border:1px solid rgba(192,57,43,.25); padding:2px 8px; border-radius:10px; }
+.adp-bud-card-actions { display:flex; gap:6px; }
+.adp-bud-btn { font-size:10px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer; border:1px solid var(--rule2); background:transparent; color:var(--mist); transition:all .15s; white-space:nowrap; }
+.adp-bud-btn:hover { border-color:var(--gold); color:var(--gold); }
+.adp-bud-btn.pay { color:#27ae60; border-color:rgba(39,174,96,.3); background:rgba(39,174,96,.06); }
+.adp-bud-btn.pay:hover { background:rgba(39,174,96,.12); }
+.adp-bud-btn.pause { color:var(--red); border-color:rgba(192,57,43,.3); }
+.adp-bud-btn.resume { color:#27ae60; border-color:rgba(39,174,96,.3); }
+.adp-bud-btn.del { color:var(--mist); }
+
+/* progress */
+.adp-bud-progress { padding:10px 14px 12px; }
+.adp-bud-prog-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+.adp-bud-prog-spent { font-size:16px; font-weight:900; color:var(--white); }
+.adp-bud-prog-budget { font-size:11px; color:var(--mist); }
+.adp-bud-prog-track { height:6px; background:var(--rule2); border-radius:3px; overflow:hidden; }
+.adp-bud-prog-fill { height:100%; border-radius:3px; transition:width .5s ease; }
+.adp-bud-prog-meta { display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:var(--mist); }
+.adp-bud-alert { padding:8px 14px; font-size:11px; font-weight:700; border-top:1px solid; }
+.adp-bud-alert.warn { color:var(--amber); background:rgba(230,126,34,.08); border-color:rgba(230,126,34,.2); }
+.adp-bud-alert.danger { color:var(--red); background:rgba(192,57,43,.08); border-color:rgba(192,57,43,.2); }
+.adp-bud-alert.done { color:var(--mist); background:rgba(255,255,255,.03); border-color:var(--rule2); }
 </style>
 
 <div class="adp">
+  <!-- chips -->
   <div class="adp-chips">
     <button class="adp-chip" onclick="setAdsPeriod(0,this)">اليوم</button>
     <button class="adp-chip on" onclick="setAdsPeriod(7,this)">7 أيام</button>
@@ -1661,13 +1751,55 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <button class="adp-chip" onclick="setAdsPeriod(90,this)">90 يوم</button>
     <div style="margin-right:auto;display:flex;align-items:center;gap:6px;">
       <input type="date" id="ads_from" class="adp-date-in" onchange="loadAdsData()">
-      <span style="color:var(--mist);font-size:11px;">—</span>
+      <span style="color:var(--mist);">—</span>
       <input type="date" id="ads_to" class="adp-date-in" onchange="loadAdsData()">
     </div>
   </div>
 
+  <!-- Hero: أفضل مصدر + أفضل حملة -->
+  <div id="ads_hero" style="display:none;margin-bottom:14px;background:var(--ink3);border:1px solid rgba(212,150,26,.25);border-radius:14px;overflow:hidden;">
+    <div style="padding:10px 16px;border-bottom:1px solid var(--rule2);display:flex;align-items:center;gap:8px;">
+      <span style="font-size:10px;font-weight:700;color:var(--mist);text-transform:uppercase;letter-spacing:.8px;">الأفضل أداءً</span>
+      <span style="font-size:9px;color:var(--mist);margin-right:auto;" id="ads_hero_period"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;">
+      <!-- best source -->
+      <div style="padding:14px 16px;border-left:1px solid var(--rule2);">
+        <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🥇 أفضل مصدر</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="ads_hero_src_logo" style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div id="ads_hero_src_name" style="font-size:14px;font-weight:800;color:var(--white);"></div>
+            <div id="ads_hero_src_meta" style="font-size:10px;color:var(--mist);margin-top:2px;"></div>
+          </div>
+          <div style="text-align:left;">
+            <div id="ads_hero_src_conv" style="font-size:16px;font-weight:900;"></div>
+            <div style="font-size:9px;color:var(--mist);">تحويل</div>
+          </div>
+        </div>
+      </div>
+      <!-- best campaign -->
+      <div style="padding:14px 16px;">
+        <div style="font-size:9px;color:var(--mist);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🏆 أفضل حملة</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="ads_hero_camp_logo" style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div id="ads_hero_camp_name" style="font-size:13px;font-weight:800;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+            <div id="ads_hero_camp_meta" style="font-size:10px;color:var(--mist);margin-top:2px;"></div>
+          </div>
+          <div style="text-align:left;">
+            <div id="ads_hero_camp_conv" style="font-size:16px;font-weight:900;"></div>
+            <div style="font-size:9px;color:var(--mist);">تحويل</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
   <div class="adp-kpis" id="ads_kpis"></div>
 
+  <!-- Chart -->
   <div class="adp-chart" id="ads_chart">
     <div class="adp-chart-hd">
       <div class="adp-chart-ttl">أوردرات يومياً</div>
@@ -1679,26 +1811,11 @@ tbody td{padding:12px 14px;font-size:12px;color:var(--silver);vertical-align:mid
     <div class="adp-bars-wrap" id="ads_bars"></div>
   </div>
 
-  <div class="adp-grid">
-    <div class="adp-panel">
-      <div class="adp-panel-hd">
-        <div class="adp-panel-ttl">المصادر</div>
-        <div class="adp-panel-tag" id="ads_top_src_badge"></div>
-      </div>
-      <div id="ads_winner_src"></div>
-      <div class="adp-conv-track"><div class="adp-conv-fill" id="ads_src_convbar" style="width:0%"></div></div>
-      <div id="ads_src_rows"></div>
-    </div>
-    <div class="adp-panel">
-      <div class="adp-panel-hd">
-        <div class="adp-panel-ttl">أفضل الحملات</div>
-        <div class="adp-panel-tag" id="ads_top_camp_badge"></div>
-      </div>
-      <div id="ads_winner_camp"></div>
-      <div class="adp-conv-track"><div class="adp-conv-fill" id="ads_camp_convbar" style="width:0%"></div></div>
-      <div id="ads_camp_rows"></div>
-    </div>
-  </div>
+  <!-- Sources + their campaigns -->
+  <div id="ads_sources" style="margin-bottom:14px;"></div>
+
+  <!-- Budget Manager -->
+  <div id="ads_budgets"></div>
 </div>
 </div>
 
@@ -3645,7 +3762,12 @@ function onEoProdSKUChange(prefix,id){
     const l=document.getElementById(prefix+"_line_"+id);
     if(c&&prod.color) c.value=prod.color;
     if(s&&prod.size)  s.value=prod.size;
-    if(l&&prod.price) l.value=prod.price;
+    // لو السعر في الـ cache موجود (مش صفر) — حدّثه، غير كده متلمسوش
+    if(l&&prod.price){
+      l.value=prod.price;
+      l.style.borderColor='';
+      l.style.background='';
+    }
   }
 }
 
@@ -3885,13 +4007,22 @@ async function fetchAndFillEditOrder(orderId){
       // بني الـ options مع تحديد المنتج الحالي
       const itemSku = item.sku||item.name||"";
       const skuOpts = buildSKUOptionsWithSelected(itemSku);
-      div.innerHTML=`<div class="product-item-header"><span class="product-item-title">📦 منتج ${id2}</span><button class="remove-product-btn" onclick="document.getElementById('eo_prod_row_${id2}').remove()">✕ حذف</button></div>
+      const origPrice = Number(item.lineTotal||0);
+      div.innerHTML=`<div class="product-item-header">
+        <span class="product-item-title">📦 منتج ${id2}</span>
+        <button class="remove-product-btn" onclick="document.getElementById('eo_prod_row_${id2}').remove()">✕ حذف</button>
+      </div>
       <div class="form-grid form-grid-3">
         <div><label class="field-label">المنتج</label><select id="eo_prod_sku_${id2}" class="sku-select" onchange="onEoProdSKUChange('eo_prod',${id2})">${skuOpts}</select></div>
         <div><label class="field-label">اللون</label><input id="eo_prod_color_${id2}" value="${esc(item.color||"")}"/></div>
         <div><label class="field-label">المقاس</label><input id="eo_prod_size_${id2}" value="${esc(item.size||"")}"/></div>
-        <div><label class="field-label">الكمية</label><input id="eo_prod_qty_${id2}" type="number" value="${item.qty||1}"/></div>
-        <div><label class="field-label">سعر الصنف (ج)</label><input id="eo_prod_line_${id2}" type="number" value="${item.lineTotal||0}"/></div>
+        <div><label class="field-label">الكمية</label><input id="eo_prod_qty_${id2}" type="number" value="${item.qty||1}" min="1"/></div>
+        <div>
+          <label class="field-label">سعر الصنف (ج) ${origPrice===0?'<span style="color:var(--red);font-size:9px;">⚠️ صفر!</span>':''}</label>
+          <input id="eo_prod_line_${id2}" type="number" value="${origPrice}"
+            style="${origPrice===0?'border-color:var(--red);background:rgba(192,57,43,.08);':''}"
+            oninput="this.style.borderColor=Number(this.value)===0?'var(--red)':'';this.style.background=Number(this.value)===0?'rgba(192,57,43,.08)':''"/>
+        </div>
       </div>`;
       cont.appendChild(div);
     });
@@ -3963,20 +4094,47 @@ async function submitEditOrder(){
   }
 
   const products=[];
+  let hasZeroPrice=false;
   document.querySelectorAll("#eo_products_container .product-item").forEach(item=>{
     const idMatch=item.id.match(/_row_(\d+)$/);if(!idMatch)return;
     const id=idMatch[1];
     const skuVal   = (document.getElementById("eo_prod_sku_"+id)?.value||"").trim();
     const prodObj  = productsCache.find(p=>p.sku===skuVal||p.name===skuVal);
+    const lineTotal= parseFloat(document.getElementById("eo_prod_line_"+id)?.value||0)||0;
+    const qty      = parseInt(document.getElementById("eo_prod_qty_"+id)?.value||1)||1;
+    if(lineTotal===0) hasZeroPrice=true;
     products.push({
       prod: prodObj?.name || skuVal,
       sku:  prodObj?.sku  || skuVal,
       color:(document.getElementById("eo_prod_color_"+id)?.value||"").trim(),
       size: (document.getElementById("eo_prod_size_"+id)?.value||"").trim(),
-      qty:  parseInt(document.getElementById("eo_prod_qty_"+id)?.value||1)||1,
-      lineTotal: parseFloat(document.getElementById("eo_prod_line_"+id)?.value||0)||0,
+      qty,
+      lineTotal,
     });
   });
+
+  // تحذير لو في منتج سعره صفر
+  if(hasZeroPrice){
+    const proceed = await new Promise(resolve=>{
+      openModal(`
+        <div style="margin-bottom:14px;">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--amber);">⚠️ تحذير — سعر صفر</div>
+          <div style="font-size:12px;color:var(--mist);margin-top:6px;">في منتج واحد أو أكتر سعره <b style="color:var(--red);">0 ج</b> — ده هيأثر على الفاتورة والتحصيل!</div>
+        </div>
+        <div style="background:var(--ink3);border:1px solid rgba(212,150,26,.3);border-radius:var(--r2);padding:10px 12px;margin-bottom:14px;">
+          ${products.filter(p=>p.lineTotal===0).map(p=>`
+            <div style="font-size:12px;color:var(--ivory);padding:3px 0;">❌ <b>${esc(p.prod||p.sku||'منتج')}</b> × ${p.qty} = <span style="color:var(--red);">0 ج</span></div>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:10px;cursor:pointer;" onclick="window._eoZeroCancel()">🔙 ارجع وصلّح</button>
+          <button class="btn-gold" style="flex:1;" onclick="window._eoZeroOk()">حفظ على مسؤوليتي</button>
+        </div>`);
+      window._eoZeroOk=()=>{closeModal();resolve(true);delete window._eoZeroOk;delete window._eoZeroCancel;};
+      window._eoZeroCancel=()=>{closeModal();resolve(false);delete window._eoZeroOk;delete window._eoZeroCancel;};
+    });
+    if(!proceed) return;
+  }
 
   const subtotal=products.reduce((s,p)=>s+p.lineTotal,0);
   const shipping=parseFloat(document.getElementById("eo_shipping")?.value||0)||0;
@@ -5923,6 +6081,208 @@ async function deleteOrderFromSheet(id){
   }catch(e){hideLoading();toast("❌ خطأ","","err");}
 }
 
+/* ══ IMPORT FROM SHIPPING SHEET ══ */
+function openImportShippingModal(){
+  openModal(`
+    <div style="margin-bottom:14px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white);">📋 استيراد من شيت الشحن</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:4px;">الصق أرقام الموبايل من شيت شركة الشحن — كل رقم في سطر أو مفصولة بفاصلة</div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="field-label">أرقام الموبايل *</label>
+      <textarea id="imp_phones" rows="8"
+        placeholder="01xxxxxxxxx&#10;01xxxxxxxxx&#10;01xxxxxxxxx&#10;...&#10;&#10;أو: 011..., 012..., 010..."
+        style="width:100%;font-family:'JetBrains Mono',monospace;font-size:12px;direction:ltr;margin-top:4px;resize:vertical;">
+      </textarea>
+    </div>
+
+    <div id="imp_result" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:var(--r2);font-size:12px;"></div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn-gold" style="flex:1;" onclick="_doImportPhones()">🔍 بحث وإضافة</button>
+      <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:10px;cursor:pointer;" onclick="closeModal()">إغلاق</button>
+    </div>
+  `, "600px");
+
+  setTimeout(()=>document.getElementById('imp_phones')?.focus(), 80);
+}
+
+async function _doImportPhones(){
+  const raw = (document.getElementById('imp_phones')?.value||'').trim();
+  if(!raw){ toast('الصق أرقام الموبايل أولاً','','warn'); return; }
+
+  // استخرج كل الأرقام
+  const phones = [...new Set(
+    raw.split(/[\n\r,،\t;]+/)
+      .map(s=>s.trim().replace(/\s/g,'').replace(/^(\+?20|0020)/,'0'))
+      .filter(s=>/^0\d{9,10}$/.test(s))
+  )];
+
+  if(!phones.length){ toast('مش لاقي أرقام صحيحة','تأكد من الصيغة: 01XXXXXXXXX','warn'); return; }
+
+  const resEl = document.getElementById('imp_result');
+  resEl.style.display = 'block';
+  resEl.style.background = 'rgba(52,152,219,.08)';
+  resEl.style.border = '1px solid rgba(52,152,219,.2)';
+  resEl.style.color = 'var(--blue)';
+  resEl.innerHTML = `⏳ جاري البحث عن <b>${phones.length}</b> رقم في الشيت…`;
+
+  // ابحث في allCache أولاً
+  let found=[], notFound=[], alreadyAdded=[];
+
+  phones.forEach(phone=>{
+    const digits = phone.replace(/\D/g,'');
+    // بحث بالأرقام الأخيرة 9-10 خانات
+    const matches = allCache.filter(r=>{
+      const p1 = String(r.phone||r.phone1||'').replace(/\D/g,'');
+      const p2 = String(r.altPhone||r.phone2||'').replace(/\D/g,'');
+      return p1.endsWith(digits.slice(-9)) || p2.endsWith(digits.slice(-9));
+    });
+
+    if(!matches.length){
+      notFound.push(phone);
+    } else {
+      matches.forEach(r=>{
+        const id = String(r.orderId||r.id||'').trim();
+        if(mineIds.has(id)){
+          alreadyAdded.push({id, phone, name:r.name||r.customer||''});
+        } else {
+          found.push({id, phone, name:r.name||r.customer||'', status:r.status||''});
+        }
+      });
+    }
+  });
+
+  if(!found.length && !notFound.length && !alreadyAdded.length){
+    resEl.style.background='rgba(192,57,43,.08)';resEl.style.borderColor='rgba(192,57,43,.2)';resEl.style.color='var(--red)';
+    resEl.innerHTML='❌ مش لاقي أي أوردرات بالأرقام دي';
+    return;
+  }
+
+  // اكتشف الأرقام المكررة — نفس الرقم عنده أكتر من أوردر
+  const phoneCount={};
+  found.forEach(r=>{ phoneCount[r.phone]=(phoneCount[r.phone]||0)+1; });
+
+  // رتّب: المكررين الأول، ثم الباقي — وجوّه بفاصل للمكررين
+  const grouped=[];
+  const seen=new Set();
+  // المكررين أول
+  found.forEach((r,i)=>{ if(phoneCount[r.phone]>1){ grouped.push({...r,_i:i,_dup:true}); } });
+  // الباقي
+  found.forEach((r,i)=>{ if(phoneCount[r.phone]===1){ grouped.push({...r,_i:i,_dup:false}); } });
+
+  let lastPhone='';
+  const foundHtml = grouped.map(r=>{
+    const isDup = r._dup;
+    const isNewDupGroup = isDup && r.phone!==lastPhone;
+    if(isDup) lastPhone=r.phone;
+
+    const groupHeader = isNewDupGroup ? `
+      <div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;">
+        <div style="height:1px;flex:1;background:rgba(230,126,34,.4);"></div>
+        <div style="font-size:9px;font-weight:800;color:var(--amber);letter-spacing:.5px;white-space:nowrap;background:rgba(212,150,26,.1);border:1px solid rgba(212,150,26,.3);border-radius:10px;padding:2px 10px;">
+          ⚠️ تكرار · ${r.phone} · ${phoneCount[r.phone]} أوردر
+        </div>
+        <div style="height:1px;flex:1;background:rgba(230,126,34,.4);"></div>
+      </div>` : '';
+
+    const rowBg = isDup
+      ? 'background:rgba(212,150,26,.08);border:1px solid rgba(212,150,26,.25);'
+      : 'background:rgba(39,174,96,.06);border:1px solid transparent;';
+
+    return `${groupHeader}
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;margin-bottom:3px;${rowBg}">
+      <input type="checkbox" id="imp_chk_${r._i}" checked onchange="_updateImportCounter(${found.length})" style="width:16px;height:16px;accent-color:${isDup?'var(--amber)':'var(--green)'};">
+      <div style="flex:1;min-width:0;">
+        <span style="font-weight:700;color:var(--gold);">#${esc(r.id)}</span>
+        <span style="color:var(--ivory);margin-right:6px;">${esc(r.name)}</span>
+        ${isDup?`<span style="font-size:9px;font-weight:800;color:var(--amber);background:rgba(212,150,26,.15);border-radius:3px;padding:1px 5px;">مكرر</span>`:''}
+      </div>
+      <span style="font-size:10px;color:var(--mist);">${statusBadge(r.status)}</span>
+    </div>`;
+
+  }).join('');
+
+  const dupPhones = Object.values(phoneCount).filter(v=>v>1).length;
+
+  resEl.style.background='var(--ink3)';resEl.style.border='1px solid var(--rule2)';resEl.style.color='var(--ivory)';
+  resEl.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+      <div style="font-weight:700;color:#27ae60;">✅ لاقي ${found.length} أوردر</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${dupPhones?`<div style="font-size:10px;font-weight:700;color:var(--amber);background:rgba(212,150,26,.1);border:1px solid rgba(212,150,26,.3);border-radius:10px;padding:2px 10px;">⚠️ ${dupPhones} رقم مكرر</div>`:''}
+        ${notFound.length?`<div style="font-size:10px;color:var(--red);">❌ ${notFound.length} مش موجود</div>`:''}
+        ${alreadyAdded.length?`<div style="font-size:10px;color:var(--mist);">⚪ ${alreadyAdded.length} موجود بالفعل</div>`:''}
+      </div>
+    </div>
+    <div style="max-height:220px;overflow-y:auto;padding-left:2px;" id="imp_list">${foundHtml}</div>
+    <div style="display:flex;gap:6px;margin-top:6px;">
+      <button onclick="_impToggleAll(${found.length},true)" style="font-size:10px;padding:3px 10px;background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#27ae60;border-radius:4px;cursor:pointer;">تحديد الكل</button>
+      <button onclick="_impToggleAll(${found.length},false)" style="font-size:10px;padding:3px 10px;background:rgba(255,255,255,.05);border:1px solid var(--rule2);color:var(--mist);border-radius:4px;cursor:pointer;">إلغاء الكل</button>
+    </div>
+    ${notFound.length?`<div style="margin-top:8px;font-size:10px;color:var(--red);padding:6px;background:rgba(192,57,43,.06);border-radius:4px;">❌ أرقام مش موجودة: ${notFound.join(', ')}</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="imp_confirm_btn" class="btn-gold" style="flex:1;" onclick="_confirmImportPhones(${JSON.stringify(found).replace(/"/g,'&quot;')})">
+        ✅ إضافة المحدد (<span id="imp_counter">${found.length}</span>)
+      </button>
+      <button style="flex:1;font-size:11px;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:8px;cursor:pointer;" onclick="closeModal()">إلغاء</button>
+    </div>`;
+}
+
+function _updateImportCounter(total){
+  const cnt = document.getElementById('imp_counter');
+  if(!cnt) return;
+  let checked=0;
+  for(let i=0;i<total;i++){
+    if(document.getElementById('imp_chk_'+i)?.checked) checked++;
+  }
+  cnt.textContent = checked;
+  const btn = document.getElementById('imp_confirm_btn');
+  if(btn) btn.disabled = checked===0;
+}
+
+function _impToggleAll(total, state){
+  for(let i=0;i<total;i++){
+    const el=document.getElementById('imp_chk_'+i);
+    if(el) el.checked=state;
+  }
+  _updateImportCounter(total);
+}
+
+async function _confirmImportPhones(found){
+  // جمّع الـ IDs المحددة
+  const selectedIds = (Array.isArray(found)?found:[]).filter((_,i)=>{
+    const chk=document.getElementById('imp_chk_'+i);
+    return chk?chk.checked:true;
+  }).map(r=>r.id);
+
+  if(!selectedIds.length){ toast('مفيش أوردرات محددة','','warn'); return; }
+
+  closeModal(); showLoading(`جاري إضافة ${selectedIds.length} أوردر…`);
+
+  let added=0;
+  selectedIds.forEach(id=>{
+    if(!mineIds.has(id)){ mineIds.add(id); recordScanTime(id); added++; }
+  });
+  saveMine();
+
+  // أضف من الـ cache فوراً
+  selectedIds.forEach(id=>{
+    const r=allCache.find(x=>String(x.orderId||x.id||'')===id);
+    if(r&&!rows.find(x=>String(x.orderId||x.id||'')===id)){
+      rows.unshift(r); selected.add(id);
+    }
+  });
+  render();
+
+  // sync في الخلفية
+  selectedIds.forEach(id=>api('scanAdd',{orderId:id}).catch(()=>{}));
+  hideLoading();
+  toast(`✅ تم إضافة ${added} أوردر`,`من شيت الشحن`,'ok',4000);
+  setTimeout(()=>refreshAll(true),2000);
+}
+
 function removeFromMine(id){
   mineIds.delete(String(id));
   saveMine();
@@ -6068,6 +6428,7 @@ async function runBackfillShippingLoss(){
 /* ══ ADS DASHBOARD ══ */
 /* ══ ADS DASHBOARD ══ */
 /* ══ ADS ══ */
+/* ══ ADS ══ */
 let _adsData=[];
 const _AS={
   fb:{c:'#1877F2',bg:'rgba(24,119,242,.12)',s:'<svg viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'},
@@ -6077,6 +6438,7 @@ const _AS={
 };
 function _gs(s){const k=String(s||'').toLowerCase();if(k.includes('facebook')||k.includes('fb'))return{..._AS.fb,name:s};if(k.includes('tiktok')||k.includes('tik'))return{..._AS.tt,name:s};if(k.includes('instagram')||k.includes('ig'))return{..._AS.ig,name:s};return{..._AS.dr,name:s||'Direct'};}
 function _cc(v){return v>=50?'#27ae60':v>=30?'var(--amber)':'var(--red)';}
+
 function setAdsPeriod(days,btn){
   document.querySelectorAll('.adp-chip').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
@@ -6090,21 +6452,42 @@ function setAdsPeriod(days,btn){
 async function loadAdsData(){
   const from=(document.getElementById('ads_from')?.value||'').replace(/-/g,'/');
   const to=(document.getElementById('ads_to')?.value||'').replace(/-/g,'/');
-  document.getElementById('ads_kpis').innerHTML='<div style="color:var(--mist);font-size:12px;grid-column:1/-1;padding:8px;">جاري التحميل…</div>';
-  ['ads_winner_src','ads_src_rows','ads_winner_camp','ads_camp_rows'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});
-  document.getElementById('ads_chart').style.display='none';
-  try{const res=await api('getAdsData',{from,to});if(!res?.ok){toast('فشل','','err');return;}_adsData=res.rows||[];_renderAds();}
-  catch(e){toast('خطأ','','err');}
+  const kpisEl=document.getElementById('ads_kpis');
+  if(kpisEl) kpisEl.innerHTML='<div style="color:var(--mist);font-size:12px;grid-column:1/-1;padding:8px;">جاري التحميل…</div>';
+  const srcEl=document.getElementById('ads_sources'); if(srcEl) srcEl.innerHTML='';
+  const chEl=document.getElementById('ads_chart'); if(chEl) chEl.style.display='none';
+
+  try{
+    const res=await api('getAdsData',{from,to});
+    if(!res?.ok){ toast('فشل تحميل الإعلانات',res?.error||'','err'); return; }
+    _adsData=res.rows||[];
+    window._adsSpend=res.adSpend||{};
+    // اقرأ الميزانيات من localStorage فوراً
+    if(!_budgets.length){ try{ _budgets=JSON.parse(localStorage.getItem(LS_BUD)||'[]'); }catch{} }
+    _renderAds();
+    renderBudgets();
+    // حاول تزامن مع الشيت في الخلفية
+    _fetchBudgets().then(()=>renderBudgets()).catch(()=>{});
+  }catch(e){
+    // السيرفر مش متاح — عرض الميزانيات من localStorage على الأقل
+    if(!_budgets.length){ try{ _budgets=JSON.parse(localStorage.getItem(LS_BUD)||'[]'); }catch{} }
+    renderBudgets();
+    toast('خطأ في الاتصال بالسيرفر','','err');
+  }
 }
 function _renderAds(){
-  const R=_adsData;
+  const R=_adsData||[];
   const isDel=s=>s==='تم التسليم',isRet=s=>s==='مرتجع'||s==='مرتجع جزئي',isCan=s=>s==='الغاء';
   const tot=R.length,del=R.filter(r=>isDel(r.status)).length,
         ret=R.filter(r=>isRet(r.status)).length,can=R.filter(r=>isCan(r.status)).length,
         rev=R.filter(r=>isDel(r.status)).reduce((s,r)=>s+r.revenue,0),
         conv=tot?Math.round(del/tot*100):0,retR=tot?Math.round(ret/tot*100):0;
 
-  document.getElementById('ads_kpis').innerHTML=[
+  const $=id=>document.getElementById(id);
+
+  // KPIs
+  const kpisEl=$('ads_kpis');
+  if(kpisEl) kpisEl.innerHTML=[
     {ico:'📦',v:tot,lbl:'الأوردرات',c:'var(--gold)'},
     {ico:'✅',v:del,lbl:'تسليم',c:'#27ae60'},
     {ico:'↩️',v:ret,lbl:'مرتجع',c:'var(--red)'},
@@ -6116,47 +6499,489 @@ function _renderAds(){
 
   // Chart
   const dm={};R.forEach(r=>{if(r.date){if(!dm[r.date])dm[r.date]={t:0,d:0};dm[r.date].t++;if(isDel(r.status))dm[r.date].d++;}});
-  const dys=Object.keys(dm).sort();const ch=document.getElementById('ads_chart');
-  if(dys.length>1){
-    ch.style.display='block';const mx=Math.max(...dys.map(d=>dm[d].t),1);
-    document.getElementById('ads_bars').innerHTML=dys.map(d=>{
-      const hT=Math.round(dm[d].t/mx*72),hD=Math.round(dm[d].d/mx*72);
-      return `<div class="adp-bc" title="${d}: ${dm[d].t} أوردر"><div class="adp-bc-bars"><div class="adp-bf" style="height:${hT}px;background:rgba(212,150,26,.4);"></div><div class="adp-bf" style="height:${hD}px;background:#27ae60;opacity:.8;"></div></div><div class="adp-bl">${d.slice(5)}</div></div>`;
-    }).join('');
-  } else ch.style.display='none';
+  const dys=Object.keys(dm).sort();
+  const ch=$('ads_chart');
+  if(ch){
+    if(dys.length>1){
+      ch.style.display='block';
+      const mx=Math.max(...dys.map(d=>dm[d].t),1);
+      const barsEl=$('ads_bars');
+      if(barsEl) barsEl.innerHTML=dys.map(d=>{
+        const hT=Math.round(dm[d].t/mx*64),hD=Math.round(dm[d].d/mx*64);
+        return `<div class="adp-bc" title="${d}: ${dm[d].t} أوردر"><div class="adp-bc-bars"><div class="adp-bf" style="height:${hT}px;background:rgba(212,150,26,.4);"></div><div class="adp-bf" style="height:${hD}px;background:#27ae60;opacity:.8;"></div></div><div class="adp-bl">${d.slice(5)}</div></div>`;
+      }).join('');
+    } else ch.style.display='none';
+  }
 
-  if(!R.length){document.getElementById('ads_winner_src').innerHTML='<div class="adp-empty"><div class="adp-empty-ico">📭</div>مفيش بيانات</div>';return;}
+  if(!R.length){
+    const srcEl=$('ads_sources'); if(srcEl) srcEl.innerHTML='<div class="adp-empty">📭<br>مفيش بيانات في الفترة دي</div>';
+    const heroEl=$('ads_hero'); if(heroEl) heroEl.style.display='none';
+    return;
+  }
 
+  // Build source map — sorted by orders (مش revenue)
   const sm={};
-  R.forEach(r=>{const s=r.source||'Direct';if(!sm[s])sm[s]={o:0,d:0,ret:0,can:0,rev:0,camps:{}};sm[s].o++;if(isDel(r.status)){sm[s].d++;sm[s].rev+=r.revenue;}if(isRet(r.status))sm[s].ret++;if(isCan(r.status))sm[s].can++;const c=(r.campaign||'').trim()||'(بدون حملة)';if(!sm[s].camps[c])sm[s].camps[c]={o:0,d:0,rev:0,src:s};sm[s].camps[c].o++;if(isDel(r.status)){sm[s].camps[c].d++;sm[s].camps[c].rev+=r.revenue;}});
+  R.forEach(r=>{
+    const s=r.source||'Direct';
+    if(!sm[s])sm[s]={o:0,d:0,ret:0,can:0,rev:0,camps:{}};
+    sm[s].o++;
+    if(isDel(r.status)){sm[s].d++;sm[s].rev+=r.revenue;}
+    if(isRet(r.status))sm[s].ret++;
+    if(isCan(r.status))sm[s].can++;
+    const c=(r.campaign||'').trim()||'(بدون حملة)';
+    if(!sm[s].camps[c])sm[s].camps[c]={o:0,d:0,rev:0};
+    sm[s].camps[c].o++;
+    if(isDel(r.status)){sm[s].camps[c].d++;sm[s].camps[c].rev+=r.revenue;}
+  });
 
-  const sl=Object.entries(sm).sort((a,b)=>b[1].rev-a[1].rev);
-  const maxO=Math.max(...sl.map(([,d])=>d.o),1);
+  // Sort by orders
+  const sl=Object.entries(sm).sort((a,b)=>b[1].o-a[1].o);
 
-  const [ts,td]=sl[0]||['',{}];
-  const tsi=_gs(ts);const tc=td.o?Math.round(td.d/td.o*100):0;
-  document.getElementById('ads_top_src_badge').textContent=ts?'🏆 '+ts:'';
-  document.getElementById('ads_winner_src').innerHTML=ts?`<div class="adp-winner"><div class="adp-winner-logo" style="background:${tsi.bg};">${tsi.s}</div><div class="adp-winner-info"><div class="adp-winner-name">${esc(ts)}</div><div class="adp-winner-meta">${td.o} أوردر · تحويل <span style="color:${_cc(tc)};font-weight:700;">${tc}%</span></div></div><div class="adp-winner-right"><div class="adp-winner-rev">${fmt(td.rev)} ج</div><div class="adp-winner-rev-lbl">إيراد</div></div></div>`:'';
-  setTimeout(()=>{const e=document.getElementById('ads_src_convbar');if(e)e.style.cssText=`width:${tc}%;background:${tsi.c};`;},80);
+  // ── Hero card ──
+  // أفضل مصدر = أكتر أوردرات
+  const [heroSrc, heroD] = sl[0] || ['', {}];
+  const heroInfo = _gs(heroSrc);
+  const heroConv = heroD.o ? Math.round(heroD.d / heroD.o * 100) : 0;
 
-  document.getElementById('ads_src_rows').innerHTML=sl.slice(1).map(([src,d])=>{
-    const si=_gs(src),cv=d.o?Math.round(d.d/d.o*100):0,bw=Math.round(d.o/maxO*100);
-    return `<div class="adp-src-row"><div class="adp-src-dot" style="background:${si.c};"></div><div class="adp-src-name">${esc(src)}</div><div class="adp-src-cnt">${d.o}</div><div class="adp-src-bar-tr"><div class="adp-src-bar-f" style="width:${bw}%;background:${si.c};opacity:.5;"></div></div><div class="adp-src-conv" style="color:${_cc(cv)};">${cv}%</div></div>`;
-  }).join('');
+  // أفضل حملة = أكتر أوردرات عبر كل المصادر
+  const allCamps = [];
+  sl.forEach(([src, d]) => Object.entries(d.camps).forEach(([cn, cd]) => allCamps.push({n: cn, src, o: cd.o, d: cd.d, rev: cd.rev})));
+  allCamps.sort((a, b) => b.o - a.o);
+  const topCamp = allCamps[0];
+  const topCampInfo = topCamp ? _gs(topCamp.src) : {};
+  const topCampConv = topCamp && topCamp.o ? Math.round(topCamp.d / topCamp.o * 100) : 0;
 
-  const ac=[];sl.forEach(([src,d])=>Object.entries(d.camps).forEach(([cn,cd])=>ac.push({n:cn,src,o:cd.o,d:cd.d,rev:cd.rev})));ac.sort((a,b)=>b.rev-a.rev);
-  const maxR=Math.max(...ac.map(c=>c.rev),1);
-  const top=ac[0];const topSi=top?_gs(top.src):{};const topCv=top&&top.o?Math.round(top.d/top.o*100):0;
-  document.getElementById('ads_top_camp_badge').textContent=top?'🏆 '+top.n.slice(0,22):'';
-  document.getElementById('ads_winner_camp').innerHTML=top?`<div class="adp-winner"><div class="adp-winner-logo" style="background:${topSi.bg};">${topSi.s}</div><div class="adp-winner-info"><div class="adp-winner-name" style="font-size:13px;">${esc(top.n)}</div><div class="adp-winner-meta">${esc(top.src)} · ${top.o} أوردر · تحويل <span style="color:${_cc(topCv)};font-weight:700;">${topCv}%</span></div></div><div class="adp-winner-right"><div class="adp-winner-rev">${fmt(top.rev)} ج</div><div class="adp-winner-rev-lbl">إيراد</div></div></div>`:'';
-  setTimeout(()=>{const e=document.getElementById('ads_camp_convbar');if(e)e.style.cssText=`width:${topCv}%;background:${topSi?topSi.c:'var(--gold)'};`;},80);
+  // period label
+  const fromEl = $('ads_from')?.value || '';
+  const toEl   = $('ads_to')?.value   || '';
+  const heroEl = $('ads_hero');
+
+  const _sid = $;
+
+  if(heroSrc) {
+    if(_sid('ads_hero'))           _sid('ads_hero').style.display = 'block';
+    if(_sid('ads_hero_period'))    _sid('ads_hero_period').textContent = fromEl && toEl ? fromEl + ' ← ' + toEl : '';
+    if(_sid('ads_hero_src_logo')){ _sid('ads_hero_src_logo').innerHTML = heroInfo.s||''; _sid('ads_hero_src_logo').style.background = heroInfo.bg||''; }
+    if(_sid('ads_hero_src_name'))  _sid('ads_hero_src_name').textContent = heroSrc;
+    if(_sid('ads_hero_src_meta'))  _sid('ads_hero_src_meta').textContent = heroD.o + ' أوردر · ' + heroD.d + ' تسليم';
+    if(_sid('ads_hero_src_conv')){ _sid('ads_hero_src_conv').textContent = heroConv + '%'; _sid('ads_hero_src_conv').style.color = _cc(heroConv); }
+
+    if(topCamp) {
+      if(_sid('ads_hero_camp_logo')){ _sid('ads_hero_camp_logo').innerHTML = topCampInfo.s||''; _sid('ads_hero_camp_logo').style.background = topCampInfo.bg||''; }
+      if(_sid('ads_hero_camp_name')) _sid('ads_hero_camp_name').textContent = topCamp.n;
+      if(_sid('ads_hero_camp_meta')) _sid('ads_hero_camp_meta').textContent = topCamp.src + ' · ' + topCamp.o + ' أوردر';
+      if(_sid('ads_hero_camp_conv')){ _sid('ads_hero_camp_conv').textContent = topCampConv + '%'; _sid('ads_hero_camp_conv').style.color = _cc(topCampConv); }
+    }
+  } else {
+    if(_sid('ads_hero')) _sid('ads_hero').style.display = 'none';
+  }
 
   const rnk=i=>i===0?'r1':i===1?'r2':i===2?'r3':'';
-  document.getElementById('ads_camp_rows').innerHTML=ac.slice(1,11).map((c,i)=>{
-    const si=_gs(c.src),cv=c.o?Math.round(c.d/c.o*100):0,bw=Math.round(c.rev/maxR*100);
-    return `<div class="adp-camp-row"><div class="adp-camp-idx ${rnk(i+1)}">${i+2}</div><div class="adp-camp-src-dot" style="background:${si.c};"></div><div class="adp-camp-name" title="${esc(c.n)}">${esc(c.n)}</div><div class="adp-camp-cnt">${c.o}</div><div class="adp-camp-bar-tr"><div class="adp-camp-bar-f" style="width:${bw}%;background:${si.c};opacity:.6;"></div></div><div class="adp-camp-conv" style="color:${_cc(cv)};">${cv}%</div><div class="adp-camp-rev">${fmt(c.rev)} ج</div></div>`;
+
+  const srcEl=$('ads_sources');
+  if(srcEl) srcEl.innerHTML=sl.map(([src,d],si)=>{
+    const info=_gs(src);
+    const conv=d.o?Math.round(d.d/d.o*100):0;
+    const retR=d.o?Math.round(d.ret/d.o*100):0;
+
+    // مصاريف الإعلانات من الـ Expenses شيت
+    const spend = window._adsSpend || {};
+    // جمّع كل المصاريف اللي المصدر بتاعها = src (بصرف النظر عن الحملة)
+    const totalSpend = Object.entries(spend)
+      .filter(([k]) => k.startsWith(src + '|||'))
+      .reduce((s,[,v]) => s+v, 0);
+
+    const camps=Object.entries(d.camps).sort((a,b)=>b[1].o-a[1].o);
+    const maxCO=Math.max(...camps.map(([,c])=>c.o),1);
+    const rnk=i=>i===0?'r1':i===1?'r2':i===2?'r3':'';
+
+    const campRows=camps.map(([cn,cd],ci)=>{
+      const cv=cd.o?Math.round(cd.d/cd.o*100):0;
+      const bw=Math.round(cd.o/maxCO*100);
+      // مصروف الحملة المحددة
+      const campSpend = spend[src + '|||' + cn] || 0;
+      const campRoas = campSpend>0 && cd.rev>0 ? (cd.rev/campSpend).toFixed(1)+'x' : '';
+      const campSpendHtml = campSpend>0
+        ? `<span style="font-size:9px;color:var(--mist);margin-right:4px;">${fmt(campSpend)} ج صُرف</span><span style="font-size:10px;font-weight:800;color:${Number(cd.rev/campSpend)>=2?'#27ae60':'var(--amber)'};">${campRoas}</span>`
+        : '';
+      return `<div class="adp-camp-row">
+        <div class="adp-camp-rank ${rnk(ci)}">${ci+1}</div>
+        <div class="adp-camp-name" title="${esc(cn)}">${esc(cn)}</div>
+        <div class="adp-camp-cnt">${cd.o} أوردر</div>
+        <div class="adp-camp-bar-tr"><div class="adp-camp-bar-f" style="width:${bw}%;background:${info.c};opacity:.6;"></div></div>
+        <div class="adp-camp-conv" style="color:${_cc(cv)};">${cv}%</div>
+        <div class="adp-camp-rev">${fmt(cd.rev)} ج ${campSpendHtml}</div>
+      </div>`;
+    }).join('');
+
+    // ROI row للمصدر كله
+    const roiHtml = totalSpend > 0
+      ? _roiHtml(d.rev, d.o, totalSpend)
+      : `<span style="font-size:10px;color:var(--mist);">سجّل مصاريف "إعلانات | ${esc(src)}" في المصاريف لحساب ROI</span>`;
+
+    return `<div class="adp-src-block${si===0?' top-src':''}">
+      <div class="adp-src-hd">
+        <div class="adp-src-logo" style="background:${info.bg};">${info.s}</div>
+        <div class="adp-src-hd-info">
+          <div class="adp-src-hd-name">${esc(src)}${si===0?' 🏆':''}</div>
+          <div class="adp-src-hd-sub">${d.o} أوردر · ${camps.length} حملة${totalSpend>0?' · صُرف '+fmt(totalSpend)+' ج':''}</div>
+        </div>
+        <div class="adp-src-hd-right">
+          <div class="adp-src-hd-rev">${fmt(d.rev)} ج</div>
+          <div class="adp-src-hd-rlbl">إيراد</div>
+        </div>
+      </div>
+      <div class="adp-src-cbar"><div class="adp-src-cbar-f" id="scbar_${si}" style="width:0%;background:${info.c};"></div></div>
+      <div class="adp-src-stats">
+        <div class="adp-src-stat"><div class="adp-src-stat-v" style="color:#27ae60;">${d.d}</div><div class="adp-src-stat-l">تسليم</div></div>
+        <div class="adp-src-stat"><div class="adp-src-stat-v" style="color:${_cc(conv)};">${conv}%</div><div class="adp-src-stat-l">تحويل</div></div>
+        <div class="adp-src-stat"><div class="adp-src-stat-v" style="color:${retR>20?'var(--red)':'var(--mist)'};">${retR}%</div><div class="adp-src-stat-l">إرجاع</div></div>
+        <div class="adp-src-stat"><div class="adp-src-stat-v" style="color:var(--mist);">${d.can}</div><div class="adp-src-stat-l">إلغاء</div></div>
+      </div>
+      <div class="adp-roi-row">${roiHtml}</div>
+      <div class="adp-camps-ttl">الحملات</div>
+      ${campRows}
+    </div>`;
   }).join('');
+
+  // Animate conv bars
+  setTimeout(()=>{
+    sl.forEach(([src,d],si)=>{
+      const el=document.getElementById('scbar_'+si);
+      const info=_gs(src);
+      const cv=d.o?Math.round(d.d/d.o*100):0;
+      if(el) el.style.cssText=`width:${cv}%;background:${info.c};`;
+    });
+  },100);
 }
+function _onExpTypeChange(){
+  const type = document.getElementById('exp_type')?.value;
+  const fields = document.getElementById('exp_ads_fields');
+  if(fields) fields.style.display = type === 'إعلانات' ? 'block' : 'none';
+  if(type !== 'إعلانات') return;
+  const camps = new Set();
+  (_budgets||[]).forEach(b=>{ if(b.campaign) camps.add(b.campaign); });
+  (_adsData||[]).forEach(r=>{ if(r.campaign) camps.add(r.campaign); });
+  const dl = document.getElementById('exp_ad_camp_list');
+  if(dl) dl.innerHTML = [...camps].map(c=>`<option value="${esc(c)}">`).join('');
+}
+function _onAdSrcChange(){
+  const src  = document.getElementById('exp_ad_src')?.value  || '';
+  const camp = document.getElementById('exp_ad_camp')?.value || '';
+  const desc = document.getElementById('exp_desc');
+  if(!desc) return;
+  if(src) desc.value = src + (camp ? ' | ' + camp : '');
+  _showPayUrlBtn();
+}
+function _showPayUrlBtn(){
+  const src  = document.getElementById('exp_ad_src')?.value  || '';
+  const camp = document.getElementById('exp_ad_camp')?.value || '';
+  const btn  = document.getElementById('exp_pay_url_btn');
+  if(!btn) return;
+  const match = (_budgets||[]).find(b=>
+    b.payUrl && b.source===src && (!camp||!b.campaign||b.campaign===camp)
+  );
+  if(match){ btn.href=match.payUrl; btn.style.display='block'; }
+  else btn.style.display='none';
+}
+
+/* ══ BUDGET MANAGER ══ */
+let _budgets = [];
+const LS_BUD = 'wc_budgets_v2';
+
+async function _fetchBudgets(){
+  try{
+    const r=await api('getBudgets');
+    if(r?.ok && r.budgets?.length){
+      _budgets=r.budgets;
+      try{ localStorage.setItem(LS_BUD, JSON.stringify(_budgets)); }catch{}
+      return;
+    }
+  }catch{}
+  // fallback من localStorage
+  try{ _budgets=JSON.parse(localStorage.getItem(LS_BUD)||'[]'); }catch{}
+}
+
+async function _saveBudgets(arr){
+  _budgets=arr;
+  // احفظ في localStorage فوراً
+  try{ localStorage.setItem(LS_BUD, JSON.stringify(arr)); }catch{}
+  // وحاول تحفظ في الشيت
+  try{ await api('saveBudgets',{budgets:JSON.stringify(arr)}); }
+  catch(e){ console.warn('Budget sheet save failed:',e); }
+}
+
+function renderBudgets(){
+  // استخدم _budgets لو في بيانات، وإلا اقرأ من localStorage
+  const LS_BUD='wc_budgets_v2';
+  let budgets=_budgets&&_budgets.length?_budgets:[];
+  if(!budgets.length){ try{ budgets=JSON.parse(localStorage.getItem(LS_BUD)||'[]'); }catch{} }
+  const spend=window._adsSpend||{};
+  const el=document.getElementById('ads_budgets');
+  if(!el) return;
+
+  if(!budgets.length){
+    el.innerHTML=`<div class="adp-bud-hd"><div class="adp-bud-ttl">💰 ميزانيات الحملات</div><button class="adp-bud-add" onclick="openAddBudgetModal()">+ إضافة</button></div>
+    <div style="background:var(--ink3);border:1px dashed var(--rule2);border-radius:12px;padding:20px;text-align:center;color:var(--mist);font-size:11px;">مفيش ميزانيات — اضغط إضافة عشان تتابع إنفاقك</div>`;
+    return;
+  }
+
+  const todayISO=new Date().toISOString().slice(0,10);
+
+  const cards=budgets.map((b,i)=>{
+    const info=_gs(b.source);
+    const key=b.source+'|||'+(b.campaign||'');
+    const charged=spend[key]||0;
+    const fixedDaily=Number(b.daily||0);
+
+    // أوردرات المصدر من _adsData مقسّمة على أيام
+    const srcOrders=(_adsData||[]).filter(r=>
+      (r.source||'Direct')===b.source && (!b.campaign||(r.campaign||'')===b.campaign)
+    );
+    const dayMap={};
+    srcOrders.forEach(r=>{
+      if(!r.date) return;
+      const d=r.date.slice(0,10).replace(/\//g,'-');
+      dayMap[d]=(dayMap[d]||0)+1;
+    });
+
+    const todayOrders=dayMap[todayISO]||0;
+    const todayCPO=fixedDaily>0&&todayOrders>0?Math.round(fixedDaily/todayOrders):0;
+
+    // حساب الأيام من آخر شحن (أو من الإنشاء لو ما في شحن)
+    // كل 24 ساعة = يوم واحد بيتخصم من الرصيد
+    const startDate = b.lastChargeDate
+      ? new Date(b.lastChargeDate)
+      : (b.createdAt ? new Date(b.createdAt) : new Date());
+    const msElapsed = Date.now() - startDate.getTime();
+    const daysSince = Math.floor(msElapsed / 86400000); // كل 24 ساعة = يوم
+    const hoursElapsed = Math.floor((msElapsed % 86400000) / 3600000);
+    const totalSpent = fixedDaily * daysSince;
+    const totalCharged = Math.max(charged, totalSpent);
+
+    // متوسط CPO
+    const activeDays=Object.values(dayMap).filter(x=>x>0);
+    const avgOrders=activeDays.length>0?activeDays.reduce((s,v)=>s+v,0)/activeDays.length:0;
+    const avgCPO=fixedDaily>0&&avgOrders>0?Math.round(fixedDaily/avgOrders):0;
+
+    const remaining=Math.max(totalCharged-totalSpent,0);
+    const pct=totalCharged>0?Math.min(Math.round(totalSpent/totalCharged*100),100):0;
+    const barColor=pct>=90?'var(--red)':pct>=70?'var(--amber)':'#27ae60';
+    const daysLeft=fixedDaily>0&&remaining>0?Math.floor(remaining/fixedDaily):null;
+
+    // كم ساعة على الدفعة الجاية
+    const nextPayIn = 24 - hoursElapsed;
+
+    let alertHtml='';
+    if(b.paused)     alertHtml=`<div class="adp-bud-alert done">⏸️ الحملة موقوفة يدوياً</div>`;
+    else if(pct>=100)alertHtml=`<div class="adp-bud-alert danger">🚨 الرصيد خلص! اشحن دلوقتي</div>`;
+    else if(pct>=80) alertHtml=`<div class="adp-bud-alert danger">⚠️ ${fmt(remaining)} ج متبقي${daysLeft?' · ~'+daysLeft+' يوم':''}</div>`;
+    else if(pct>=60) alertHtml=`<div class="adp-bud-alert warn">⚡ ${fmt(remaining)} ج متبقي${daysLeft?' · ~'+daysLeft+' يوم':''}</div>`;
+
+    // chart آخر 7 أيام
+    const last7=[];
+    for(let d7=6;d7>=0;d7--){
+      const dd=new Date(); dd.setDate(dd.getDate()-d7);
+      const dk=dd.toISOString().slice(0,10);
+      const ords=dayMap[dk]||0;
+      const cpo7=ords>0&&fixedDaily>0?Math.round(fixedDaily/ords):0;
+      last7.push({lbl:dk.slice(5), ords, cpo7, isToday:dk===todayISO});
+    }
+    const maxOrds=Math.max(...last7.map(x=>x.ords),1);
+
+    const miniChart=fixedDaily>0?`
+      <div style="padding:10px 16px 0;display:flex;align-items:flex-end;gap:4px;height:56px;">
+        ${last7.map(x=>{
+          const h=Math.max(Math.round(x.ords/maxOrds*40),x.ords>0?4:1);
+          const clr=x.isToday?'var(--gold)':x.ords>0?'rgba(255,255,255,.3)':'rgba(255,255,255,.07)';
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;" title="${x.lbl}: ${x.ords} أوردر${x.cpo7?' · CPO '+x.cpo7+' ج':''}">
+            <div style="font-size:7px;color:${clr};font-weight:700;min-height:10px;">${x.ords>0?x.ords:''}</div>
+            <div style="width:100%;height:${h}px;background:${clr};border-radius:2px 2px 0 0;"></div>
+            <div style="font-size:7px;color:${x.isToday?'var(--gold)':'var(--mist)'};">${x.lbl.slice(3)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="padding:4px 16px 10px;display:flex;justify-content:space-between;font-size:10px;border-bottom:1px solid var(--rule2);">
+        <span style="color:var(--mist);">${fmt(fixedDaily)} ج/يوم${avgCPO>0?' · متوسط CPO: <b style="color:var(--white);">'+avgCPO+' ج</b>':''}</span>
+        <span style="color:${todayOrders>0?'var(--gold)':'var(--mist)'};">النهارده: <b>${todayOrders} أوردر${todayCPO>0?' · '+todayCPO+' ج/أوردر':''}</b></span>
+      </div>`
+    :`<div style="padding:10px 16px;font-size:10px;color:var(--amber);border-bottom:1px solid var(--rule2);">⚠️ حط الإنفاق اليومي عشان يحسب CPO → <button class="adp-bud-btn" onclick="openEditBudget(${i})">تعديل</button></div>`;
+
+    const payBtn=b.payUrl
+      ?`<button class="adp-bud-btn pay" onclick="openPayFlow(${i})">💳 اشحن</button>`
+      :`<button class="adp-bud-btn" onclick="openEditBudget(${i})">✏️ تعديل</button>`;
+    const pauseBtn=b.paused
+      ?`<button class="adp-bud-btn resume" onclick="toggleBudgetPause(${i})">▶️ استأنف</button>`
+      :`<button class="adp-bud-btn pause" onclick="toggleBudgetPause(${i})">⏸️ وقّف</button>`;
+
+    return `<div class="adp-bud-card${b.paused?' paused':''}">
+      <div class="adp-bud-card-hd">
+        <div class="adp-bud-card-logo" style="background:${info.bg};">${info.s}</div>
+        <div class="adp-bud-card-info">
+          <div class="adp-bud-card-name">${esc(b.campaign||b.source)}</div>
+          <div class="adp-bud-card-src">${esc(b.source)}${b.campaign?' · '+esc(b.campaign):''} · ${srcOrders.length} أوردر</div>
+        </div>
+        ${b.paused?'<div class="adp-bud-paused-badge">موقوفة</div>':''}
+        <div class="adp-bud-card-actions">${payBtn}${pauseBtn}<button class="adp-bud-btn del" onclick="deleteBudget(${i})">🗑️</button></div>
+      </div>
+      ${miniChart}
+      <div class="adp-bud-progress">
+        <div class="adp-bud-prog-row">
+          <div>
+            <div class="adp-bud-prog-spent" style="color:${totalCharged>0?barColor:'var(--mist)'};">
+              ${totalCharged>0?fmt(remaining)+' ج':fmt(totalSpent)+' ج'}
+              <span style="font-size:11px;color:var(--mist);">${totalCharged>0?'متبقي':'صُرف'}</span>
+            </div>
+            <div style="font-size:10px;color:var(--mist);">${totalCharged>0?'من '+fmt(totalCharged)+' ج مشحون':'اشحن رصيد لمتابعة المتبقي'}</div>
+          </div>
+          <div style="text-align:left;">
+            <div style="font-size:13px;font-weight:800;color:var(--white);">${fmt(totalSpent)} ج</div>
+            <div style="font-size:9px;color:var(--mist);">إجمالي صُرف (${daysSince} يوم)</div>
+          </div>
+        </div>
+        ${totalCharged>0?`
+        <div class="adp-bud-prog-track" style="margin-top:8px;">
+          <div class="adp-bud-prog-fill" style="width:${pct}%;background:${barColor};"></div>
+        </div>
+        <div class="adp-bud-prog-meta">
+          <span>${pct}% من الرصيد · ${daysSince} يوم</span>
+          <span style="color:${barColor};">${daysLeft!==null?'~'+daysLeft+' يوم متبقي':''}</span>
+        </div>`:''}
+        <div style="font-size:10px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--mist);">⏱️ الدفعة الجاية بعد <b style="color:var(--gold);">${nextPayIn} ساعة</b></span>
+          <span style="color:var(--mist);">${fmt(fixedDaily)} ج/يوم</span>
+        </div>
+      </div>
+      ${alertHtml}
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`<div class="adp-bud-hd"><div class="adp-bud-ttl">💰 ميزانيات الحملات</div><button class="adp-bud-add" onclick="openAddBudgetModal()">+ إضافة</button></div>${cards}`;
+}
+
+function openAddBudgetModal(){
+  const camps=new Set();
+  (_adsData||[]).forEach(r=>{ if(r.campaign) camps.add(r.campaign); });
+  const campOpts=[...camps].map(c=>`<option value="${esc(c)}">`).join('');
+  openModal(`
+    <div style="margin-bottom:14px;"><div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white);">💰 إضافة ميزانية حملة</div></div>
+    <div class="form-grid form-grid-2" style="margin-bottom:12px;">
+      <div><label class="field-label">المنصة *</label>
+        <select id="bud_src"><option value="">— اختر —</option><option>Facebook</option><option>TikTok</option><option>Instagram</option><option>Google</option><option>أخرى</option></select></div>
+      <div><label class="field-label">الحملة (اختياري)</label>
+        <input id="bud_camp" list="bud_camp_list" placeholder="(كل حملات المنصة)"/>
+        <datalist id="bud_camp_list">${campOpts}</datalist></div>
+      <div style="grid-column:span 2;">
+        <label class="field-label">الإنفاق اليومي الثابت (ج) *</label>
+        <input id="bud_daily" type="number" min="0" placeholder="مثال: 200"/>
+        <div style="font-size:9px;color:var(--mist);margin-top:3px;">بيتقسم على أوردرات اليوم → CPO = الإنفاق ÷ عدد الأوردرات</div>
+      </div>
+      <div style="grid-column:span 2;"><label class="field-label">🔗 رابط صفحة الشحن (اختياري)</label>
+        <input id="bud_url" type="url" placeholder="https://business.facebook.com/..."/></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-gold" style="flex:1;" onclick="_saveBudgetModal()">✅ حفظ</button>
+      <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:10px;cursor:pointer;" onclick="closeModal()">إلغاء</button>
+    </div>`);
+}
+
+async function _saveBudgetModal(){
+  const src=document.getElementById('bud_src')?.value?.trim();
+  const camp=document.getElementById('bud_camp')?.value?.trim()||'';
+  const daily=Number(document.getElementById('bud_daily')?.value||0);
+  const url=document.getElementById('bud_url')?.value?.trim()||'';
+  if(!src){toast('اختر المنصة','','warn');return;}
+  if(!daily){toast('اكتب الإنفاق اليومي','','warn');return;}
+  const arr=[..._budgets,{source:src,campaign:camp,daily,payUrl:url,paused:false,createdAt:new Date().toISOString()}];
+  closeModal(); showLoading('جاري الحفظ…');
+  await _saveBudgets(arr);
+  hideLoading(); renderBudgets();
+  toast('✅ تمت الإضافة',src+(camp?' | '+camp:''),'ok');
+}
+
+function openEditBudget(idx){
+  const b=_budgets[idx]; if(!b) return;
+  openModal(`
+    <div style="margin-bottom:12px;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:800;color:var(--white);">✏️ تعديل الميزانية</div>
+    <div class="form-grid form-grid-2" style="margin-bottom:12px;">
+      <div style="grid-column:span 2;"><label class="field-label">الإنفاق اليومي (ج)</label>
+        <input id="edit_daily" type="number" min="0" value="${b.daily||''}"/></div>
+      <div style="grid-column:span 2;"><label class="field-label">🔗 رابط صفحة الشحن</label>
+        <input id="edit_url" type="url" value="${b.payUrl||''}" placeholder="https://..."/></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-gold" style="flex:1;" onclick="_saveEditBudget(${idx})">✅ حفظ</button>
+      <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:10px;cursor:pointer;" onclick="closeModal()">إلغاء</button>
+    </div>`);
+}
+
+async function _saveEditBudget(idx){
+  const daily=Number(document.getElementById('edit_daily')?.value||0);
+  const url=document.getElementById('edit_url')?.value?.trim()||'';
+  const arr=[..._budgets];
+  if(arr[idx]){arr[idx].daily=daily;arr[idx].payUrl=url;}
+  closeModal(); showLoading('جاري الحفظ…');
+  await _saveBudgets(arr);
+  hideLoading(); renderBudgets();
+}
+
+function openPayFlow(idx){
+  const b=_budgets[idx]; if(!b) return;
+  openModal(`
+    <div style="margin-bottom:14px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:800;color:var(--white);">💳 شحن رصيد إعلان</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:4px;">${esc(b.source)}${b.campaign?' · '+esc(b.campaign):''}</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label class="field-label">المبلغ اللي شحنته (ج) *</label>
+      <input id="pay_amount" type="number" min="0" placeholder="0" style="width:100%;margin-top:4px;font-size:22px;font-weight:800;text-align:center;"/>
+    </div>
+    ${b.payUrl?`<a href="${esc(b.payUrl)}" target="_blank" style="display:block;margin-bottom:10px;"><button class="btn-gold" style="width:100%;font-size:13px;">🔗 افتح صفحة الشحن على ${esc(b.source)}</button></a><div style="font-size:10px;color:var(--mist);text-align:center;margin-bottom:14px;">اشحن هناك، ارجع هنا واضغط "سجل"</div>`:''}
+    <div style="display:flex;gap:8px;">
+      <button class="btn-gold" style="flex:1;" onclick="_confirmPayment(${idx})">✅ سجل الشحن</button>
+      <button style="flex:1;background:transparent;border:1px solid var(--rule2);color:var(--mist);border-radius:var(--r2);padding:10px;cursor:pointer;" onclick="closeModal()">إلغاء</button>
+    </div>`);
+}
+
+async function _confirmPayment(idx){
+  const amt=Number(document.getElementById('pay_amount')?.value||0);
+  if(!amt){toast('اكتب المبلغ','','warn');return;}
+  const b=_budgets[idx]; if(!b){closeModal();return;}
+  closeModal(); showLoading('جاري التسجيل…');
+  const today=new Date().toISOString().slice(0,10);
+  const desc=b.source+(b.campaign?' | '+b.campaign:'');
+  try{
+    const res=await api('addExpense',{date:today,type:'إعلانات',desc,amount:amt,method:'تحويل'});
+    hideLoading();
+    if(res?.ok){
+      // حفظ تاريخ ووقت الشحن — بيبدأ العد من هنا
+      const arr=[..._budgets];
+      arr[idx].lastChargeDate = new Date().toISOString();
+      await _saveBudgets(arr);
+      toast('✅ تم تسجيل الشحن',fmt(amt)+' ج — '+desc,'ok',4000);
+      loadAdsData();
+    }
+    else toast('❌ فشل',res?.error||'','err');
+  }catch(e){hideLoading();toast('❌ خطأ','','err');}
+}
+
+async function toggleBudgetPause(idx){
+  const arr=[..._budgets];
+  if(!arr[idx]) return;
+  arr[idx].paused=!arr[idx].paused;
+  await _saveBudgets(arr); renderBudgets();
+  toast(arr[idx].paused?'⏸️ موقوفة':'▶️ استأنفت','','ok');
+}
+
+async function deleteBudget(idx){
+  if(!confirm('هتحذف الميزانية دي؟')) return;
+  const arr=[..._budgets]; arr.splice(idx,1);
+  showLoading('جاري الحذف…');
+  await _saveBudgets(arr); hideLoading(); renderBudgets();
+}
+
+function editBudgetUrl(idx){ openEditBudget(idx); }
+
 function openSideDrawer(){
   document.getElementById('sideDrawer').classList.add('open');
   document.body.style.overflow='hidden';
