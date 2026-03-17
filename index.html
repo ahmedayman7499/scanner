@@ -6086,13 +6086,13 @@ function openImportShippingModal(){
   openModal(`
     <div style="margin-bottom:14px;">
       <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:800;color:var(--white);">📋 استيراد من شيت الشحن</div>
-      <div style="font-size:11px;color:var(--mist);margin-top:4px;">الصق أرقام الموبايل من شيت شركة الشحن — كل رقم في سطر أو مفصولة بفاصلة</div>
+      <div style="font-size:11px;color:var(--mist);margin-top:4px;">الصق أرقام الموبايل <b style="color:var(--silver);">أو</b> أرقام الأوردرات — كل رقم في سطر أو مفصولة بفاصلة</div>
     </div>
 
     <div style="margin-bottom:12px;">
-      <label class="field-label">أرقام الموبايل *</label>
+      <label class="field-label">أرقام الموبايل أو Order IDs *</label>
       <textarea id="imp_phones" rows="8"
-        placeholder="01xxxxxxxxx&#10;01xxxxxxxxx&#10;01xxxxxxxxx&#10;...&#10;&#10;أو: 011..., 012..., 010..."
+        placeholder="أرقام موبايل:&#10;01xxxxxxxxx&#10;01xxxxxxxxx&#10;&#10;أو أرقام أوردرات:&#10;WC-1234&#10;2140&#10;2548&#10;&#10;أو مزيج من الاتنين ✅"
         style="width:100%;font-family:'JetBrains Mono',monospace;font-size:12px;direction:ltr;margin-top:4px;resize:vertical;">
       </textarea>
     </div>
@@ -6110,30 +6110,73 @@ function openImportShippingModal(){
 
 async function _doImportPhones(){
   const raw = (document.getElementById('imp_phones')?.value||'').trim();
-  if(!raw){ toast('الصق أرقام الموبايل أولاً','','warn'); return; }
+  if(!raw){ toast('الصق الأرقام أولاً','','warn'); return; }
 
-  // استخرج كل الأرقام
-  const phones = [...new Set(
-    raw.split(/[\n\r,،\t;]+/)
-      .map(s=>s.trim().replace(/\s/g,'').replace(/^(\+?20|0020)/,'0'))
-      .filter(s=>/^0\d{9,10}$/.test(s))
-  )];
+  // قسّم السطور
+  const tokens = raw.split(/[\n\r,،\t;]+/).map(s=>s.trim()).filter(Boolean);
 
-  if(!phones.length){ toast('مش لاقي أرقام صحيحة','تأكد من الصيغة: 01XXXXXXXXX','warn'); return; }
+  // افصل: أرقام موبايل vs Order IDs
+  const phones  = [];
+  const orderIds = [];
+  const seenPhones = new Set();
+  const seenIds    = new Set();
+
+  tokens.forEach(t=>{
+    const clean = t.replace(/\s/g,'');
+    // normalize الرقم — شيل +20 أو 20 من الأول
+    const normalized = clean.replace(/^(\+?20|0020)/,'0');
+
+    // Order ID: WC-xxx
+    if(/^WC-\d+$/i.test(clean)){
+      const norm = clean.toUpperCase();
+      if(!seenIds.has(norm)){ seenIds.add(norm); orderIds.push(norm); }
+    }
+    // موبايل مصري بصفر: 01xxxxxxxxx
+    else if(/^0[0-9]{9,10}$/.test(normalized)){
+      if(!seenPhones.has(normalized)){ seenPhones.add(normalized); phones.push(normalized); }
+    }
+    // موبايل مصري بدون صفر: 1xxxxxxxxx (10 أرقام)
+    else if(/^1[0-9]{9}$/.test(clean)){
+      const withZero = '0'+clean;
+      if(!seenPhones.has(withZero)){ seenPhones.add(withZero); phones.push(withZero); }
+    }
+    // رقم قصير — Order ID رقمي (1-8 خانات)
+    else if(/^\d{1,8}$/.test(clean)){
+      if(!seenIds.has(clean)){ seenIds.add(clean); orderIds.push(clean); }
+    }
+  });
+
+  const totalInput = phones.length + orderIds.length;
+  if(!totalInput){ toast('مش لاقي أرقام صحيحة','موبايل: 01XXXXXXXXX | أوردر: WC-xxx أو الرقم','warn'); return; }
 
   const resEl = document.getElementById('imp_result');
   resEl.style.display = 'block';
   resEl.style.background = 'rgba(52,152,219,.08)';
   resEl.style.border = '1px solid rgba(52,152,219,.2)';
   resEl.style.color = 'var(--blue)';
-  resEl.innerHTML = `⏳ جاري البحث عن <b>${phones.length}</b> رقم في الشيت…`;
+  resEl.innerHTML = `⏳ جاري البحث عن <b>${totalInput}</b> ${orderIds.length&&phones.length?'رقم (موبايل + أوردر)':orderIds.length?'أوردر':'رقم موبايل'}…`;
 
-  // ابحث في allCache أولاً
   let found=[], notFound=[], alreadyAdded=[];
 
+  // ── بحث بـ Order ID ──
+  orderIds.forEach(oid=>{
+    const norm = String(oid).trim().replace(/\.0+$/,'');
+    const r = allCache.find(x=> String(x.orderId||x.id||'').trim().replace(/\.0+$/,'') === norm);
+    if(!r){
+      notFound.push(oid);
+    } else {
+      const id = String(r.orderId||r.id||'').trim();
+      if(mineIds.has(id)){
+        alreadyAdded.push({id, phone:oid, name:r.name||r.customer||''});
+      } else {
+        found.push({id, phone:oid, name:r.name||r.customer||'', status:r.status||''});
+      }
+    }
+  });
+
+  // ── بحث بـ موبايل ──
   phones.forEach(phone=>{
     const digits = phone.replace(/\D/g,'');
-    // بحث بالأرقام الأخيرة 9-10 خانات
     const matches = allCache.filter(r=>{
       const p1 = String(r.phone||r.phone1||'').replace(/\D/g,'');
       const p2 = String(r.altPhone||r.phone2||'').replace(/\D/g,'');
